@@ -10,7 +10,7 @@ install the dependencies:
 ```npm install```
 
 run the app:
-```npm run```
+```npm run start```
 
 ## Develop!
 

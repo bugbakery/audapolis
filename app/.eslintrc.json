@@ -16,7 +16,7 @@
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
-    "prettier/prettier": "error"
+    "prettier/prettier": "warn"
   },
   "settings": {
     "react": {

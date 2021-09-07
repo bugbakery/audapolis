@@ -1,28 +1,28 @@
 import * as React from 'react';
+import { RootState, store } from '../state';
+import { Provider, useSelector } from 'react-redux';
+import { Page } from '../state/nav';
 import { LandingPage } from './Landing';
-import { TitleBar } from './TitleBar';
-import styled from 'styled-components';
-
-const AppContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-`;
-const MainContainer = styled.div`
-  overflow: auto;
-  align-self: stretch;
-  flex-grow: 1;
-  display: flex;
-`;
+import { TranscribePage } from './Transcribe';
+import { EditorPage } from './Editor';
 
 export default function App(): JSX.Element {
   return (
-    <AppContainer>
-      <TitleBar />
-      <MainContainer>
-        <LandingPage />
-      </MainContainer>
-    </AppContainer>
+    <Provider store={store}>
+      <CurrentPage />
+    </Provider>
   );
+}
+
+function CurrentPage(): JSX.Element {
+  const page = useSelector((state: RootState) => state.nav.page);
+
+  switch (page) {
+    case Page.Landing:
+      return <LandingPage />;
+    case Page.Transcribe:
+      return <TranscribePage />;
+    case Page.Editor:
+      return <EditorPage />;
+  }
 }

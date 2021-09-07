@@ -1,23 +1,26 @@
-/* the landing page, that gets opened, when the user opens the app without directly opening a file */
-
 import * as React from 'react';
-import styled from 'styled-components';
 import { Button } from './Controls';
-
-const CenterColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
-`;
+import { useDispatch } from 'react-redux';
+import { transcribeFile } from '../state/transcribe';
+import { TitleBar } from './TitleBar';
+import { AppContainer, CenterColumn } from './Util';
+import { openDocument } from '../state/editor';
 
 export function LandingPage(): JSX.Element {
+  const dispatch = useDispatch();
+
   return (
-    <CenterColumn>
-      <Button primary>Import & Transcribe</Button>
-      <Button primary>Open Existing</Button>
-      <Button>New Blank Document</Button>
-    </CenterColumn>
+    <AppContainer>
+      <TitleBar />
+      <CenterColumn>
+        <Button primary onClick={() => dispatch(transcribeFile())}>
+          Import & Transcribe
+        </Button>
+        <Button primary onClick={() => dispatch(openDocument())}>
+          Open Existing
+        </Button>
+        <Button>New Blank Document</Button>
+      </CenterColumn>
+    </AppContainer>
   );
 }

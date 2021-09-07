@@ -12,7 +12,23 @@ It might also be possible to speed it up by running it on a GPU.
 Therefore we decided to create a small server that provides transcription.
 This can either be run on the same host as the app or hosted somewhere else.
 
-## Installation
+## Installation & Usage
+
+### Docker
+
+We provide a Dockerfile for easy setup.
+
+To build the container, simply run
+```sh
+docker build --tag audapolis-server .
+```
+
+After that you can start the container using
+```sh
+docker run -p 80:80 audapolis-server
+```
+
+### Manually
 
 We use [poetry](https://python-poetry.org/) for dependency management.
 Either install poetry using your system package manager or by running
@@ -26,8 +42,6 @@ After that you can install the needed dependencies by running
 ```sh
 poetry install
 ```
-
-## Usage
 
 After installing the dependencies you can start the server by running
 

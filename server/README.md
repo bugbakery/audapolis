@@ -48,3 +48,21 @@ After installing the dependencies you can start the server by running
 ```sh
 uvicorn main:app --reload
 ```
+
+## Code checks & tests
+
+We use black, isort and flake8 for code formatting.
+You can either run them manually or use the [pre-commit](https://pre-commit.com)-hook.
+To do that install `pre-commit` using you system package manager or by running
+
+```sh
+pip install pre-commit
+```
+
+After that install the hook by runnign
+
+```sh
+pre-commit install
+```
+
+Now the code will be reformatted every time you commit.

@@ -8,9 +8,15 @@ authors = ["Your Name <you@example.com>"]
 python = "^3.8"
 fastapi = "^0.68.1"
 uvicorn = {extras = ["standard"], version = "^0.15.0"}
+isort = "^5.9.3"
+black = "^21.8b0"
+flake8 = "^3.9.2"
 
 [tool.poetry.dev-dependencies]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"

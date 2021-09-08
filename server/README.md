@@ -14,6 +14,7 @@ This can either be run on the same host as the app or hosted somewhere else.
 
 ## Installation & Usage
 
+<!--
 ### Docker
 
 We provide a Dockerfile for easy setup.
@@ -28,7 +29,9 @@ After that you can start the container using
 docker run -p 80:80 audapolis-server
 ```
 
+
 ### Manually
+-->
 
 We use [poetry](https://python-poetry.org/) for dependency management.
 Either install poetry using your system package manager or by running
@@ -48,6 +51,10 @@ After installing the dependencies you can start the server by running
 ```sh
 uvicorn main:app --reload
 ```
+## Models
+
+You need to download a model for speech recognition from [here](https://alphacephei.com/vosk/models).
+Place this model in the `data` this in the root of this repo.
 
 ## Code checks & tests
 

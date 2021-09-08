@@ -1,13 +1,15 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
-import { store } from './index';
+import { RootState, store } from './index';
 import { openEditor } from './nav';
-import { deserializeDocument, Document } from './document';
+import { deserializeDocument, Document } from '../core/document';
+import { player } from '../core/webaudio';
 
 export interface Editor {
   path?: string;
-  error?: any;
   document?: Document;
+  currentTime?: number;
+  playing?: boolean;
 }
 
 export const openDocument = createAsyncThunk('editor/openDocument', async (): Promise<Editor> => {
@@ -22,32 +24,53 @@ export const openDocument = createAsyncThunk('editor/openDocument', async (): Pr
       ],
     })
     .then((x) => x.filePaths[0]);
-  let document;
-  try {
-    document = await deserializeDocument(path);
-  } catch (error) {
-    return { error };
-  }
-  console.log(document);
+  const document = await deserializeDocument(path);
+
   store.dispatch(openEditor());
   return { path, document };
 });
 
+export const play = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/play',
+  async (arg, thunkAPI): Promise<void> => {
+    const { document, currentTime } = thunkAPI.getState().editor;
+    const progressCallback = (time: number) => store.dispatch(setTime(time));
+    player.play(document, currentTime, progressCallback);
+  }
+);
+export const pause = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/pause',
+  async (): Promise<void> => {
+    player.pause();
+  }
+);
+
 export const importSlice = createSlice({
   name: 'editor',
   initialState: {} as Editor,
-  reducers: {},
+  reducers: {
+    setTime: (state, args: PayloadAction<number>) => {
+      state.currentTime = args.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(openDocument.fulfilled, (state, action) => {
       const payload = action.payload as Editor;
-      for (const key in payload) {
-        const k = key as keyof Editor;
-        state[k] = payload[k];
-      }
+      state.document = payload.document;
+      state.path = payload.path;
+      state.currentTime = 0;
+      state.playing = false;
     });
     builder.addCase(openDocument.rejected, (state, action) => {
-      console.error(action.payload);
+      console.error('an error occurred while trying to load the file', action.error);
+    });
+    builder.addCase(play.pending, (state) => {
+      state.playing = true;
+    });
+    builder.addCase(pause.pending, (state) => {
+      state.playing = false;
     });
   },
 });
+export const { setTime } = importSlice.actions;
 export default importSlice.reducer;

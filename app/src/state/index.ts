@@ -5,14 +5,17 @@ import editor from './editor';
 
 export const store = configureStore({
   reducer: {
-    nav: nav,
-    transcribe: transcribe,
-    editor: editor,
+    nav,
+    transcribe,
+    editor,
   },
   middleware: getDefaultMiddleware({
     serializableCheck: false,
   }),
 });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).store = store;
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

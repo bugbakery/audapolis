@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
 import { store } from './index';
-import { openImport, openLanding } from './nav';
+import { openTranscribe, openLanding } from './nav';
 
 export interface TranscribeState {
   file?: string;
@@ -17,7 +17,7 @@ export const transcribeFile = createAsyncThunk('transcribe/transcribeFile', asyn
       { name: 'All Files', extensions: ['*'] },
     ],
   });
-  store.dispatch(openImport());
+  store.dispatch(openTranscribe());
   return file.filePaths[0];
 });
 

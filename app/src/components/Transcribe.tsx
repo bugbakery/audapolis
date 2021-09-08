@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button } from './Controls';
 import { useDispatch, useSelector } from 'react-redux';
-import { abortTranscription, transcribeFile } from '../state/transcribe';
+import { abortTranscription } from '../state/transcribe';
 import { TitleBar } from './TitleBar';
 import { AppContainer, CenterColumn } from './Util';
 import { RootState } from '../state';

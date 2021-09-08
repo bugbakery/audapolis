@@ -15,7 +15,7 @@ export const navSlice = createSlice({
     page: Page.Landing,
   },
   reducers: {
-    openImport: (state) => {
+    openTranscribe: (state) => {
       state.page = Page.Transcribe;
     },
     openEditor: (state) => {
@@ -27,5 +27,5 @@ export const navSlice = createSlice({
   },
 });
 
-export const { openImport, openEditor, openLanding } = navSlice.actions;
+export const { openTranscribe, openEditor, openLanding } = navSlice.actions;
 export default navSlice.reducer;

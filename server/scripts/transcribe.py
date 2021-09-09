@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
 from pprint import pprint
-
+import json
+import zipfile
 import requests
 
 parser = argparse.ArgumentParser()
@@ -22,4 +23,15 @@ while True:
 
     print(status_req.json(), end="\r")
 
+output_file = args.file.with_suffix('.audapolis')
+content = status_req.json()['content']
+for paragraph in content:
+    for word in paragraph['content']:
+        word['source'] = 0
+        
+document = {"sources": [{"fileName": args.file.name}], "content":content}
 print()
+print(document)
+with zipfile.ZipFile(output_file, "w") as audapolis_zip:
+    audapolis_zip.write(args.file, arcname=args.file.name)
+    audapolis_zip.writestr("document.json", json.dumps(document, indent=4))

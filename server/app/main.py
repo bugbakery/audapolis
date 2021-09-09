@@ -45,7 +45,7 @@ def transform_vosk_result(name: str, result: dict) -> dict:
                 "start": word["start"],
                 "end": word["end"],
                 "type": "word",
-                "text": word["word"],
+                "word": word["word"],
                 "conf": word["conf"],
             }
         )
@@ -82,7 +82,7 @@ def process_audio(file: UploadFile, task_uuid: str):
     task["state"] = TranscriptionState.POST_PROCESSING
     vosk_result = json.loads(rec.FinalResult())
     content = transform_vosk_result(task["filename"], vosk_result)
-    task["content"] = content
+    task["content"] = [content]
     task["state"] = TranscriptionState.DONE
 
 

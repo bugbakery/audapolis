@@ -14,7 +14,6 @@ export const store = configureStore({
   }),
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).store = store;
 
 export type RootState = ReturnType<typeof store.getState>;

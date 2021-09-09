@@ -3,10 +3,7 @@ import { MdClose } from 'react-icons/md';
 import * as React from 'react';
 
 const CloseIcon = styled(MdClose)`
-  display: ${
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.navigator as any).windowControlsOverlay.visible ? 'none' : 'inline'
-  };
+  display: ${(window.navigator as any).windowControlsOverlay.visible ? 'none' : 'inline'};
   margin: 0 12px;
   height: 20px;
   width: auto;

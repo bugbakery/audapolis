@@ -20,3 +20,11 @@ repos:
   rev: 3.9.2
   hooks:
     - id: flake8
+-   repo: local
+    hooks:
+    -   id: npm_lint
+        name: npm lint
+        entry: bash -c "(cd app/ && (stat node_modules/ || npm i) && npm run lint)"
+        language: system
+        files: app/.*
+        pass_filenames: false

@@ -6,10 +6,16 @@ import { deserializeDocument, Document } from '../core/document';
 import { player } from '../core/webaudio';
 
 export interface Editor {
-  path?: string;
-  document?: Document;
-  currentTime?: number;
-  playing?: boolean;
+  path: string;
+  document: Document;
+  currentTime: number;
+  playing: boolean;
+}
+
+function assertEditor(editor: Editor | null): asserts editor is Editor {
+  if (editor === null) {
+    throw Error('editor is not fully loaded, cant perform action on it');
+  }
 }
 
 export const openDocument = createAsyncThunk('editor/openDocument', async (): Promise<Editor> => {
@@ -27,13 +33,18 @@ export const openDocument = createAsyncThunk('editor/openDocument', async (): Pr
   const document = await deserializeDocument(path);
 
   store.dispatch(openEditor());
-  return { path, document };
+  return { path, document, currentTime: 0, playing: false };
 });
 
 export const play = createAsyncThunk<void, void, { state: RootState }>(
   'editor/play',
   async (arg, thunkAPI): Promise<void> => {
-    const { document, currentTime } = thunkAPI.getState().editor;
+    const editor = thunkAPI.getState().editor;
+    assertEditor(editor);
+    const { document, currentTime } = editor;
+    if (document === undefined || currentTime === undefined) {
+      throw Error('cant play. document is undefined');
+    }
     const progressCallback = (time: number) => store.dispatch(setTime(time));
     player.play(document, currentTime, progressCallback);
   }
@@ -47,27 +58,26 @@ export const pause = createAsyncThunk<void, void, { state: RootState }>(
 
 export const importSlice = createSlice({
   name: 'editor',
-  initialState: {} as Editor,
+  initialState: null as Editor | null,
   reducers: {
     setTime: (state, args: PayloadAction<number>) => {
+      assertEditor(state);
       state.currentTime = args.payload;
     },
   },
   extraReducers: (builder) => {
     builder.addCase(openDocument.fulfilled, (state, action) => {
-      const payload = action.payload as Editor;
-      state.document = payload.document;
-      state.path = payload.path;
-      state.currentTime = 0;
-      state.playing = false;
+      return action.payload;
     });
     builder.addCase(openDocument.rejected, (state, action) => {
       console.error('an error occurred while trying to load the file', action.error);
     });
     builder.addCase(play.pending, (state) => {
+      assertEditor(state);
       state.playing = true;
     });
     builder.addCase(pause.pending, (state) => {
+      assertEditor(state);
       state.playing = false;
     });
   },

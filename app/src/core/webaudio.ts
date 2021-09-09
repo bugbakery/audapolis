@@ -9,9 +9,7 @@ class Player {
   constructor() {
     this.source = ctx.createBufferSource();
     this.source.connect(ctx.destination);
-    this.pauseListener = () => {
-      // as a default, we do nothing on pause
-    };
+    this.pauseListener = () => {};
   }
 
   async play(

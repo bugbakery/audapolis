@@ -66,5 +66,9 @@ app.on('activate', () => {
 
 ipcMain.handle('open-file', (event, options) => {
   const win = BrowserWindow.getFocusedWindow();
-  return dialog.showOpenDialog(win, options);
+  if (win) {
+    return dialog.showOpenDialog(win, options);
+  } else {
+    dialog.showOpenDialog(options);
+  }
 });

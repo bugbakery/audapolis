@@ -109,12 +109,12 @@ const PlayerControlsContainer = styled.div`
   }
 `;
 function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
-  const time = useSelector((state: RootState) => state.editor.currentTime);
+  const time = useSelector((state: RootState) => state.editor?.currentTime) || 0;
   const formatInt = (x: number) => {
     const str = Math.floor(x).toString();
     return (str.length == 1 ? '0' + str : str).substr(0, 2);
   };
-  const playing = useSelector((state: RootState) => state.editor.playing);
+  const playing = useSelector((state: RootState) => state.editor?.playing);
   const dispatch = useDispatch();
 
   return (

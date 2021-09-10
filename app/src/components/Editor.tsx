@@ -16,8 +16,8 @@ import {
   skipToTime,
   TimedParagraphItem,
 } from '../core/document';
-import { play, pause, setTime, toggleDisplaySpeakerNames } from '../state/editor';
-import { useState } from 'react';
+import { play, pause, setTime, toggleDisplaySpeakerNames, togglePlaying } from '../state/editor';
+import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 
 const MainContainer = styled(CenterColumn)`
@@ -25,8 +25,17 @@ const MainContainer = styled(CenterColumn)`
   overflow-y: auto;
 `;
 export function EditorPage(): JSX.Element {
+  const dispatch = useDispatch();
+
+  const handleKeyPress: KeyboardEventHandler = (e) => {
+    console.log(e);
+    if (e.key === ' ') {
+      dispatch(togglePlaying());
+    }
+  };
+
   return (
-    <AppContainer>
+    <AppContainer onKeyDown={handleKeyPress} tabIndex={-1}>
       <TitleBar>
         <SpeakerNamesButton />
         <PlayerControls />

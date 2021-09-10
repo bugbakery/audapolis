@@ -10,6 +10,7 @@ export interface Editor {
   document: Document;
   currentTime: number;
   playing: boolean;
+  displaySpeakerNames: boolean;
 }
 
 function assertEditor(editor: Editor | null): asserts editor is Editor {
@@ -33,7 +34,7 @@ export const openDocument = createAsyncThunk('editor/openDocument', async (): Pr
   const document = await deserializeDocument(path);
 
   store.dispatch(openEditor());
-  return { path, document, currentTime: 0, playing: false };
+  return { path, document, currentTime: 0, playing: false, displaySpeakerNames: false };
 });
 
 export const play = createAsyncThunk<void, void, { state: RootState }>(
@@ -46,7 +47,7 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
       throw Error('cant play. document is undefined');
     }
     const progressCallback = (time: number) => store.dispatch(setTime(time));
-    player.play(document, currentTime, progressCallback);
+    await player.play(document, currentTime, progressCallback);
   }
 );
 export const pause = createAsyncThunk<void, void, { state: RootState }>(
@@ -64,6 +65,10 @@ export const importSlice = createSlice({
       assertEditor(state);
       state.currentTime = args.payload;
     },
+    toggleDisplaySpeakerNames: (state) => {
+      assertEditor(state);
+      state.displaySpeakerNames = !state.displaySpeakerNames;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(openDocument.fulfilled, (state, action) => {
@@ -76,11 +81,15 @@ export const importSlice = createSlice({
       assertEditor(state);
       state.playing = true;
     });
-    builder.addCase(pause.pending, (state) => {
+    builder.addCase(play.fulfilled, (state) => {
+      assertEditor(state);
+      state.playing = false;
+    });
+    builder.addCase(pause.fulfilled, (state) => {
       assertEditor(state);
       state.playing = false;
     });
   },
 });
-export const { setTime } = importSlice.actions;
+export const { setTime, toggleDisplaySpeakerNames } = importSlice.actions;
 export default importSlice.reducer;

@@ -5,13 +5,21 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-color: #282828;
+    --bg-color-mild: #28282855;
     --fg-color: white;
+    --fg-color-mild: #fff5;
+    --accent: #ed6a5e;
+    --filter: invert();
   }
 }
 @media (prefers-color-scheme: light) {
   :root {
     --bg-color: white;
+    --bg-color-mild: #fff5;
     --fg-color: black;
+    --fg-color-mild: #0005;
+    --accent: #ed6a5e;
+    --filter: none;
   }
 }
 

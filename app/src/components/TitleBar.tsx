@@ -2,68 +2,66 @@ import styled from 'styled-components';
 import { MdClose } from 'react-icons/md';
 import * as React from 'react';
 
+function getWindowControlsRect(): DOMRect {
+  const windowControlsOverlay = (window.navigator as any).windowControlsOverlay;
+  if (windowControlsOverlay.visible) {
+    return windowControlsOverlay.getBoundingClientRect();
+  } else {
+    return new DOMRect(window.innerWidth - 55, 0, 55, 55);
+  }
+}
 const CloseIcon = styled(MdClose)`
-  display: ${(window.navigator as any).windowControlsOverlay.visible ? 'none' : 'inline'};
-  margin: 0 12px;
-  height: 20px;
-  width: auto;
+  padding: 17px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  -webkit-app-region: no-drag;
 `;
 function FallbackCloseButton() {
-  // TODO(anuejn) test how this behaves on different platforms (win, macos)
-  // and implement better handling (i.e. a dummy container) for the cases where the os renders the buttons
-
-  return (
-    <CloseIcon
-      onClick={() => {
-        window.close();
-        console.log('lol');
-      }}
-    />
-  );
+  if ((window.navigator as any).windowControlsOverlay.visible) {
+    return <></>;
+  } else {
+    const rect = getWindowControlsRect();
+    return (
+      <CloseIcon
+        onClick={() => {
+          window.close();
+          console.log('lol');
+        }}
+        style={{ width: rect.width, height: rect.height }}
+      />
+    );
+  }
 }
 
 const TitleBarContainer = styled.div`
-  height: 40px;
-  display: grid;
-  grid-auto-columns: 1fr auto 1fr;
-  grid-auto-flow: column;
-`;
-const WindowTitle = styled.h1`
-  margin: 0;
-  font-size: 20px;
-  font-weight: normal;
-  height: 100%;
+  height: 55px;
+  flex-shrink: 0;
+  padding: 0 ${getWindowControlsRect().width}px;
   display: flex;
-  align-items: center;
-  -webkit-app-region: drag;
-  -webkit-user-select: none;
-`;
-const Department = styled.div<{ side: 'left' | 'center' | 'right' }>`
-  display: flex;
-  align-items: center;
   flex-direction: row;
-  justify-content: ${(props) => props.side};
-`;
-const DragHandle = styled.div`
+  justify-content: space-evenly;
+  align-items: center;
+  box-shadow: 0 0 3px var(--fg-color-mild);
+
   -webkit-app-region: drag;
   -webkit-user-select: none;
-  flex-grow: 1;
-  height: 100%;
+`;
+export const WindowTitle = styled.h1`
+  margin: 0;
+  font-size: 18px;
+  font-weight: normal;
 `;
 
-export function TitleBar(): JSX.Element {
+export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Element {
+  if (!children) {
+    children = <WindowTitle>audapolis</WindowTitle>;
+  }
+
   return (
     <TitleBarContainer>
-      <Department side={'left'}>
-        <DragHandle />
-      </Department>
-      <Department side={'center'}>
-        <WindowTitle>audapolis</WindowTitle>
-      </Department>
-      <Department side={'right'}>
-        <DragHandle />
-        <FallbackCloseButton />
-      </Department>
+      <FallbackCloseButton />
+      {children}
     </TitleBarContainer>
   );
 }

@@ -8,13 +8,16 @@ import { FaPause, FaPlay } from 'react-icons/fa';
 import {
   computeTimed,
   documentIterator,
+  filterItems,
   Paragraph,
   ParagraphGeneric,
+  ParagraphItem,
   skipToTime,
   TimedParagraphItem,
 } from '../core/document';
-import { play, pause, setTime } from '../state/editor';
-import { RefObject, useRef } from 'react';
+import { useState } from 'react';
+import quarterRest from '../res/quarter_rest.svg';
+import { pause, play, setTime } from '../state/editor';
 
 const MainContainer = styled(CenterColumn)`
   justify-content: start;
@@ -32,8 +35,11 @@ export function EditorPage(): JSX.Element {
   );
 }
 
-const DocumentContainer = styled.div``;
-const DocumentOuterContainer = styled.div`
+function itemDisplayPredicate(item: ParagraphItem): boolean {
+  return !(item.type === 'silence' && item.end - item.start < 0.4);
+}
+
+const DocumentContainer = styled.div`
   position: relative;
   max-width: 800px;
   margin: 30px;
@@ -42,38 +48,55 @@ const DocumentOuterContainer = styled.div`
 function Document() {
   const contentRaw = useSelector((state: RootState) => state.editor?.document?.content);
   const content = computeTimed(contentRaw || ([] as Paragraph[]));
-  const ref = useRef(null);
 
   return (
-    <DocumentOuterContainer>
-      <Cursor documentContainerRef={ref} />
-      <DocumentContainer ref={ref}>
-        {content.map((p, i) => (
-          <Paragraph key={i} speaker={p.speaker} content={p.content} />
-        ))}
-      </DocumentContainer>
-    </DocumentOuterContainer>
+    <DocumentContainer>
+      <Cursor />
+      {content.map((p, i) => (
+        <Paragraph key={i} speaker={p.speaker} content={p.content} />
+      ))}
+    </DocumentContainer>
   );
 }
 
-const Word = styled.span`
-  transition: background-color 0.3s;
-`;
 const ParagraphContainer = styled.div``;
+function Silence(): JSX.Element {
+  return (
+    <img
+      className={'word'}
+      style={{ height: '1em', filter: 'var(--filter)' }}
+      src={quarterRest}
+      alt={'quarter rest'}
+    />
+  );
+}
 function Paragraph({ content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
+  const playing = useSelector((state: RootState) => state.editor?.playing) || false;
   const dispatch = useDispatch();
 
   return (
     <ParagraphContainer>
-      {content.flatMap((item, i) => {
+      {content.filter(itemDisplayPredicate).flatMap((item, i) => {
         switch (item.type) {
           case 'word':
             return [
-              <Word key={i * 2} onMouseDown={() => dispatch(setTime(item.absoluteStart))}>
+              <span
+                key={i * 2}
+                className={'word'}
+                onMouseDown={async () => {
+                  await dispatch(pause());
+                  await dispatch(setTime(item.absoluteStart + 0.01));
+                  if (playing) {
+                    dispatch(play());
+                  }
+                }}
+              >
                 {item.word}
-              </Word>,
-              <span key={i * 2 + 1}> </span>,
+              </span>,
+              <React.Fragment key={i * 2 + 1}> </React.Fragment>,
             ];
+          case 'silence':
+            return [<Silence key={i * 2} />, <React.Fragment key={i * 2 + 1}> </React.Fragment>];
         }
       })}
     </ParagraphContainer>
@@ -150,17 +173,27 @@ const CursorNeedle = styled.div`
   height: 100%;
   background-color: red;
 `;
-function Cursor({
-  documentContainerRef,
-}: {
-  documentContainerRef: RefObject<HTMLDivElement>;
-}): JSX.Element {
-  const content = useSelector((state: RootState) => state.editor?.document?.content) || [];
-  const time = useSelector((state: RootState) => state.editor?.currentTime) || 0;
-  const { x, y } = computeCursorPosition(content, documentContainerRef, time);
+function Cursor(): JSX.Element {
+  const [ref, setRef] = useState<HTMLDivElement | null>(null);
+  const content = useSelector((state: RootState) => state.editor?.document?.content);
+  const time = useSelector((state: RootState) => state.editor?.currentTime);
+  let left = -100;
+  let top = -100;
+  if (ref?.parentElement && content != null && time != null) {
+    const { x, y } = computeCursorPosition(content, ref.parentElement as HTMLDivElement, time);
+    left = x;
+    top = y;
+  }
 
   return (
-    <CursorContainer style={{ left: x, top: y }}>
+    <CursorContainer
+      style={{ left, top }}
+      ref={(newRef) => {
+        if (ref != newRef) {
+          setRef(newRef);
+        }
+      }}
+    >
       <CursorPoint />
       <CursorNeedle />
     </CursorContainer>
@@ -169,24 +202,33 @@ function Cursor({
 
 function computeCursorPosition(
   content: Paragraph[],
-  ref: RefObject<HTMLDivElement>,
+  ref: HTMLDivElement,
   time: number
 ): { x: number; y: number } {
-  const item = skipToTime(time, documentIterator(content)).next().value;
-  if (!item) {
-    return { x: 0, y: 0 };
-  }
+  const item = skipToTime(
+    time,
+    filterItems(itemDisplayPredicate, documentIterator(content)),
+    true
+  ).next().value || {
+    end: 1,
+    start: 0,
+    globalIdx: 0,
+    absoluteStart: time,
+  };
+  const itemElement = ref
+    .getElementsByClassName('word')
+    .item(item.globalIdx) as HTMLDivElement | null;
 
-  const itemElement = ref.current?.children
-    .item(item.paragraphIdx)
-    ?.children.item(item.itemIdx * 2) as HTMLDivElement;
   if (!itemElement) {
-    return { x: 0, y: 0 };
+    return { x: -100, y: -100 };
   }
 
   const y = itemElement.offsetTop;
-  const itemLength = item.end - item.start;
-  const timeInWord = time - item.absoluteStart;
-  const x = itemElement.offsetLeft + (timeInWord / itemLength) * itemElement.offsetWidth;
+  let x = itemElement.offsetLeft;
+  if (item.absoluteStart <= time) {
+    const itemLength = item.end - item.start;
+    const timeInWord = time - item.absoluteStart;
+    x += (timeInWord / itemLength) * itemElement.offsetWidth;
+  }
   return { x, y };
 }

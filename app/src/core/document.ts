@@ -113,30 +113,50 @@ export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagr
 }
 
 type DocumentIteratorItem = TimedParagraphItem & {
-  paragraphIdx: number;
-  itemIdx: number;
+  globalIdx: number;
 };
 type DocumentGenerator = Generator<DocumentIteratorItem, void, undefined>;
 export function* documentIterator(content: Paragraph[]): DocumentGenerator {
   let accumulatedTime = 0;
+  let globalIdx = 0;
   for (let p = 0; p < content.length; p++) {
     const paragraph = content[p];
     for (let i = 0; i < paragraph.content.length; i++) {
       const item = paragraph.content[i];
-      yield { paragraphIdx: p, itemIdx: i, ...item, absoluteStart: accumulatedTime };
+      yield { ...item, absoluteStart: accumulatedTime, globalIdx };
       accumulatedTime += item.end - item.start;
+      globalIdx += 1;
     }
   }
 }
-export function* skipToTime(targetTime: number, iterator: DocumentGenerator): DocumentGenerator {
-  let next = null;
+export function* filterItems(
+  predicate: (x: DocumentIteratorItem) => boolean,
+  iterator: DocumentGenerator
+): DocumentGenerator {
+  let globalIdx = 0;
   for (const item of iterator) {
-    if (item.absoluteStart > targetTime && next) {
-      yield next;
+    if (predicate(item)) {
+      yield { ...item, globalIdx };
+      globalIdx += 1;
     }
-    next = item;
   }
-  if (next && next.absoluteStart >= targetTime) {
-    yield next;
+}
+export function* skipToTime(
+  targetTime: number,
+  iterator: DocumentGenerator,
+  alwaysLast?: boolean
+): DocumentGenerator {
+  let last = null;
+  for (const item of iterator) {
+    if (item.absoluteStart + (item.end - item.start) <= targetTime) {
+      last = item;
+    } else {
+      yield item;
+      last = null;
+    }
+  }
+
+  if (alwaysLast && last) {
+    yield last;
   }
 }

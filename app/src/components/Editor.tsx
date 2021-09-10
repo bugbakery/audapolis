@@ -5,6 +5,7 @@ import { AppContainer, CenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { FaPause, FaPlay } from 'react-icons/fa';
+import { MdPerson } from 'react-icons/md';
 import {
   computeTimed,
   documentIterator,
@@ -15,9 +16,9 @@ import {
   skipToTime,
   TimedParagraphItem,
 } from '../core/document';
+import { play, pause, setTime, toggleDisplaySpeakerNames } from '../state/editor';
 import { useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
-import { pause, play, setTime } from '../state/editor';
 
 const MainContainer = styled(CenterColumn)`
   justify-content: start;
@@ -26,12 +27,41 @@ const MainContainer = styled(CenterColumn)`
 export function EditorPage(): JSX.Element {
   return (
     <AppContainer>
-      <TitleBar />
+      <TitleBar>
+        <SpeakerNamesButton />
+        <PlayerControls />
+        <NoButton />
+      </TitleBar>
+
       <MainContainer>
         <Document />
       </MainContainer>
-      <PlayerControls />
     </AppContainer>
+  );
+}
+
+const NoButton = styled.div`
+  width: 30px;
+  height: 30px;
+`;
+const SpeakerNamesButtonIcon = styled(MdPerson)`
+  width: 30px;
+  height: 30px;
+  padding: 3px;
+  -webkit-app-region: no-drag;
+  border-radius: 10px;
+  transition: all 0.2s;
+`;
+export function SpeakerNamesButton(): JSX.Element {
+  const displaySpeakerNames =
+    useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
+  const dispatch = useDispatch();
+
+  return (
+    <SpeakerNamesButtonIcon
+      onClick={() => dispatch(toggleDisplaySpeakerNames())}
+      style={{ boxShadow: displaySpeakerNames ? 'inset 0 0 3px var(--fg-color)' : 'none' }}
+    />
   );
 }
 
@@ -39,19 +69,50 @@ function itemDisplayPredicate(item: ParagraphItem): boolean {
   return !(item.type === 'silence' && item.end - item.start < 0.4);
 }
 
-const DocumentContainer = styled.div`
+const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
-  max-width: 800px;
   margin: 30px;
   line-height: 1.5;
+
+  display: grid;
+  transition: all 1s;
+  grid-template-columns: ${(props) => (props.displaySpeakerNames ? '100' : '0')}px fit-content(
+      800px
+    );
+
+  & > * {
+    overflow-x: hidden;
+  }
+`;
+const DocumentTitle = styled.h1`
+  text-align: left;
+  font-weight: normal;
+  font-size: 20px;
+  grid-column-start: 2;
 `;
 function Document() {
   const contentRaw = useSelector((state: RootState) => state.editor?.document?.content);
+  const displaySpeakerNames =
+    useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
   const content = computeTimed(contentRaw || ([] as Paragraph[]));
 
+  const fileName = useSelector((state: RootState) => state.editor?.path) || '';
+  const splitLast = (str: string, delim: string) => {
+    const idx = str.lastIndexOf(delim);
+    return [str.slice(0, idx), str.slice(idx + 1)];
+  };
+  const [_, last] = splitLast(fileName, '/');
+  const [base, extension] = splitLast(last, '.');
+
   return (
-    <DocumentContainer>
+    <DocumentContainer displaySpeakerNames={displaySpeakerNames}>
       <Cursor />
+
+      <DocumentTitle>
+        {base}
+        <span style={{ fontWeight: 'lighter' }}>.{extension}</span>
+      </DocumentTitle>
+
       {content.map((p, i) => (
         <Paragraph key={i} speaker={p.speaker} content={p.content} />
       ))}
@@ -60,6 +121,7 @@ function Document() {
 }
 
 const ParagraphContainer = styled.div``;
+const SpeakerContainer = styled.div``;
 function Silence(): JSX.Element {
   return (
     <img
@@ -70,63 +132,61 @@ function Silence(): JSX.Element {
     />
   );
 }
-function Paragraph({ content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
+function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor?.playing) || false;
   const dispatch = useDispatch();
 
   return (
-    <ParagraphContainer>
-      {content.filter(itemDisplayPredicate).flatMap((item, i) => {
-        switch (item.type) {
-          case 'word':
-            return [
-              <span
-                key={i * 2}
-                className={'word'}
-                onMouseDown={async () => {
-                  await dispatch(pause());
-                  await dispatch(setTime(item.absoluteStart + 0.01));
-                  if (playing) {
-                    dispatch(play());
-                  }
-                }}
-              >
-                {item.word}
-              </span>,
-              <React.Fragment key={i * 2 + 1}> </React.Fragment>,
-            ];
-          case 'silence':
-            return [<Silence key={i * 2} />, <React.Fragment key={i * 2 + 1}> </React.Fragment>];
-        }
-      })}
-    </ParagraphContainer>
+    <>
+      <SpeakerContainer>{speaker}</SpeakerContainer>
+      <ParagraphContainer>
+        {content.filter(itemDisplayPredicate).flatMap((item, i) => {
+          switch (item.type) {
+            case 'word':
+              return [
+                <span
+                  key={i * 2}
+                  className={'word'}
+                  onMouseDown={async () => {
+                    await dispatch(pause());
+                    await dispatch(setTime(item.absoluteStart + 0.01));
+                    if (playing) {
+                      dispatch(play());
+                    }
+                  }}
+                >
+                  {item.word}
+                </span>,
+                <React.Fragment key={i * 2 + 1}> </React.Fragment>,
+              ];
+            case 'silence':
+              return [<Silence key={i * 2} />, <React.Fragment key={i * 2 + 1}> </React.Fragment>];
+          }
+        })}
+      </ParagraphContainer>
+    </>
   );
 }
 
 const PlayerControlsContainer = styled.div`
-  border: 1px solid var(--fg-color);
   background-color: var(--bg-color);
-  box-shadow: 0 0 30px var(--bg-color);
+  box-shadow: inset 0 0 3px var(--fg-color-mild);
   border-radius: 20px;
   height: 30px;
-  width: 160px;
+  width: 200px;
   font-size: 18px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  margin: 20px;
+  -webkit-app-region: no-drag;
 
   & > div {
-    padding-right: 15px;
+    padding-right: 30px;
   }
 
   & > svg {
-    height: 80%;
+    height: 75%;
     width: auto;
     padding: 3px;
   }
@@ -145,8 +205,14 @@ function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
       <div>
         {formatInt(time / 60)}:{formatInt(time % 60)}:{formatInt((time * 100) % 100)}
       </div>
-      <FaPlay color={playing ? 'red' : 'var(--fg-color)'} onClick={() => dispatch(play())} />
-      <FaPause color={playing ? 'var(--fg-color)' : 'red'} onClick={() => dispatch(pause())} />
+      <FaPlay
+        color={playing ? 'var(--accent)' : 'var(--fg-color)'}
+        onClick={() => dispatch(play())}
+      />
+      <FaPause
+        color={playing ? 'var(--fg-color)' : 'var(--accent)'}
+        onClick={() => dispatch(pause())}
+      />
     </PlayerControlsContainer>
   );
 }
@@ -165,13 +231,13 @@ const CursorPoint = styled.div`
   height: 8px;
   margin-bottom: -2px;
   border-radius: 100%;
-  background-color: red;
+  background-color: var(--accent);
   transition: all 0.1s;
 `;
 const CursorNeedle = styled.div`
   width: 2px;
   height: 100%;
-  background-color: red;
+  background-color: var(--accent);
 `;
 function Cursor(): JSX.Element {
   const [ref, setRef] = useState<HTMLDivElement | null>(null);

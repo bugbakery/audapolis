@@ -53,8 +53,13 @@ uvicorn main:app --reload
 ```
 ## Models
 
-You need to download a model for speech recognition from [here](https://alphacephei.com/vosk/models).
-Place this model in the `data` this in the root of this repo.
+You need to download a model for speech recognition from [here](https://alphacephei.com/vosk/models) or by running the `download_models.sh` script
+
+```sh
+cd ../data
+./download_models.sh
+cd ../server
+```
 
 ## Code checks & tests
 

@@ -19,6 +19,9 @@ black = "^21.8b0"
 flake8 = "^3.9.2"
 requests = "^2.26.0"
 rich = "^10.9.0"
+types-requests = "^2.25.6"
+types-PyYAML = "^5.4.10"
+mypy = "^0.910"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

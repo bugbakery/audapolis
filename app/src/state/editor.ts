@@ -2,7 +2,13 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
 import { RootState } from './index';
 import { openEditor } from './nav';
-import { deserializeDocument, Document, serializeDocument } from '../core/document';
+import {
+  deserializeDocument,
+  Document,
+  serializeDocument,
+  documentIterator,
+  skipToTime,
+} from '../core/document';
 import { player } from '../core/webaudio';
 
 export interface Editor {
@@ -131,6 +137,59 @@ export const importSlice = createSlice({
       assertEditor(state);
       state.path = args.payload;
     },
+    insertParagraph: (state) => {
+      assertEditor(state);
+
+      const item = skipToTime(
+        state.currentTime,
+        documentIterator(state.document.content),
+        true
+      ).next().value;
+      if (!item) {
+        throw new Error('something went wrong');
+      }
+
+      const oldParagraph = state.document.content[item.paragraphIdx];
+      const wordsBefore = oldParagraph.content.slice(0, item.itemIdx);
+      const wordsAfter = oldParagraph.content.slice(item.itemIdx);
+
+      state.document.content = [
+        ...state.document.content.slice(0, item.paragraphIdx),
+        { ...oldParagraph, content: wordsBefore },
+        { ...oldParagraph, content: wordsAfter },
+        ...state.document.content.slice(item.paragraphIdx + 1),
+      ];
+    },
+    deleteAction: (state) => {
+      assertEditor(state);
+
+      const item = skipToTime(
+        state.currentTime,
+        documentIterator(state.document.content),
+        true
+      ).next().value;
+      if (!item) {
+        throw new Error('something went wrong');
+      }
+
+      console.log(item);
+
+      if (item.itemIdx === 0) {
+        // we dont actually want to delete anything but rather merge two paragraphs together
+        const prevParagraph = state.document.content[item.paragraphIdx - 1];
+        const thisParagraph = state.document.content[item.paragraphIdx];
+
+        if (thisParagraph?.speaker !== prevParagraph?.speaker) {
+          throw Error('can only merge paragraphs if speaker is the same');
+        }
+
+        state.document.content = [
+          ...state.document.content.slice(0, item.paragraphIdx - 1),
+          { ...thisParagraph, content: [...prevParagraph.content, ...thisParagraph.content] },
+          ...state.document.content.slice(item.paragraphIdx + 1),
+        ];
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(openDocumentFromDisk.fulfilled, (state, action) => {
@@ -151,5 +210,12 @@ export const importSlice = createSlice({
     });
   },
 });
-export const { setTime, setPlay, setPath, toggleDisplaySpeakerNames } = importSlice.actions;
+export const {
+  setTime,
+  setPlay,
+  setPath,
+  toggleDisplaySpeakerNames,
+  insertParagraph,
+  deleteAction,
+} = importSlice.actions;
 export default importSlice.reducer;

@@ -23,6 +23,8 @@ import {
   toggleDisplaySpeakerNames,
   togglePlaying,
   saveDocument,
+  insertParagraph,
+  deleteAction,
 } from '../state/editor';
 import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
@@ -39,6 +41,10 @@ export function EditorPage(): JSX.Element {
     console.log(e);
     if (e.key === ' ') {
       dispatch(togglePlaying());
+    } else if (e.key === 'Enter') {
+      dispatch(insertParagraph());
+    } else if (e.key === 'Backspace') {
+      dispatch(deleteAction());
     }
   };
 
@@ -107,6 +113,8 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   line-height: 1.5;
 
   display: grid;
+  row-gap: 1em;
+  column-gap: 1em;
   transition: all 1s;
   grid-template-columns: ${(props) => (props.displaySpeakerNames ? '100' : '0')}px min(
       800px,
@@ -152,7 +160,8 @@ function Document() {
 
 const ParagraphContainer = styled.div``;
 const SpeakerContainer = styled.div`
-  overflow-wrap: break-word;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 function Silence(): JSX.Element {
   return (

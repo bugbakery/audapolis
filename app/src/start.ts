@@ -28,17 +28,19 @@ const createWindow = (): void => {
       contextIsolation: false,
     },
   });
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.once('dom-ready', async () => {
+    (async () => {
       await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
         .then((name: string) => console.log(`Added Extension:  ${name}`))
         .catch((err: string) => console.log('An error occurred: ', err))
         .finally(() => {
           mainWindow.webContents.openDevTools();
         });
-    });
+      await mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+    })();
+  } else {
+    mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   }
 };
 

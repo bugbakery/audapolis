@@ -21,19 +21,17 @@ class Player {
     let first = true;
     try {
       for (const item of iterator) {
-        switch (item.type) {
-          case 'word': {
-            const timeInWord = first ? start - item.absoluteStart : 0;
-            await this.playInternal(
-              document.sources[item.source].decoded,
-              item.start + timeInWord,
-              item.end,
-              progressCallback,
-              item.absoluteStart + timeInWord
-            );
-            break;
-          }
+        if (item.type == 'word' || item.type == 'silence') {
+          const timeInWord = first ? start - item.absoluteStart : 0;
+          await this.playInternal(
+            document.sources[item.source].decoded,
+            item.start + timeInWord,
+            item.end,
+            progressCallback,
+            item.absoluteStart + timeInWord
+          );
         }
+
         first = false;
       }
     } catch (_) {
@@ -66,6 +64,7 @@ class Player {
       this.source.onended = () => {
         resolve();
         playing = false;
+        progressCallback(absoluteOffset + (end - start));
       };
       this.pauseListener = () => {
         reject();

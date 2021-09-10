@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
-import { RootState, store } from './index';
+import { RootState } from './index';
 import { openEditor } from './nav';
 import { deserializeDocument, Document } from '../core/document';
 import { player } from '../core/webaudio';
@@ -19,34 +19,37 @@ function assertEditor(editor: Editor | null): asserts editor is Editor {
   }
 }
 
-export const openDocument = createAsyncThunk('editor/openDocument', async (): Promise<Editor> => {
-  const path = await ipcRenderer
-    .invoke('open-file', {
-      properties: ['openFile'],
-      promptToCreate: true,
-      createDirectory: true,
-      filters: [
-        { name: 'Audapolis Project Files', extensions: ['audapolis'] },
-        { name: 'All Files', extensions: ['*'] },
-      ],
-    })
-    .then((x) => x.filePaths[0]);
-  const document = await deserializeDocument(path);
+export const openDocument = createAsyncThunk(
+  'editor/openDocument',
+  async (_, { dispatch }): Promise<Editor> => {
+    const path = await ipcRenderer
+      .invoke('open-file', {
+        properties: ['openFile'],
+        promptToCreate: true,
+        createDirectory: true,
+        filters: [
+          { name: 'Audapolis Project Files', extensions: ['audapolis'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      })
+      .then((x) => x.filePaths[0]);
+    const document = await deserializeDocument(path);
 
-  store.dispatch(openEditor());
-  return { path, document, currentTime: 0, playing: false, displaySpeakerNames: false };
-});
+    dispatch(openEditor());
+    return { path, document, currentTime: 0, playing: false, displaySpeakerNames: false };
+  }
+);
 
 export const play = createAsyncThunk<void, void, { state: RootState }>(
   'editor/play',
-  async (arg, thunkAPI): Promise<void> => {
-    const editor = thunkAPI.getState().editor;
+  async (arg, { getState, dispatch }): Promise<void> => {
+    const editor = getState().editor;
     assertEditor(editor);
     const { document, currentTime } = editor;
     if (document === undefined || currentTime === undefined) {
       throw Error('cant play. document is undefined');
     }
-    const progressCallback = (time: number) => store.dispatch(setTime(time));
+    const progressCallback = (time: number) => dispatch(setTime(time));
     await player.play(document, currentTime, progressCallback);
   }
 );
@@ -54,6 +57,16 @@ export const pause = createAsyncThunk<void, void, { state: RootState }>(
   'editor/pause',
   async (): Promise<void> => {
     player.pause();
+  }
+);
+export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/togglePlaying',
+  async (arg, { dispatch, getState }): Promise<void> => {
+    if (getState().editor?.playing) {
+      dispatch(pause());
+    } else {
+      dispatch(play());
+    }
   }
 );
 

@@ -5,8 +5,8 @@ import { openEditor } from './nav';
 import {
   deserializeDocument,
   Document,
-  serializeDocument,
   documentIterator,
+  serializeDocument,
   skipToTime,
 } from '../core/document';
 import { player } from '../core/webaudio';

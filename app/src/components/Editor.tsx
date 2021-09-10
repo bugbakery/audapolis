@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { TitleBar } from './TitleBar';
+import { TitleBar, TitleBarButton } from './TitleBar';
 import { AppContainer, CenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
@@ -22,9 +22,9 @@ import {
   setTime,
   toggleDisplaySpeakerNames,
   togglePlaying,
-  saveDocument,
   insertParagraph,
   deleteAction,
+  saveDocument,
 } from '../state/editor';
 import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
@@ -50,12 +50,7 @@ export function EditorPage(): JSX.Element {
 
   return (
     <AppContainer onKeyDown={handleKeyPress} tabIndex={-1}>
-      <TitleBar>
-        <SaveButton />
-        <SpeakerNamesButton />
-        <PlayerControls />
-        <NoButton />
-      </TitleBar>
+      <EditorTitleBar />
 
       <MainContainer>
         <Document />
@@ -64,43 +59,27 @@ export function EditorPage(): JSX.Element {
   );
 }
 
-const NoButton = styled.div`
-  width: 30px;
-  height: 30px;
-`;
-const SpeakerNamesButtonIcon = styled(MdPerson)`
-  width: 30px;
-  height: 30px;
-  padding: 3px;
-  -webkit-app-region: no-drag;
-  border-radius: 10px;
-  transition: all 0.2s;
-`;
-export function SpeakerNamesButton(): JSX.Element {
+function EditorTitleBar(): JSX.Element {
+  const dispatch = useDispatch();
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
-  const dispatch = useDispatch();
 
   return (
-    <SpeakerNamesButtonIcon
-      onClick={() => dispatch(toggleDisplaySpeakerNames())}
-      style={{ boxShadow: displaySpeakerNames ? 'inset 0 0 3px var(--fg-color)' : 'none' }}
-    />
+    <TitleBar>
+      <TitleBarButton
+        clicked={displaySpeakerNames}
+        onClick={() => dispatch(toggleDisplaySpeakerNames())}
+      >
+        <MdPerson />
+      </TitleBarButton>
+
+      <PlayerControls />
+
+      <TitleBarButton onClick={() => dispatch(saveDocument())}>
+        <MdSave />
+      </TitleBarButton>
+    </TitleBar>
   );
-}
-
-const SaveButtonIcon = styled(MdSave)`
-  width: 30px;
-  height: 30px;
-  padding: 3px;
-  -webkit-app-region: no-drag;
-  border-radius: 10px;
-  transition: all 0.2s;
-`;
-export function SaveButton(): JSX.Element {
-  const dispatch = useDispatch();
-
-  return <SaveButtonIcon onClick={() => dispatch(saveDocument())} />;
 }
 
 function itemDisplayPredicate(item: ParagraphItem): boolean {

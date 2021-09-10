@@ -116,6 +116,8 @@ export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagr
 
 type DocumentIteratorItem = TimedParagraphItem & {
   globalIdx: number;
+  paragraphIdx: number;
+  itemIdx: number;
 };
 type DocumentGenerator = Generator<DocumentIteratorItem, void, undefined>;
 export function* documentIterator(content: Paragraph[]): DocumentGenerator {
@@ -125,7 +127,7 @@ export function* documentIterator(content: Paragraph[]): DocumentGenerator {
     const paragraph = content[p];
     for (let i = 0; i < paragraph.content.length; i++) {
       const item = paragraph.content[i];
-      yield { ...item, absoluteStart: accumulatedTime, globalIdx };
+      yield { ...item, absoluteStart: accumulatedTime, globalIdx, paragraphIdx: p, itemIdx: i };
       accumulatedTime += item.end - item.start;
       globalIdx += 1;
     }

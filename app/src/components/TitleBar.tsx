@@ -28,7 +28,7 @@ function FallbackCloseButton() {
           window.close();
           console.log('lol');
         }}
-        style={{ width: rect.width, height: rect.height }}
+        style={{ width: rect.x, height: rect.height }}
       />
     );
   }

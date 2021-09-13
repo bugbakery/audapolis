@@ -25,6 +25,8 @@ import {
   insertParagraph,
   deleteAction,
   saveDocument,
+  goRight,
+  goLeft,
 } from '../state/editor';
 import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
@@ -35,21 +37,8 @@ const MainContainer = styled(CenterColumn)`
   overflow-y: auto;
 `;
 export function EditorPage(): JSX.Element {
-  const dispatch = useDispatch();
-
-  const handleKeyPress: KeyboardEventHandler = (e) => {
-    console.log(e);
-    if (e.key === ' ') {
-      dispatch(togglePlaying());
-    } else if (e.key === 'Enter') {
-      dispatch(insertParagraph());
-    } else if (e.key === 'Backspace') {
-      dispatch(deleteAction());
-    }
-  };
-
   return (
-    <AppContainer onKeyDown={handleKeyPress} tabIndex={-1}>
+    <AppContainer>
       <EditorTitleBar />
 
       <MainContainer>
@@ -104,36 +93,66 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   & > * {
     overflow-x: hidden;
   }
+
+  &:focus {
+    outline: none;
+  }
 `;
+function Document() {
+  const dispatch = useDispatch();
+  const contentRaw = useSelector((state: RootState) => state.editor?.document?.content);
+  const displaySpeakerNames =
+    useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
+  const content = computeTimed(contentRaw || ([] as Paragraph[]));
+
+  const handleKeyPress: KeyboardEventHandler = (e) => {
+    if (e.key === ' ') {
+      dispatch(togglePlaying());
+    } else if (e.key === 'Enter') {
+      dispatch(insertParagraph());
+    } else if (e.key === 'Backspace') {
+      dispatch(deleteAction());
+    } else if (e.key === 'ArrowRight') {
+      dispatch(goRight());
+    } else if (e.key === 'ArrowLeft') {
+      dispatch(goLeft());
+    }
+  };
+
+  const fileName = useSelector((state: RootState) => state.editor?.path) || '';
+
+  return (
+    <DocumentContainer
+      displaySpeakerNames={displaySpeakerNames}
+      tabIndex={0}
+      onKeyDown={handleKeyPress}
+      ref={(ref) => ref?.focus()}
+    >
+      <Cursor />
+      <FileNameDisplay path={fileName} />
+
+      {content.map((p, i) => (
+        <Paragraph key={i} speaker={p.speaker} content={p.content} />
+      ))}
+    </DocumentContainer>
+  );
+}
+
 const DocumentTitle = styled.h1`
   text-align: left;
   font-weight: normal;
   font-size: 20px;
   grid-column-start: 2;
 `;
-function Document() {
-  const contentRaw = useSelector((state: RootState) => state.editor?.document?.content);
-  const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
-  const content = computeTimed(contentRaw || ([] as Paragraph[]));
-
-  const fileName = useSelector((state: RootState) => state.editor?.path) || '';
-  const extension = extname(fileName);
-  const base = basename(fileName, extension);
+function FileNameDisplay({ path }: { path: string }) {
+  const extension = extname(paht);
+  const base = basename(path, extension);
 
   return (
-    <DocumentContainer displaySpeakerNames={displaySpeakerNames}>
-      <Cursor />
-      {/*TODO: Indicate if not saved*/}
-      <DocumentTitle>
-        {base}
-        <span style={{ fontWeight: 'lighter' }}>{extension}</span>
-      </DocumentTitle>
-
-      {content.map((p, i) => (
-        <Paragraph key={i} speaker={p.speaker} content={p.content} />
-      ))}
-    </DocumentContainer>
+    <DocumentTitle>
+      {base}
+      <span style={{ fontWeight: 'lighter' }}>{extension}</span>
+    </DocumentTitle>
   );
 }
 

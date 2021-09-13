@@ -5,6 +5,7 @@ import { Page } from '../state/nav';
 import { LandingPage } from './Landing';
 import { TranscribePage } from './Transcribe';
 import { EditorPage } from './Editor';
+import { TranscribingPage } from './Transcribing';
 
 export default function App(): JSX.Element {
   return (
@@ -24,5 +25,7 @@ function CurrentPage(): JSX.Element {
       return <TranscribePage />;
     case Page.Editor:
       return <EditorPage />;
+    case Page.Transcribing:
+      return <TranscribingPage />;
   }
 }

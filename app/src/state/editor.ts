@@ -6,7 +6,7 @@ import { deserializeDocument, Document } from '../core/document';
 import { player } from '../core/webaudio';
 
 export interface Editor {
-  path: string;
+  path: string | null;
   document: Document;
   currentTime: number;
   playing: boolean;
@@ -19,8 +19,8 @@ function assertEditor(editor: Editor | null): asserts editor is Editor {
   }
 }
 
-export const openDocument = createAsyncThunk(
-  'editor/openDocument',
+export const openDocumentFromDisk = createAsyncThunk(
+  'editor/openDocumentFromDisk',
   async (_, { dispatch }): Promise<Editor> => {
     const path = await ipcRenderer
       .invoke('open-file', {
@@ -37,6 +37,14 @@ export const openDocument = createAsyncThunk(
 
     dispatch(openEditor());
     return { path, document, currentTime: 0, playing: false, displaySpeakerNames: false };
+  }
+);
+
+export const openDocumentFromMemory = createAsyncThunk<Editor, Document>(
+  'editor/openDocumentFromMemory',
+  async (document, { dispatch }): Promise<Editor> => {
+    dispatch(openEditor());
+    return { path: null, document, currentTime: 0, playing: false, displaySpeakerNames: false };
   }
 );
 
@@ -93,11 +101,17 @@ export const importSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(openDocument.fulfilled, (state, action) => {
+    builder.addCase(openDocumentFromDisk.fulfilled, (state, action) => {
       return action.payload;
     });
-    builder.addCase(openDocument.rejected, (state, action) => {
+    builder.addCase(openDocumentFromDisk.rejected, (state, action) => {
       console.error('an error occurred while trying to load the file', action.error);
+    });
+    builder.addCase(openDocumentFromMemory.fulfilled, (state, action) => {
+      return action.payload;
+    });
+    builder.addCase(openDocumentFromMemory.rejected, (state, action) => {
+      console.error('an error occurred while trying to load the doc from memory', action.error);
     });
     builder.addCase(pause.fulfilled, (state) => {
       assertEditor(state);

@@ -8,10 +8,24 @@ from typing import Optional
 
 import yaml
 from fastapi import BackgroundTasks, FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from pydub import AudioSegment
 from vosk import KaldiRecognizer, Model
 
 app = FastAPI()
+origins = [
+    "http://localhost:3000",
+    "http://localhost",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 DATA_DIR = Path(__file__).absolute().parent.parent.parent / "data"
 CONFIG_FILE = DATA_DIR / "config.yml"
@@ -186,7 +200,7 @@ async def start_transcription(
 # FIXME: this needs to be removed / put behind proper auth for security reasons
 @app.get("/tasks/list/")
 async def list_tasks():
-    return sorted(TASKS.values(), key=lambda x: x["uuid"])
+    return sorted(TASKS.values(), key=lambda x: x.uuid)
 
 
 @app.get("/tasks/{task_uuid}/")

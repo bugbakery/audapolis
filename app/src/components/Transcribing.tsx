@@ -18,7 +18,7 @@ export function TranscribingPage(): JSX.Element {
   const file = useSelector((state: RootState) => state.transcribe.file) || '';
   const progress = useSelector(
     (state: RootState) => state.transcribe.processed / state.transcribe.total
-  );
+  ) || 0;
   const server_state = useSelector((state: RootState) => state.transcribe.state) || '';
 
   return (

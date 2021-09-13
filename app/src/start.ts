@@ -22,7 +22,7 @@ const createWindow = (): void => {
     frame: false,
     titleBarStyle: 'hiddenInset',
     titleBarOverlay: true,
-
+    trafficLightPosition: {x: 21, y: 21},
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,

@@ -58,7 +58,10 @@ export const startTranscription = createAsyncThunk<void, void, { state: RootStat
   async (_, { dispatch, getState }) => {
     const formData = new FormData();
     const state = getState();
-    const path = state!.transcribe!.file!;
+    const path = state?.transcribe?.file;
+    if (path === undefined) {
+      throw Error('Failed to start transcription: No file for transcription given.');
+    }
     const fileContent = readFileSync(path);
     const fileName = basename(path);
     const file = new File([fileContent], fileName);
@@ -72,7 +75,7 @@ export const startTranscription = createAsyncThunk<void, void, { state: RootStat
     const { uuid } = result;
     while (true) {
       const { content, state, processed, total } = (await fetch(
-        `http://localhost:8000/tasks/${uuid}`
+        `http://localhost:8000/tasks/${uuid}/`
       ).then((x) => x.json())) as Task;
       dispatch(setProgress({ processed, total }));
       dispatch(setState(state));
@@ -86,7 +89,18 @@ export const startTranscription = createAsyncThunk<void, void, { state: RootStat
             decoded,
           },
         ];
-        dispatch(openDocumentFromMemory({ sources: sources, content: content as Paragraph[] }));
+        if (content === undefined) {
+          throw Error('Transcription failed: State is done, but no content was produced');
+        }
+        // TODO: proper typing
+        const contentWithSource = content.map((paragraph: any) => {
+          paragraph.content = paragraph.content.map((word: any) => {
+            word['source'] = 0;
+            return word
+          })
+          return paragraph
+        });
+        dispatch(openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] }));
         break;
       }
       await sleep(100);

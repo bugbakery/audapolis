@@ -184,7 +184,9 @@ export function documentFromIterator(iter: DocumentGenerator): Paragraph[] {
     if (lastParagraph < item.paragraphIdx) {
       paragraphs.push({ speaker: item.speaker, content: [item] });
     } else {
-      paragraphs[paragraphs.length - 1].content.push(item);
+      // eslint-disable-next-line unused-imports/no-unused-vars
+      const { absoluteStart, paragraphIdx, itemIdx, globalIdx, speaker, ...rest } = item;
+      paragraphs[paragraphs.length - 1].content.push(rest);
     }
     lastParagraph = item.paragraphIdx;
   }

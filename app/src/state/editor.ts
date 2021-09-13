@@ -23,8 +23,21 @@ export interface Editor {
   currentTime: number;
   playing: boolean;
   displaySpeakerNames: boolean;
+
   selection: Range | null;
+  selectionStartItem: TimedParagraphItem | null;
+  mouseSelection: boolean;
 }
+
+const editorDefaults = {
+  currentTime: 0,
+  playing: false,
+  displaySpeakerNames: false,
+
+  selection: null,
+  selectionStartItem: null,
+  mouseSelection: false,
+};
 
 export interface Range {
   start: number;
@@ -51,10 +64,7 @@ export const openDocumentFromDisk = createAsyncThunk(
     return {
       path,
       document,
-      currentTime: 0,
-      playing: false,
-      displaySpeakerNames: false,
-      selection: null,
+      ...editorDefaults,
     };
   }
 );
@@ -63,7 +73,11 @@ export const openDocumentFromMemory = createAsyncThunk<Editor, Document>(
   'editor/openDocumentFromMemory',
   async (document, { dispatch }): Promise<Editor> => {
     dispatch(openEditor());
-    return { path: null, document, currentTime: 0, playing: false, displaySpeakerNames: false, selection: null };
+    return {
+      path: null,
+      document,
+      ...editorDefaults,
+    };
   }
 );
 
@@ -145,6 +159,36 @@ export const deleteSomething = createAsyncThunk<void, void, { state: RootState }
   }
 );
 
+function getSelectionInfo(
+  selection: Range | null,
+  selectionStartItem: TimedParagraphItem | null
+): { currentEndRight: boolean; currentEndLeft: boolean; leftEnd: number; rightEnd: number } | null {
+  if (selection && selectionStartItem) {
+    const startDifference = Math.abs(selectionStartItem.absoluteStart - selection.start);
+    const selectionStartItemEnd =
+      selectionStartItem.absoluteStart + (selectionStartItem.end - selectionStartItem.start);
+    const selectionEnd = selection.start + selection.length;
+    const endDifference = Math.abs(selectionStartItemEnd - selectionEnd);
+    return {
+      leftEnd: selection.start,
+      rightEnd: selection.start + selection.length,
+      currentEndRight: startDifference < 0.01,
+      currentEndLeft: endDifference < 0.01,
+    };
+  } else if (selectionStartItem) {
+    const selectionStartItemEnd =
+      selectionStartItem.absoluteStart + (selectionStartItem.end - selectionStartItem.start);
+    return {
+      leftEnd: selectionStartItem.absoluteStart,
+      rightEnd: selectionStartItemEnd,
+      currentEndRight: false,
+      currentEndLeft: false,
+    };
+  } else {
+    return null;
+  }
+}
+
 export const importSlice = createSlice({
   name: 'editor',
   initialState: null as Editor | null,
@@ -169,16 +213,8 @@ export const importSlice = createSlice({
     },
     goLeft: (state) => {
       assertSome(state);
-      const iter = skipToTime(
-        state.currentTime,
-        documentIterator(state.document.content),
-        true,
-        true
-      );
-      const item = iter.next().value;
-      if (!item) {
-        throw new Error('something went wrong');
-      }
+      const item = getCurrentItem(state.document.content, state.currentTime, true);
+      assertSome(item);
       state.currentTime = item.absoluteStart;
       state.selection = null;
     },
@@ -192,11 +228,78 @@ export const importSlice = createSlice({
       state.selection = null;
     },
 
+    unselect: (state) => {
+      assertSome(state);
+      state.selection = null;
+      state.selectionStartItem = null;
+      state.mouseSelection = false;
+    },
     selectLeft: (state) => {
       assertSome(state);
-      const item = getCurrentItem(state.document.content, state.currentTime, true);
-      assertSome(item);
-      state.selection = { start: item.absoluteStart, length: item.end - item.start };
+      const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
+      if (!selectionInfo || !state.selection) {
+        const item = getCurrentItem(state.document.content, state.currentTime, true);
+        assertSome(item);
+        state.selection = { start: item.absoluteStart, length: item.end - item.start };
+        state.selectionStartItem = item;
+      } else {
+        const { leftEnd, rightEnd, currentEndLeft } = selectionInfo;
+        if (currentEndLeft) {
+          const item = getCurrentItem(state.document.content, leftEnd, true);
+          assertSome(item);
+          state.selection.length = rightEnd - item.absoluteStart;
+          state.selection.start = item.absoluteStart;
+        } else {
+          const item = getCurrentItem(state.document.content, rightEnd, true);
+          assertSome(item);
+          state.selection.length = item.absoluteStart - leftEnd;
+        }
+      }
+    },
+    selectRight: (state) => {
+      assertSome(state);
+      const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
+      if (!selectionInfo || !state.selection) {
+        const item = getCurrentItem(state.document.content, state.currentTime, false);
+        assertSome(item);
+        state.selection = { start: item.absoluteStart, length: item.end - item.start };
+        state.selectionStartItem = item;
+      } else {
+        const { leftEnd, rightEnd, currentEndRight } = selectionInfo;
+        if (currentEndRight) {
+          const item = getCurrentItem(state.document.content, rightEnd);
+          assertSome(item);
+          const itemEnd = item.absoluteStart + (item.end - item.start);
+          state.selection.length = itemEnd - leftEnd;
+        } else {
+          const item = getCurrentItem(state.document.content, leftEnd);
+          assertSome(item);
+          const itemEnd = item.absoluteStart + (item.end - item.start);
+          state.selection.length = rightEnd - itemEnd;
+          state.selection.start = itemEnd;
+        }
+      }
+    },
+    mouseSelectionStart: (state, arg: PayloadAction<TimedParagraphItem>) => {
+      assertSome(state);
+      state.mouseSelection = true;
+      state.selectionStartItem = arg.payload;
+    },
+    mouseSelectionOver: (state, arg: PayloadAction<TimedParagraphItem>) => {
+      assertSome(state);
+      if (!state.selectionStartItem || !state.mouseSelection) return;
+
+      const list = [state.selectionStartItem, arg.payload];
+      list.sort((a, b) => a.absoluteStart - b.absoluteStart);
+      const [first, second] = list;
+      state.selection = {
+        start: first.absoluteStart,
+        length: second.absoluteStart + (second.end - second.start) - first.absoluteStart,
+      };
+    },
+    mouseSelectionEnd: (state) => {
+      assertSome(state);
+      state.mouseSelection = false;
     },
 
     insertParagraph: (state) => {
@@ -245,8 +348,8 @@ export const importSlice = createSlice({
       }
       const isNotSelected = (item: TimedParagraphItem) => {
         return !(
-          item.absoluteStart <= selection.start &&
-          item.absoluteStart + (item.end - item.start) >= selection.start + selection.length
+          item.absoluteStart >= selection.start &&
+          item.absoluteStart + (item.end - item.start) <= selection.start + selection.length
         );
       };
       state.document.content = documentFromIterator(
@@ -280,11 +383,16 @@ export const {
   setPlay,
   setPath,
   setTime,
-  
+
   goLeft,
   goRight,
 
+  unselect,
   selectLeft,
+  selectRight,
+  mouseSelectionStart,
+  mouseSelectionOver,
+  mouseSelectionEnd,
 
   insertParagraph,
   deleteParagraph,

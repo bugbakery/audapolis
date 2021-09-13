@@ -34,8 +34,9 @@ class Player {
 
         first = false;
       }
-    } catch (_) {
+    } catch (e) {
       // errors here mean, that the we are paused, this is ok
+      console.log("error while playing. might mean that we are paused, which is ok:", e);
     }
   }
   playInternal(

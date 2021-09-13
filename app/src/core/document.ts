@@ -118,6 +118,7 @@ type DocumentIteratorItem = TimedParagraphItem & {
   globalIdx: number;
   paragraphIdx: number;
   itemIdx: number;
+  speaker: string;
 };
 type DocumentGenerator = Generator<DocumentIteratorItem, void, undefined>;
 export function* documentIterator(content: Paragraph[]): DocumentGenerator {
@@ -127,7 +128,14 @@ export function* documentIterator(content: Paragraph[]): DocumentGenerator {
     const paragraph = content[p];
     for (let i = 0; i < paragraph.content.length; i++) {
       const item = paragraph.content[i];
-      yield { ...item, absoluteStart: accumulatedTime, globalIdx, paragraphIdx: p, itemIdx: i };
+      yield {
+        ...item,
+        absoluteStart: accumulatedTime,
+        globalIdx,
+        paragraphIdx: p,
+        itemIdx: i,
+        speaker: paragraph.speaker,
+      };
       accumulatedTime += item.end - item.start;
       globalIdx += 1;
     }
@@ -148,13 +156,17 @@ export function* filterItems(
 export function* skipToTime(
   targetTime: number,
   iterator: DocumentGenerator,
-  alwaysLast?: boolean
+  alwaysLast?: boolean,
+  before?: boolean
 ): DocumentGenerator {
   let last = null;
   for (const item of iterator) {
     if (item.absoluteStart + (item.end - item.start) <= targetTime) {
       last = item;
     } else {
+      if (before && last) {
+        yield last;
+      }
       yield item;
       last = null;
     }
@@ -163,4 +175,28 @@ export function* skipToTime(
   if (alwaysLast && last) {
     yield last;
   }
+}
+
+export function documentFromIterator(iter: DocumentGenerator): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+  let lastParagraph = -1;
+  for (const item of iter) {
+    if (lastParagraph < item.paragraphIdx) {
+      paragraphs.push({ speaker: item.speaker, content: [item] });
+    } else {
+      paragraphs[paragraphs.length - 1].content.push(item);
+    }
+    lastParagraph = item.paragraphIdx;
+  }
+
+  return paragraphs;
+}
+
+export function getCurrentItem(
+  document: Paragraph[],
+  time: number,
+  prev?: boolean
+): DocumentIteratorItem | void {
+  const iter = skipToTime(time, documentIterator(document), true, prev);
+  return iter.next().value;
 }

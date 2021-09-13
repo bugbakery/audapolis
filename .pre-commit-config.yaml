@@ -28,6 +28,14 @@ repos:
         language: system
         files: app/.*
         pass_filenames: false
+-   repo: local
+    hooks:
+      -   id: npm_format
+          name: npm format
+          entry: bash -c "(cd app/ && (stat node_modules/ || npm i) && npm run format)"
+          language: system
+          files: app/.*
+          pass_filenames: false
 # TODO
 # -   repo: https://github.com/pre-commit/mirrors-mypy
 #     rev: 'v0.910'  # Use the sha / tag you want to point at

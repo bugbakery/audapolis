@@ -11,7 +11,6 @@ import {
   documentIterator,
   Paragraph,
   ParagraphGeneric,
-  ParagraphItem,
   skipToTime,
   TimedParagraphItem,
 } from '../core/document';
@@ -22,12 +21,12 @@ import {
   toggleDisplaySpeakerNames,
   togglePlaying,
   insertParagraph,
-  deleteAction,
   saveDocument,
   goRight,
   goLeft,
+  deleteSomething,
 } from '../state/editor';
-import { KeyboardEventHandler, useState } from 'react';
+import { HTMLAttributes, KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 import { basename, extname } from 'path';
 import { ActionCreators } from 'redux-undo';
@@ -76,10 +75,6 @@ function EditorTitleBar(): JSX.Element {
   );
 }
 
-function itemDisplayPredicate(item: ParagraphItem): boolean {
-  return !(item.type === 'silence' && item.end - item.start < 0.4);
-}
-
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
   margin: 30px;
@@ -116,7 +111,7 @@ function Document() {
     } else if (e.key === 'Enter') {
       dispatch(insertParagraph());
     } else if (e.key === 'Backspace') {
-      dispatch(deleteAction());
+      dispatch(deleteSomething());
     } else if (e.key === 'ArrowRight') {
       dispatch(goRight());
     } else if (e.key === 'ArrowLeft') {
@@ -169,55 +164,84 @@ function FileNameDisplay({ path }: { path: string }) {
   );
 }
 
-const ParagraphContainer = styled.div``;
+const ParagraphContainer = styled.div`
+  user-select: none;
+`;
 const SpeakerContainer = styled.div`
   text-overflow: ellipsis;
   white-space: nowrap;
 `;
-function LongSilence(): JSX.Element {
+function LongSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
     <img
       className={'item'}
-      style={{ height: '1em', filter: 'var(--filter)', margin: '0 4px' }}
+      style={{
+        height: '1em',
+        filter: 'var(--filter)',
+        margin: '0 4px',
+        ...(props.selected ? { backgroundColor: 'lightblue' } : {}),
+      }}
       src={quarterRest}
       alt={'quarter rest'}
+      {...props}
     />
   );
 }
-function ShortSilence(): JSX.Element {
-  return <span className={'item'}> </span>;
+function ShortSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
+  return (
+    <span
+      className={'item'}
+      style={props.selected ? { backgroundColor: 'lightblue' } : {}}
+      {...props}
+    >
+      {' '}
+    </span>
+  );
 }
 function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
+  const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const dispatch = useDispatch();
+  const isSelected = (item: TimedParagraphItem) => {
+    if (!selection) {
+      return false;
+    } else {
+      return (
+        item.absoluteStart <= selection.start &&
+        item.absoluteStart + (item.end - item.start) >= selection.start + selection.length
+      );
+    }
+  };
 
   return (
     <>
       <SpeakerContainer>{speaker}</SpeakerContainer>
       <ParagraphContainer>
         {content.map((item, i) => {
+          const onClick = async () => {
+            await dispatch(pause());
+            await dispatch(setTime(item.absoluteStart));
+            if (playing) {
+              dispatch(play());
+            }
+          };
           switch (item.type) {
             case 'word':
               return (
                 <span
                   key={i}
                   className={'item'}
-                  onMouseDown={async () => {
-                    await dispatch(pause());
-                    await dispatch(setTime(item.absoluteStart + 0.01));
-                    if (playing) {
-                      dispatch(play());
-                    }
-                  }}
+                  onClick={onClick}
+                  style={isSelected(item) ? { backgroundColor: 'lightblue' } : {}}
                 >
                   {' ' + item.word}
                 </span>
               );
             case 'silence':
-              if (itemDisplayPredicate(item)) {
-                return <LongSilence key={i} />;
+              if (item.end - item.start < 0.4) {
+                return <LongSilence key={i} onClick={onClick} selected={isSelected(item)} />;
               } else {
-                return <ShortSilence key={i} />;
+                return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
               }
           }
         })}

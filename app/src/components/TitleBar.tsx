@@ -7,7 +7,7 @@ function getWindowControlsRect(): DOMRect {
   if (windowControlsOverlay.visible) {
     return windowControlsOverlay.getBoundingClientRect();
   } else {
-    return new DOMRect(window.innerWidth - 55, 0, 55, 55);
+    return new DOMRect(55, 0, window.innerWidth - 2*55, 55);
   }
 }
 const CloseIcon = styled(MdClose)`
@@ -37,7 +37,7 @@ function FallbackCloseButton() {
 const TitleBarContainer = styled.div`
   height: 55px;
   flex-shrink: 0;
-  padding: 0 ${getWindowControlsRect().width}px;
+  padding: 0 ${getWindowControlsRect().left}px;
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;

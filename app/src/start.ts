@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow, dialog } from 'electron';
+import { app, ipcMain, BrowserWindow, dialog, session } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
@@ -42,6 +42,17 @@ const createWindow = (): void => {
   } else {
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   }
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        // TODO better policy
+        'Content-Security-Policy': [
+          "default-src *  data: blob: filesystem: about: ws: wss: 'unsafe-inline' 'unsafe-eval'",
+        ],
+      },
+    });
+  });
 };
 
 // This method will be called when Electron has finished

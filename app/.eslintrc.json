@@ -23,7 +23,8 @@
     "unused-imports/no-unused-vars": [
       "warn",
       { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
-    ]
+    ],
+    "no-constant-condition": ["error", { "checkLoops": false }]
   },
   "settings": {
     "react": {

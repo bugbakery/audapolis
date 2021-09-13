@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { TitleBar, TitleBarButton } from './TitleBar';
+import { TitleBar, TitleBarButton, TitleBarGroup, TitleBarSection } from './TitleBar';
 import { AppContainer, CenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { FaPause, FaPlay } from 'react-icons/fa';
-import { MdPerson, MdSave } from 'react-icons/md';
+import { MdPerson, MdRedo, MdSave, MdUndo } from 'react-icons/md';
 import {
   computeTimed,
   documentIterator,
@@ -31,6 +31,7 @@ import {
 import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 import { basename, extname } from 'path';
+import { ActionCreators } from 'redux-undo';
 
 const MainContainer = styled(CenterColumn)`
   justify-content: start;
@@ -51,22 +52,27 @@ export function EditorPage(): JSX.Element {
 function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
   const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
+    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
 
   return (
     <TitleBar>
-      <TitleBarButton
-        clicked={displaySpeakerNames}
-        onClick={() => dispatch(toggleDisplaySpeakerNames())}
-      >
-        <MdPerson />
-      </TitleBarButton>
+      <TitleBarSection>
+        <TitleBarGroup>
+          <TitleBarButton onClick={() => dispatch(ActionCreators.undo())} icon={MdUndo} />
+          <TitleBarButton onClick={() => dispatch(ActionCreators.redo())} icon={MdRedo} />
+        </TitleBarGroup>
+        <TitleBarButton
+          clicked={displaySpeakerNames}
+          onClick={() => dispatch(toggleDisplaySpeakerNames())}
+          icon={MdPerson}
+        />
+      </TitleBarSection>
 
       <PlayerControls />
 
-      <TitleBarButton onClick={() => dispatch(saveDocument())}>
-        <MdSave />
-      </TitleBarButton>
+      <TitleBarSection>
+        <TitleBarButton onClick={() => dispatch(saveDocument())} icon={MdSave} />
+      </TitleBarSection>
     </TitleBar>
   );
 }
@@ -100,9 +106,9 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
 `;
 function Document() {
   const dispatch = useDispatch();
-  const contentRaw = useSelector((state: RootState) => state.editor?.document?.content);
+  const contentRaw = useSelector((state: RootState) => state.editor.present?.document?.content);
   const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor?.displaySpeakerNames) || false;
+    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
   const content = computeTimed(contentRaw || ([] as Paragraph[]));
 
   const handleKeyPress: KeyboardEventHandler = (e) => {
@@ -116,10 +122,18 @@ function Document() {
       dispatch(goRight());
     } else if (e.key === 'ArrowLeft') {
       dispatch(goLeft());
+    } else if (e.key === 'z' && e.ctrlKey) {
+      dispatch(ActionCreators.undo());
+    } else if (e.key === 'Z' && e.ctrlKey) {
+      dispatch(ActionCreators.redo());
+    } else if (e.key === 'y' && e.ctrlKey) {
+      dispatch(ActionCreators.redo());
+    } else if (e.key === 's' && e.ctrlKey) {
+      dispatch(saveDocument());
     }
   };
 
-  const fileName = useSelector((state: RootState) => state.editor?.path) || '';
+  const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
 
   return (
     <DocumentContainer
@@ -145,7 +159,7 @@ const DocumentTitle = styled.h1`
   grid-column-start: 2;
 `;
 function FileNameDisplay({ path }: { path: string }) {
-  const extension = extname(paht);
+  const extension = extname(path);
   const base = basename(path, extension);
 
   return (
@@ -172,7 +186,7 @@ function Silence(): JSX.Element {
   );
 }
 function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
-  const playing = useSelector((state: RootState) => state.editor?.playing) || false;
+  const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
   const dispatch = useDispatch();
 
   return (
@@ -231,12 +245,12 @@ const PlayerControlsContainer = styled.div`
   }
 `;
 function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
-  const time = useSelector((state: RootState) => state.editor?.currentTime) || 0;
+  const time = useSelector((state: RootState) => state.editor.present?.currentTime) || 0;
   const formatInt = (x: number) => {
     const str = Math.floor(x).toString();
     return (str.length == 1 ? '0' + str : str).substr(0, 2);
   };
-  const playing = useSelector((state: RootState) => state.editor?.playing);
+  const playing = useSelector((state: RootState) => state.editor.present?.playing);
   const dispatch = useDispatch();
 
   return (
@@ -280,8 +294,8 @@ const CursorNeedle = styled.div`
 `;
 function Cursor(): JSX.Element {
   const [ref, setRef] = useState<HTMLDivElement | null>(null);
-  const content = useSelector((state: RootState) => state.editor?.document?.content);
-  const time = useSelector((state: RootState) => state.editor?.currentTime);
+  const content = useSelector((state: RootState) => state.editor.present?.document?.content);
+  const time = useSelector((state: RootState) => state.editor.present?.currentTime);
   let left = -100;
   let top = -100;
   if (ref?.parentElement && content != null && time != null) {

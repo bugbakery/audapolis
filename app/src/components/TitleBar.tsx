@@ -2,6 +2,7 @@ import styled, { css } from 'styled-components';
 import { MdClose } from 'react-icons/md';
 import * as React from 'react';
 import { ButtonHTMLAttributes } from 'react';
+import { IconType } from 'react-icons';
 
 function getWindowControlsRect(): DOMRect {
   const windowControlsOverlay = (window.navigator as any).windowControlsOverlay;
@@ -84,8 +85,9 @@ const TitleBarButtonContainer = styled.button<{ clicked?: boolean }>`
       box-shadow: inset 0 0 3px var(--fg-color) !important;
     `}
 
-  &:hover {
+  &:hover, &:focus {
     box-shadow: 0 0 3px var(--fg-color);
+    outline: none;
   }
 
   & > * {
@@ -95,9 +97,26 @@ const TitleBarButtonContainer = styled.button<{ clicked?: boolean }>`
   }
 `;
 export function TitleBarButton(
-  props: { children?: React.ReactNode; clicked?: boolean } & ButtonHTMLAttributes<HTMLButtonElement>
+  props: { clicked?: boolean; icon?: IconType } & ButtonHTMLAttributes<HTMLButtonElement>
 ): JSX.Element {
-  const children = props.children || <></>;
+  const children = props.icon ? <props.icon /> : <></>;
 
   return <TitleBarButtonContainer {...props}>{children}</TitleBarButtonContainer>;
 }
+
+export const TitleBarSection = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-basis: 0;
+  flex-grow: 1;
+  justify-content: space-evenly;
+`;
+
+export const TitleBarGroup = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  & > * {
+    margin: 0 5px;
+  }
+`;

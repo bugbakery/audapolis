@@ -7,7 +7,7 @@ function getWindowControlsRect(): DOMRect {
   if (windowControlsOverlay.visible) {
     return windowControlsOverlay.getBoundingClientRect();
   } else {
-    return new DOMRect(55, 0, window.innerWidth - 2*55, 55);
+    return new DOMRect(55, 0, window.innerWidth - 2 * 55, 55);
   }
 }
 const CloseIcon = styled(MdClose)`

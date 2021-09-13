@@ -46,7 +46,7 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
     const editor = getState().editor;
     assertEditor(editor);
     if (editor.playing) {
-      return
+      return;
     }
     dispatch(setPlay(true));
     const { document, currentTime } = editor;

@@ -45,12 +45,17 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
   async (arg, { getState, dispatch }): Promise<void> => {
     const editor = getState().editor;
     assertEditor(editor);
+    if (editor.playing) {
+      return
+    }
+    dispatch(setPlay(true));
     const { document, currentTime } = editor;
     if (document === undefined || currentTime === undefined) {
       throw Error('cant play. document is undefined');
     }
     const progressCallback = (time: number) => dispatch(setTime(time));
     await player.play(document, currentTime, progressCallback);
+    dispatch(setPlay(false));
   }
 );
 export const pause = createAsyncThunk<void, void, { state: RootState }>(
@@ -78,6 +83,10 @@ export const importSlice = createSlice({
       assertEditor(state);
       state.currentTime = args.payload;
     },
+    setPlay: (state, args: PayloadAction<boolean>) => {
+      assertEditor(state);
+      state.playing = args.payload;
+    },
     toggleDisplaySpeakerNames: (state) => {
       assertEditor(state);
       state.displaySpeakerNames = !state.displaySpeakerNames;
@@ -90,19 +99,11 @@ export const importSlice = createSlice({
     builder.addCase(openDocument.rejected, (state, action) => {
       console.error('an error occurred while trying to load the file', action.error);
     });
-    builder.addCase(play.pending, (state) => {
-      assertEditor(state);
-      state.playing = true;
-    });
-    builder.addCase(play.fulfilled, (state) => {
-      assertEditor(state);
-      state.playing = false;
-    });
     builder.addCase(pause.fulfilled, (state) => {
       assertEditor(state);
       state.playing = false;
     });
   },
 });
-export const { setTime, toggleDisplaySpeakerNames } = importSlice.actions;
+export const { setTime, setPlay, toggleDisplaySpeakerNames } = importSlice.actions;
 export default importSlice.reducer;

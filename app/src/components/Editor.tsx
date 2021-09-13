@@ -9,7 +9,6 @@ import { MdPerson, MdRedo, MdSave, MdUndo } from 'react-icons/md';
 import {
   computeTimed,
   documentIterator,
-  filterItems,
   Paragraph,
   ParagraphGeneric,
   ParagraphItem,
@@ -175,15 +174,18 @@ const SpeakerContainer = styled.div`
   text-overflow: ellipsis;
   white-space: nowrap;
 `;
-function Silence(): JSX.Element {
+function LongSilence(): JSX.Element {
   return (
     <img
-      className={'word'}
-      style={{ height: '1em', filter: 'var(--filter)' }}
+      className={'item'}
+      style={{ height: '1em', filter: 'var(--filter)', margin: '0 4px' }}
       src={quarterRest}
       alt={'quarter rest'}
     />
   );
+}
+function ShortSilence(): JSX.Element {
+  return <span className={'item'}> </span>;
 }
 function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
@@ -193,13 +195,13 @@ function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): 
     <>
       <SpeakerContainer>{speaker}</SpeakerContainer>
       <ParagraphContainer>
-        {content.filter(itemDisplayPredicate).flatMap((item, i) => {
+        {content.map((item, i) => {
           switch (item.type) {
             case 'word':
-              return [
+              return (
                 <span
-                  key={i * 2}
-                  className={'word'}
+                  key={i}
+                  className={'item'}
                   onMouseDown={async () => {
                     await dispatch(pause());
                     await dispatch(setTime(item.absoluteStart + 0.01));
@@ -208,12 +210,15 @@ function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): 
                     }
                   }}
                 >
-                  {item.word}
-                </span>,
-                <React.Fragment key={i * 2 + 1}> </React.Fragment>,
-              ];
+                  {' ' + item.word}
+                </span>
+              );
             case 'silence':
-              return [<Silence key={i * 2} />, <React.Fragment key={i * 2 + 1}> </React.Fragment>];
+              if (itemDisplayPredicate(item)) {
+                return <LongSilence key={i} />;
+              } else {
+                return <ShortSilence key={i} />;
+              }
           }
         })}
       </ParagraphContainer>
@@ -277,7 +282,7 @@ const CursorContainer = styled.div`
   justify-content: stretch;
   height: calc(1em + 8px);
   position: absolute;
-  transform: translate(calc(-50% - 2px), -6px);
+  transform: translate(-3px, -6px);
 `;
 const CursorPoint = styled.div`
   width: 8px;
@@ -324,18 +329,14 @@ function computeCursorPosition(
   ref: HTMLDivElement,
   time: number
 ): { x: number; y: number } {
-  const item = skipToTime(
-    time,
-    filterItems(itemDisplayPredicate, documentIterator(content)),
-    true
-  ).next().value || {
+  const item = skipToTime(time, documentIterator(content), true).next().value || {
     end: 1,
     start: 0,
     globalIdx: 0,
     absoluteStart: time,
   };
   const itemElement = ref
-    .getElementsByClassName('word')
+    .getElementsByClassName('item')
     .item(item.globalIdx) as HTMLDivElement | null;
 
   if (!itemElement) {

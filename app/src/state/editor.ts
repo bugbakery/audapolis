@@ -10,6 +10,7 @@ import {
   skipToTime,
 } from '../core/document';
 import { player } from '../core/webaudio';
+import undoable, { includeAction } from 'redux-undo';
 
 export interface Editor {
   path: string | null;
@@ -57,7 +58,7 @@ export const openDocumentFromMemory = createAsyncThunk<Editor, Document>(
 export const play = createAsyncThunk<void, void, { state: RootState }>(
   'editor/play',
   async (arg, { getState, dispatch }): Promise<void> => {
-    const editor = getState().editor;
+    const editor = getState().editor.present;
     assertEditor(editor);
     if (editor.playing) {
       return;
@@ -81,7 +82,7 @@ export const pause = createAsyncThunk<void, void, { state: RootState }>(
 export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
   'editor/togglePlaying',
   async (arg, { dispatch, getState }): Promise<void> => {
-    if (getState().editor?.playing) {
+    if (getState().editor.present?.playing) {
       dispatch(pause());
     } else {
       dispatch(play());
@@ -92,11 +93,11 @@ export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
 export const saveDocument = createAsyncThunk<void, void, { state: RootState }>(
   'editor/saveDocument',
   async (_, { dispatch, getState }): Promise<void> => {
-    const document = getState().editor?.document;
+    const document = getState().editor.present?.document;
     if (document === undefined) {
       throw Error('cant save. document is undefined');
     }
-    const state_path = getState().editor?.path;
+    const state_path = getState().editor.present?.path;
     if (state_path) {
       await serializeDocument(document, state_path);
     } else {
@@ -245,4 +246,6 @@ export const {
   goLeft,
   goRight,
 } = importSlice.actions;
-export default importSlice.reducer;
+export default undoable(importSlice.reducer, {
+  filter: includeAction([insertParagraph.type, deleteAction.type]),
+});

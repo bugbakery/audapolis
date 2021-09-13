@@ -85,9 +85,11 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
 
   display: grid;
   transition: all 1s;
-  grid-template-columns: ${(props) => (props.displaySpeakerNames ? '100' : '0')}px fit-content(
-      800px
+  grid-template-columns: ${(props) => (props.displaySpeakerNames ? '100' : '0')}px min(
+      800px,
+      calc(100% - ${(props) => (props.displaySpeakerNames ? '100' : '0')}px)
     );
+  justify-content: center;
 
   & > * {
     overflow-x: hidden;
@@ -130,7 +132,9 @@ function Document() {
 }
 
 const ParagraphContainer = styled.div``;
-const SpeakerContainer = styled.div``;
+const SpeakerContainer = styled.div`
+  overflow-wrap: break-word;
+`;
 function Silence(): JSX.Element {
   return (
     <img

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar, TitleBarButton, TitleBarGroup, TitleBarSection } from './TitleBar';
 import { AppContainer, CenterColumn } from './Util';
 import { RootState } from '../state';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { FaPause, FaPlay } from 'react-icons/fa';
 import { MdPerson, MdRedo, MdSave, MdUndo } from 'react-icons/md';
 import {
@@ -25,8 +25,14 @@ import {
   goRight,
   goLeft,
   deleteSomething,
+  selectLeft,
+  selectRight,
+  unselect,
+  mouseSelectionOver,
+  mouseSelectionStart,
+  mouseSelectionEnd,
 } from '../state/editor';
-import { HTMLAttributes, KeyboardEventHandler, useState } from 'react';
+import { HTMLAttributes, KeyboardEventHandler, MouseEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 import { basename, extname } from 'path';
 import { ActionCreators } from 'redux-undo';
@@ -113,9 +119,11 @@ function Document() {
     } else if (e.key === 'Backspace') {
       dispatch(deleteSomething());
     } else if (e.key === 'ArrowRight') {
-      dispatch(goRight());
+      if (e.shiftKey) dispatch(selectRight());
+      else dispatch(goRight());
     } else if (e.key === 'ArrowLeft') {
-      dispatch(goLeft());
+      if (e.shiftKey) dispatch(selectLeft());
+      else dispatch(goLeft());
     } else if (e.key === 'z' && e.ctrlKey) {
       dispatch(ActionCreators.undo());
     } else if (e.key === 'Z' && e.ctrlKey) {
@@ -124,6 +132,8 @@ function Document() {
       dispatch(ActionCreators.redo());
     } else if (e.key === 's' && e.ctrlKey) {
       dispatch(saveDocument());
+    } else if (e.key === 'Escape') {
+      dispatch(unselect());
     }
   };
 
@@ -178,7 +188,7 @@ function LongSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanEleme
       style={{
         height: '1em',
         filter: 'var(--filter)',
-        margin: '0 4px',
+        padding: '0 4px',
         ...(props.selected ? { backgroundColor: 'lightblue' } : {}),
       }}
       src={quarterRest}
@@ -198,6 +208,13 @@ function ShortSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElem
     </span>
   );
 }
+const Word = styled.span<{ selected: boolean }>`
+  ${(props) =>
+    props.selected &&
+    css`
+      background-color: lightblue;
+    `}
+`;
 function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
@@ -207,8 +224,8 @@ function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): 
       return false;
     } else {
       return (
-        item.absoluteStart <= selection.start &&
-        item.absoluteStart + (item.end - item.start) >= selection.start + selection.length
+        item.absoluteStart >= selection.start &&
+        item.absoluteStart + (item.end - item.start) <= selection.start + selection.length
       );
     }
   };
@@ -225,21 +242,33 @@ function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): 
               dispatch(play());
             }
           };
+          const onMouseDown: MouseEventHandler = () => {
+            dispatch(mouseSelectionStart(item));
+            document.addEventListener(
+              'mouseup',
+              () => {
+                dispatch(mouseSelectionEnd());
+              },
+              { once: true }
+            );
+          };
+          const onMouseMove: MouseEventHandler = () => {
+            dispatch(mouseSelectionOver(item));
+          };
+          const commonProps = {
+            onClick,
+            onMouseDown,
+            onMouseMove,
+            selected: isSelected(item),
+            className: 'item',
+            key: i,
+          };
           switch (item.type) {
             case 'word':
-              return (
-                <span
-                  key={i}
-                  className={'item'}
-                  onClick={onClick}
-                  style={isSelected(item) ? { backgroundColor: 'lightblue' } : {}}
-                >
-                  {' ' + item.word}
-                </span>
-              );
+              return <Word {...commonProps}>{' ' + item.word}</Word>;
             case 'silence':
-              if (item.end - item.start < 0.4) {
-                return <LongSilence key={i} onClick={onClick} selected={isSelected(item)} />;
+              if (item.end - item.start > 0.4) {
+                return <LongSilence {...commonProps} selected={isSelected(item)} />;
               } else {
                 return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
               }

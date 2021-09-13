@@ -137,6 +137,31 @@ export const importSlice = createSlice({
       assertEditor(state);
       state.path = args.payload;
     },
+    goLeft: (state) => {
+      assertEditor(state);
+      let item = null;
+      for (const x of documentIterator(state.document.content)) {
+        if (x.absoluteStart >= state.currentTime) {
+          break;
+        } else {
+          item = x;
+        }
+      }
+      if (!item) {
+        throw new Error('something went wrong');
+      }
+      state.currentTime = item.absoluteStart;
+    },
+    goRight: (state) => {
+      assertEditor(state);
+      const iter = skipToTime(state.currentTime, documentIterator(state.document.content), true);
+      iter.next();
+      const item = iter.next().value;
+      if (!item) {
+        throw new Error('something went wrong');
+      }
+      state.currentTime = item.absoluteStart;
+    },
     insertParagraph: (state) => {
       assertEditor(state);
 
@@ -212,10 +237,12 @@ export const importSlice = createSlice({
 });
 export const {
   setTime,
+  toggleDisplaySpeakerNames,
   setPlay,
   setPath,
-  toggleDisplaySpeakerNames,
   insertParagraph,
   deleteAction,
+  goLeft,
+  goRight,
 } = importSlice.actions;
 export default importSlice.reducer;

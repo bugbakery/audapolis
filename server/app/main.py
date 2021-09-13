@@ -2,7 +2,9 @@ import enum
 import json
 import sys
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from fastapi import BackgroundTasks, FastAPI, File, UploadFile
@@ -13,6 +15,16 @@ app = FastAPI()
 
 DATA_DIR = Path(__file__).absolute().parent.parent.parent / "data"
 CONFIG_FILE = DATA_DIR / "config.yml"
+# TODO: does it make sense to cache the models in memory if we have more than one?
+LOADED_MODELS = {}
+
+SAMPLE_RATE = 16000
+# Number of seconds that should be fed into vosk.
+# Smaller = better progress estimates, but also slightly higher python overhead
+VOSK_BLOCK_SIZE = 2
+
+# This holds the tasks state. TODO(@pajowu), check if we should store this on disk
+TASKS = {}
 
 if not DATA_DIR.exists():
     print(f"ERROR: data directory {DATA_DIR.absolute()} does not exist")
@@ -67,10 +79,6 @@ class ModelDoesNotExist(Exception):
     pass
 
 
-# TODO: does it make sense to cache the models in memory if we have more than one?
-LOADED_MODELS = {}
-
-
 def get_model(lang, model):
     if lang not in CONFIG["languages"]:
         raise LanguageDoesNotExist
@@ -86,21 +94,22 @@ def get_model(lang, model):
         return model
 
 
-SAMPLE_RATE = 16000
-# Number of seconds that should be fed into vosk.
-# Smaller = better progress estimates, but also slightly higher python overhead
-VOSK_BLOCK_SIZE = 2
-
-# This holds the tasks state. TODO(@pajowu), check if we should store this on disk
-TASKS = {}
-
-
 class TranscriptionState(str, enum.Enum):
     QUEUED = "queued"
     LOADING = "loading"
     TRANSCRIBING = "transcribing"
     POST_PROCESSING = "post_processing"
     DONE = "done"
+
+
+@dataclass
+class Task:
+    uuid: str
+    filename: str
+    state: TranscriptionState
+    total: float = 0
+    processed: float = 0
+    content: Optional[dict] = None
 
 
 def transform_vosk_result(name: str, result: dict) -> dict:
@@ -130,34 +139,35 @@ def process_audio(lang: str, model: str, file: UploadFile, task_uuid: str):
     model = get_model(lang, model)
 
     task = TASKS[task_uuid]
-    task["state"] = TranscriptionState.LOADING
+    task.state = TranscriptionState.LOADING
 
     audio = AudioSegment.from_file(file)
     audio = audio.set_frame_rate(SAMPLE_RATE)
     audio = audio.set_channels(1)
 
-    task["state"] = TranscriptionState.TRANSCRIBING
-    task["total"] = audio.duration_seconds
-    task["processed"] = 0
+    # TODO: can we make this atomic?
+    task.total = audio.duration_seconds
+    task.processed = 0
+    task.state = TranscriptionState.TRANSCRIBING
 
     rec = KaldiRecognizer(model, SAMPLE_RATE)
     rec.SetWords(True)
 
     finished = False
     while not finished:
-        block_start = task["processed"]
-        block_end = task["processed"] + VOSK_BLOCK_SIZE
+        block_start = task.processed
+        block_end = task.processed + VOSK_BLOCK_SIZE
         data = audio[block_start * 1000 : block_end * 1000]
-        if block_end > task["total"]:
-            block_end = task["total"]
+        if block_end > task.total:
+            block_end = task.total
             finished = True
         rec.AcceptWaveform(data.get_array_of_samples().tobytes())
-        task["processed"] = block_end
-    task["state"] = TranscriptionState.POST_PROCESSING
+        task.processed = block_end
+    task.state = TranscriptionState.POST_PROCESSING
     vosk_result = json.loads(rec.FinalResult())
-    content = transform_vosk_result(task["filename"], vosk_result)
-    task["content"] = [content]
-    task["state"] = TranscriptionState.DONE
+    content = transform_vosk_result(task.filename, vosk_result)
+    task.content = [content]
+    task.state = TranscriptionState.DONE
 
 
 @app.post("/tasks/start_transcription/")
@@ -169,11 +179,7 @@ async def start_transcription(
 ):
     task_uuid = str(uuid.uuid4())
     background_tasks.add_task(process_audio, lang, model, file.file, task_uuid)
-    TASKS[task_uuid] = {
-        "filename": file.filename,
-        "uuid": task_uuid,
-        "state": TranscriptionState.QUEUED,
-    }
+    TASKS[task_uuid] = Task(task_uuid, file.filename, TranscriptionState.QUEUED)
     return TASKS[task_uuid]
 
 

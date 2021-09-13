@@ -91,6 +91,7 @@ const TitleBarButtonContainer = styled.button<{ clicked?: boolean }>`
   & > * {
     width: 100%;
     height: 100%;
+    filter: var(--filter);
   }
 `;
 export function TitleBarButton(

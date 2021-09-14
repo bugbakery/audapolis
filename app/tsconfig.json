@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "module": "commonjs",
+    "module": "esNext",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "outDir": "dist",
+    "noEmit": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "strictNullChecks": true,
@@ -25,6 +25,6 @@
   },
   "include": [
     "src/**/*",
-    "custom.d.ts",
+    "src/custom.d.ts"
   ]
 }

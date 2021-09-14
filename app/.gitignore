@@ -91,3 +91,7 @@ out/
 # IDE files
 .vscode/
 .idea/
+
+
+build/
+dist/

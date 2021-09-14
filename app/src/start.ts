@@ -85,3 +85,12 @@ ipcMain.handle('open-file', (event, options) => {
     dialog.showOpenDialog(options);
   }
 });
+
+ipcMain.handle('save-file', (event, options) => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    return dialog.showSaveDialog(win, options);
+  } else {
+    dialog.showSaveDialog(options);
+  }
+});

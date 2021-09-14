@@ -5,7 +5,7 @@ import { AppContainer, CenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { FaPause, FaPlay } from 'react-icons/fa';
-import { MdPerson } from 'react-icons/md';
+import { MdPerson, MdSave } from 'react-icons/md';
 import {
   computeTimed,
   documentIterator,
@@ -16,7 +16,14 @@ import {
   skipToTime,
   TimedParagraphItem,
 } from '../core/document';
-import { play, pause, setTime, toggleDisplaySpeakerNames, togglePlaying } from '../state/editor';
+import {
+  play,
+  pause,
+  setTime,
+  toggleDisplaySpeakerNames,
+  togglePlaying,
+  saveDocument,
+} from '../state/editor';
 import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 
@@ -37,6 +44,7 @@ export function EditorPage(): JSX.Element {
   return (
     <AppContainer onKeyDown={handleKeyPress} tabIndex={-1}>
       <TitleBar>
+        <SaveButton />
         <SpeakerNamesButton />
         <PlayerControls />
         <NoButton />
@@ -72,6 +80,20 @@ export function SpeakerNamesButton(): JSX.Element {
       style={{ boxShadow: displaySpeakerNames ? 'inset 0 0 3px var(--fg-color)' : 'none' }}
     />
   );
+}
+
+const SaveButtonIcon = styled(MdSave)`
+  width: 30px;
+  height: 30px;
+  padding: 3px;
+  -webkit-app-region: no-drag;
+  border-radius: 10px;
+  transition: all 0.2s;
+`;
+export function SaveButton(): JSX.Element {
+  const dispatch = useDispatch();
+
+  return <SaveButtonIcon onClick={() => dispatch(saveDocument())} />;
 }
 
 function itemDisplayPredicate(item: ParagraphItem): boolean {

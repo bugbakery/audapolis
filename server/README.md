@@ -49,11 +49,11 @@ poetry install
 After installing the dependencies you can start the server by running
 
 ```sh
-uvicorn main:app --reload
+poetry run uvicorn app.main:app --reload
 ```
 ## Models
 
-You need to download a model for speech recognition from [here](https://alphacephei.com/vosk/models) or by running the `download_models.sh` script
+You need to download a model for speech recognition into the `../data/` directory from [here](https://alphacephei.com/vosk/models) or by running the `download_models.sh` script
 
 ```sh
 cd ../data

@@ -202,20 +202,21 @@ const SpeakerContainer = styled.div`
   text-overflow: ellipsis;
   white-space: nowrap;
 `;
+const LongSilenceSpan = styled.span`
+  padding: 0 8px;
+  color: transparent;
+  background: center / auto 80% no-repeat url(${quarterRest});
+`;
 function LongSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
+  console.log(quarterRest);
   return (
-    <img
+    <LongSilenceSpan
       className={'item'}
-      style={{
-        height: '1em',
-        filter: 'var(--filter)',
-        padding: '0 4px',
-        ...(props.selected ? { backgroundColor: 'lightblue' } : {}),
-      }}
-      src={quarterRest}
-      alt={'quarter rest'}
+      style={props.selected ? { backgroundColor: 'lightblue' } : {}}
       {...props}
-    />
+    >
+      {' '}
+    </LongSilenceSpan>
   );
 }
 function ShortSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {

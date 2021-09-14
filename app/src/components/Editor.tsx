@@ -171,7 +171,7 @@ function Document() {
       <FileNameDisplay path={fileName} />
 
       {content.map((p, i) => (
-        <Paragraph key={i} speaker={p.speaker} content={p.content} />
+        <ParagraphBlock key={i} speaker={p.speaker} content={p.content} />
       ))}
     </DocumentContainer>
   );
@@ -241,7 +241,7 @@ const Word = styled.span<{ selected: boolean }>`
       color: black;
     `}
 `;
-function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
+function ParagraphBlock({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const dispatch = useDispatch();

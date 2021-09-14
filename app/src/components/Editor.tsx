@@ -26,6 +26,7 @@ import {
 } from '../state/editor';
 import { KeyboardEventHandler, useState } from 'react';
 import quarterRest from '../res/quarter_rest.svg';
+import { basename, extname } from 'path';
 
 const MainContainer = styled(CenterColumn)`
   justify-content: start;
@@ -130,20 +131,16 @@ function Document() {
   const content = computeTimed(contentRaw || ([] as Paragraph[]));
 
   const fileName = useSelector((state: RootState) => state.editor?.path) || '';
-  const splitLast = (str: string, delim: string) => {
-    const idx = str.lastIndexOf(delim);
-    return [str.slice(0, idx), str.slice(idx + 1)];
-  };
-  const [_, last] = splitLast(fileName, '/');
-  const [base, extension] = splitLast(last, '.');
+  const extension = extname(fileName);
+  const base = basename(fileName, extension);
 
   return (
     <DocumentContainer displaySpeakerNames={displaySpeakerNames}>
       <Cursor />
-
+      {/*TODO: Indicate if not saved*/}
       <DocumentTitle>
         {base}
-        <span style={{ fontWeight: 'lighter' }}>.{extension}</span>
+        <span style={{ fontWeight: 'lighter' }}>{extension}</span>
       </DocumentTitle>
 
       {content.map((p, i) => (

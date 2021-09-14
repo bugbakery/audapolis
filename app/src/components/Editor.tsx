@@ -127,6 +127,7 @@ function Document() {
   const handleKeyPress: KeyboardEventHandler = (e) => {
     if (e.key === ' ') {
       dispatch(togglePlaying());
+      e.preventDefault();
     } else if (e.key === 'Enter') {
       dispatch(insertParagraph());
     } else if (e.key === 'Backspace') {

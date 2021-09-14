@@ -15,6 +15,7 @@ import {
 } from '../core/document';
 import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
+import { assertSome } from './util';
 
 export interface Editor {
   path: string | null;
@@ -28,12 +29,6 @@ export interface Editor {
 export interface Range {
   start: number;
   length: number;
-}
-
-function assertSome<T>(x: T | null | undefined | void): asserts x is T {
-  if (x === undefined || x === null) {
-    throw Error(`x is not loaded (it is '${x}')`);
-  }
 }
 
 export const openDocumentFromDisk = createAsyncThunk(

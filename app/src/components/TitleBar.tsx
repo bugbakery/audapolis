@@ -68,7 +68,7 @@ export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Elem
   );
 }
 
-const TitleBarButtonContainer = styled.button<{ clicked?: boolean }>`
+const TitleBarButtonContainer = styled.button<{ clicked?: boolean; active?: boolean }>`
   width: 30px;
   height: 30px;
   padding: 3px;
@@ -85,8 +85,20 @@ const TitleBarButtonContainer = styled.button<{ clicked?: boolean }>`
       box-shadow: inset 0 0 3px var(--fg-color) !important;
     `}
 
+  ${(props) =>
+    props.active !== undefined &&
+    !props.active &&
+    css`
+      opacity: 0.5;
+    `}
+
   &:hover, &:focus {
-    box-shadow: 0 0 3px var(--fg-color);
+    ${(props) =>
+      props.active !== undefined && !props.active
+        ? undefined
+        : css`
+            box-shadow: 0 0 3px var(--fg-color);
+          `}
     outline: none;
   }
 
@@ -97,7 +109,11 @@ const TitleBarButtonContainer = styled.button<{ clicked?: boolean }>`
   }
 `;
 export function TitleBarButton(
-  props: { clicked?: boolean; icon?: IconType } & ButtonHTMLAttributes<HTMLButtonElement>
+  props: {
+    clicked?: boolean;
+    active?: boolean;
+    icon?: IconType;
+  } & ButtonHTMLAttributes<HTMLButtonElement>
 ): JSX.Element {
   const children = props.icon ? <props.icon /> : <></>;
 

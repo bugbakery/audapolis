@@ -32,7 +32,13 @@ import {
   mouseSelectionStart,
   mouseSelectionEnd,
 } from '../state/editor';
-import { HTMLAttributes, KeyboardEventHandler, MouseEventHandler, useState } from 'react';
+import {
+  HTMLAttributes,
+  KeyboardEventHandler,
+  MouseEventHandler,
+  useEffect,
+  useState,
+} from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 import { basename, extname } from 'path';
 import { ActionCreators } from 'redux-undo';
@@ -96,7 +102,8 @@ function EditorTitleBar(): JSX.Element {
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
-  margin: 30px;
+  padding: 30px;
+  width: 100%;
   line-height: 1.5;
 
   display: grid;
@@ -365,6 +372,14 @@ const CursorNeedle = styled.div`
   background-color: var(--accent);
 `;
 function Cursor(): JSX.Element {
+  // we do this to re-render the cursor when the window resizes
+  const [_, setWindowSize] = useState(null as null | { height: number; width: number });
+  useEffect(() => {
+    window.addEventListener('resize', () =>
+      setWindowSize({ height: window.innerHeight, width: window.innerWidth })
+    );
+  }, []);
+
   const [ref, setRef] = useState<HTMLDivElement | null>(null);
   const content = useSelector((state: RootState) => state.editor.present?.document?.content);
   const time = useSelector((state: RootState) => state.editor.present?.currentTime);

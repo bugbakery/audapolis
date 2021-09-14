@@ -96,11 +96,13 @@ export const startTranscription = createAsyncThunk<void, void, { state: RootStat
         const contentWithSource = content.map((paragraph: any) => {
           paragraph.content = paragraph.content.map((word: any) => {
             word['source'] = 0;
-            return word
-          })
-          return paragraph
+            return word;
+          });
+          return paragraph;
         });
-        dispatch(openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] }));
+        dispatch(
+          openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
+        );
         break;
       }
       await sleep(100);

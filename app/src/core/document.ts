@@ -61,7 +61,7 @@ export async function deserializeDocument(path: string): Promise<Document> {
         );
       }
       const fileContents = await fileHandle.async('arraybuffer');
-      const decoded = await ctx.decodeAudioData(fileContents);
+      const decoded = await ctx.decodeAudioData(fileContents.slice(0));
       return { fileName, fileContents, decoded };
     })
   );
@@ -69,6 +69,8 @@ export async function deserializeDocument(path: string): Promise<Document> {
   return { content: document.content, sources };
 }
 export async function serializeDocument(document: Document, path: string): Promise<void> {
+  // TODO: Do we really need to write an entire new file here? Can we check for existing file content and only overwrite
+  // what's needed?
   const zip = JSZip();
 
   const sources = document.sources.map((source) => {

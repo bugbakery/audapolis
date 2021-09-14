@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
 import { RootState } from './index';
 import { openEditor } from './nav';
-import { deserializeDocument, Document } from '../core/document';
+import { deserializeDocument, Document, serializeDocument } from '../core/document';
 import { player } from '../core/webaudio';
 
 export interface Editor {
@@ -83,6 +83,34 @@ export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
   }
 );
 
+export const saveDocument = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/saveDocument',
+  async (_, { dispatch, getState }): Promise<void> => {
+    const document = getState().editor?.document;
+    if (document === undefined) {
+      throw Error('cant save. document is undefined');
+    }
+    const state_path = getState().editor?.path;
+    if (state_path) {
+      await serializeDocument(document, state_path);
+    } else {
+      console.log('opening save dialog');
+      const path = await ipcRenderer
+        .invoke('save-file', {
+          properties: ['saveFile'],
+          filters: [
+            { name: 'Audapolis Project Files', extensions: ['audapolis'] },
+            { name: 'All Files', extensions: ['*'] },
+          ],
+        })
+        .then((x) => x.filePath);
+      console.log('saving to ', path);
+      dispatch(setPath(path));
+      await serializeDocument(document, path);
+    }
+  }
+);
+
 export const importSlice = createSlice({
   name: 'editor',
   initialState: null as Editor | null,
@@ -98,6 +126,10 @@ export const importSlice = createSlice({
     toggleDisplaySpeakerNames: (state) => {
       assertEditor(state);
       state.displaySpeakerNames = !state.displaySpeakerNames;
+    },
+    setPath: (state, args: PayloadAction<string>) => {
+      assertEditor(state);
+      state.path = args.payload;
     },
   },
   extraReducers: (builder) => {
@@ -119,5 +151,5 @@ export const importSlice = createSlice({
     });
   },
 });
-export const { setTime, setPlay, toggleDisplaySpeakerNames } = importSlice.actions;
+export const { setTime, setPlay, setPath, toggleDisplaySpeakerNames } = importSlice.actions;
 export default importSlice.reducer;

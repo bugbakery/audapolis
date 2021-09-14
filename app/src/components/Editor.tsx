@@ -57,13 +57,26 @@ function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+  const canUndo = useSelector((state: RootState) => state.editor.past.length > 0);
+  const canRedo = useSelector((state: RootState) => state.editor.future.length > 0);
+  const canSave = useSelector(
+    (state: RootState) => state.editor.present?.document != state.editor.present?.lastSavedDocument
+  );
 
   return (
     <TitleBar>
       <TitleBarSection>
         <TitleBarGroup>
-          <TitleBarButton onClick={() => dispatch(ActionCreators.undo())} icon={MdUndo} />
-          <TitleBarButton onClick={() => dispatch(ActionCreators.redo())} icon={MdRedo} />
+          <TitleBarButton
+            onClick={() => dispatch(ActionCreators.undo())}
+            active={canUndo}
+            icon={MdUndo}
+          />
+          <TitleBarButton
+            onClick={() => dispatch(ActionCreators.redo())}
+            active={canRedo}
+            icon={MdRedo}
+          />
         </TitleBarGroup>
         <TitleBarButton
           clicked={displaySpeakerNames}
@@ -75,7 +88,7 @@ function EditorTitleBar(): JSX.Element {
       <PlayerControls />
 
       <TitleBarSection>
-        <TitleBarButton onClick={() => dispatch(saveDocument())} icon={MdSave} />
+        <TitleBarButton onClick={() => dispatch(saveDocument())} active={canSave} icon={MdSave} />
       </TitleBarSection>
     </TitleBar>
   );

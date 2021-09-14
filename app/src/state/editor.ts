@@ -20,6 +20,8 @@ import { assertSome } from './util';
 export interface Editor {
   path: string | null;
   document: Document;
+  lastSavedDocument: Document | null;
+
   currentTime: number;
   playing: boolean;
   displaySpeakerNames: boolean;
@@ -30,6 +32,8 @@ export interface Editor {
 }
 
 const editorDefaults = {
+  lastSavedDocument: null,
+
   currentTime: 0,
   playing: false,
   displaySpeakerNames: false,
@@ -65,6 +69,7 @@ export const openDocumentFromDisk = createAsyncThunk(
       path,
       document,
       ...editorDefaults,
+      lastSavedDocument: document,
     };
   }
 );
@@ -113,9 +118,9 @@ export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
   }
 );
 
-export const saveDocument = createAsyncThunk<void, void, { state: RootState }>(
+export const saveDocument = createAsyncThunk<Document, void, { state: RootState }>(
   'editor/saveDocument',
-  async (_, { dispatch, getState }): Promise<void> => {
+  async (_, { dispatch, getState }) => {
     const document = getState().editor.present?.document;
     if (document === undefined) {
       throw Error('cant save. document is undefined');
@@ -138,6 +143,7 @@ export const saveDocument = createAsyncThunk<void, void, { state: RootState }>(
       dispatch(setPath(path));
       await serializeDocument(document, path);
     }
+    return document;
   }
 );
 export const deleteSomething = createAsyncThunk<void, void, { state: RootState }>(
@@ -375,6 +381,10 @@ export const importSlice = createSlice({
     builder.addCase(pause.fulfilled, (state) => {
       assertSome(state);
       state.playing = false;
+    });
+    builder.addCase(saveDocument.fulfilled, (state, action) => {
+      assertSome(state);
+      state.lastSavedDocument = action.payload;
     });
   },
 });

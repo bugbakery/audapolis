@@ -202,19 +202,22 @@ const SpeakerContainer = styled.div`
   text-overflow: ellipsis;
   white-space: nowrap;
 `;
-const LongSilenceSpan = styled.span`
+const LongSilenceSpan = styled.span<{ selected: boolean }>`
   padding: 0 8px;
   color: transparent;
   background: center / auto 80% no-repeat url(${quarterRest});
+  ${(props) =>
+    props.selected
+      ? css`
+          background-color: lightblue;
+        `
+      : css`
+          filter: var(--filter);
+        `}
 `;
 function LongSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
-  console.log(quarterRest);
   return (
-    <LongSilenceSpan
-      className={'item'}
-      style={props.selected ? { backgroundColor: 'lightblue' } : {}}
-      {...props}
-    >
+    <LongSilenceSpan className={'item'} {...props}>
       {' '}
     </LongSilenceSpan>
   );
@@ -235,6 +238,7 @@ const Word = styled.span<{ selected: boolean }>`
     props.selected &&
     css`
       background-color: lightblue;
+      color: black;
     `}
 `;
 function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {

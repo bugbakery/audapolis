@@ -1,8 +1,18 @@
 {
-  "name": "audapolis-app",
-  "productName": "audapolis-app",
+  "name": "audapolis",
+  "productName": "audapolis",
   "version": "0.0.1",
   "description": "an editor for spoken-word audio with automatic transcription",
+  "author": "audapolis team",
+  "maintainers": [
+    "pajowu <git@ca.pajowu.de>",
+    "anuejn <jarohabiger@googlemail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/audapolis/audapolis",
+    "directory": "app/"
+  },
   "main": "build/main/start.cjs.js",
   "scripts": {
     "build": "node scripts/build.js",

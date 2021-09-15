@@ -31,15 +31,9 @@ const createWindow = (): void => {
     })();
   } else {
     (async () => {
-      await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
-        .then((name: string) => console.log(`Added Extension:  ${name}`))
-        .catch((err: string) => console.log('An error occurred: ', err))
-        .finally(() => {
-          mainWindow.webContents.openDevTools();
-        });
       await mainWindow.loadURL(
         new URL('../build/renderer/index.html', 'file://' + __dirname).toString()
-      ); // TODO: figure this out
+      );
     })();
   }
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

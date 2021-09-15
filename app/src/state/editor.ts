@@ -214,10 +214,7 @@ export const importSlice = createSlice({
 
     setTime: (state, args: PayloadAction<number>) => {
       assertSome(state);
-      // we should only set the cursor if we are not already in a selection action
-      if (state.mouseSelection && state.selection !== null) return;
       state.currentTime = args.payload;
-      state.selection = null;
     },
     goLeft: (state) => {
       assertSome(state);
@@ -292,6 +289,7 @@ export const importSlice = createSlice({
       assertSome(state);
       state.mouseSelection = true;
       state.selectionStartItem = arg.payload;
+      state.selection = null;
     },
     mouseSelectionOver: (state, arg: PayloadAction<TimedParagraphItem>) => {
       assertSome(state);

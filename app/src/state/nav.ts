@@ -7,6 +7,7 @@ export enum Page {
   Editor,
   Transcribing,
   Settings,
+  ServerSettings,
 }
 export interface NavState {
   page: Page;
@@ -35,6 +36,9 @@ export const navSlice = createSlice({
     openTranscribing: (state) => {
       state.page = Page.Transcribing;
     },
+    openServerSettings: (state) => {
+      state.page = Page.ServerSettings;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(openSettings.fulfilled, (state) => {
@@ -46,5 +50,5 @@ export const navSlice = createSlice({
   },
 });
 
-export const { openEditor, openLanding, openTranscribing } = navSlice.actions;
+export const { openEditor, openLanding, openTranscribing, openServerSettings } = navSlice.actions;
 export default navSlice.reducer;

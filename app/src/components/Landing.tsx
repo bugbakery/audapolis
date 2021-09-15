@@ -6,10 +6,18 @@ import { TitleBar } from './TitleBar';
 import { AppContainer, MainCenterColumn } from './Util';
 import { openDocumentFromDisk } from '../state/editor';
 import styled from 'styled-components';
-import { MdSettings } from 'react-icons/md';
+import { MdDns, MdSettings } from 'react-icons/md';
 import { openSettings } from '../state/nav';
+import { openServerSettings } from '../state/nav';
 
 const SettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  margin: 10px;
+`;
+
+const LeftSettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
   position: absolute;
   bottom: 0;
   right: 0;
@@ -34,6 +42,9 @@ export function LandingPage(): JSX.Element {
       <SettingsButton onClick={() => dispatch(openSettings())}>
         <MdSettings />
       </SettingsButton>
+      <LeftSettingsButton onClick={() => dispatch(openServerSettings())}>
+        <MdDns />
+      </LeftSettingsButton>
     </AppContainer>
   );
 }

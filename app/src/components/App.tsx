@@ -7,6 +7,7 @@ import { TranscribePage } from './Transcribe';
 import { EditorPage } from './Editor';
 import { TranscribingPage } from './Transcribing';
 import { SettingsPage } from './Settings';
+import { ServerSettingsPage } from './ServerSettings';
 
 export default function App(): JSX.Element {
   return (
@@ -30,5 +31,7 @@ function CurrentPage(): JSX.Element {
       return <TranscribingPage />;
     case Page.Settings:
       return <SettingsPage />;
+    case Page.ServerSettings:
+      return <ServerSettingsPage />;
   }
 }

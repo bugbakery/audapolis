@@ -26,7 +26,10 @@ const config = {
   linux: {
     target: 'AppImage',
     category: 'Audio',
-  }
+  },
+  extraResources: [
+    "./server/**"
+  ]
 };
 
 module.exports = config;

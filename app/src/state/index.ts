@@ -3,6 +3,7 @@ import nav from './nav';
 import transcribe from './transcribe';
 import editor from './editor';
 import models from './models';
+import server from './server';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     transcribe,
     editor,
     models,
+    server,
   },
   middleware: getDefaultMiddleware({
     serializableCheck: false,

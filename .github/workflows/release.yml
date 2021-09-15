@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - pajowu/pyoxidizer
     paths-ignore:
       - '**.md'
       - '**.spec.js'
@@ -76,6 +77,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      # Build server
+      - name: Set up python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Build
+        run: ./server/build_server.sh
+        env:
+          DEVELOPER_DIR: /Applications/Xcode_11.4.app/Contents/Developer
 
       - uses: actions/setup-node@v2
         with:

@@ -9,6 +9,7 @@ import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
 import { fetchModelState, Model } from './models';
+import { getAuthHeader, getServerName } from './server';
 
 export interface TranscribeState {
   file?: string;
@@ -67,6 +68,7 @@ export const startTranscription = createAsyncThunk<void, Model, { state: RootSta
   async (model, { dispatch, getState }) => {
     const formData = new FormData();
     const state = getState();
+    const serverName = getServerName(state.server);
     const path = state?.transcribe?.file;
     if (path === undefined) {
       throw Error('Failed to start transcription: No file for transcription given.');
@@ -77,17 +79,21 @@ export const startTranscription = createAsyncThunk<void, Model, { state: RootSta
     formData.append('file', file); // TODO: Error handling
     dispatch(openTranscribing());
     const result = (await fetch(
-      `http://localhost:8000/tasks/start_transcription/` +
+      `${serverName}/tasks/start_transcription/` +
         `?lang=${encodeURIComponent(model.lang)}` +
         `&model=${encodeURIComponent(model.name)}`,
-      { method: 'POST', body: formData }
+      {
+        method: 'POST',
+        body: formData,
+        headers: { Authorization: getAuthHeader(state.server) },
+      }
     ).then((x) => x.json())) as Task;
     dispatch(setState(result.state));
     const { uuid } = result;
     while (true) {
-      const { content, state, processed, total } = (await fetch(
-        `http://localhost:8000/tasks/${uuid}/`
-      ).then((x) => x.json())) as Task;
+      const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
+        headers: { Authorization: getAuthHeader(getState().server) },
+      }).then((x) => x.json())) as Task;
       dispatch(setProgress({ processed, total }));
       dispatch(setState(state));
       if (state == TranscriptionState.DONE) {

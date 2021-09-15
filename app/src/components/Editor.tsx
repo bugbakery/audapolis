@@ -268,15 +268,15 @@ function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): 
               dispatch(play());
             }
           };
-          const onMouseDown: MouseEventHandler = () => {
+          const onMouseDown: MouseEventHandler = (e) => {
             dispatch(mouseSelectionStart(item));
-            document.addEventListener(
-              'mouseup',
-              () => {
-                dispatch(mouseSelectionEnd());
-              },
-              { once: true }
-            );
+            const listener = () => {
+              dispatch(mouseSelectionEnd());
+              e.target.removeEventListener('click', listener);
+              document.removeEventListener('click', listener);
+            };
+            e.target.addEventListener('click', listener, { once: true });
+            document.addEventListener('click', listener, { once: true });
           };
           const onMouseMove: MouseEventHandler = () => {
             dispatch(mouseSelectionOver(item));

@@ -214,6 +214,8 @@ export const importSlice = createSlice({
 
     setTime: (state, args: PayloadAction<number>) => {
       assertSome(state);
+      // we should only set the cursor if we are not already in a selection action
+      if (state.mouseSelection && state.selection !== null) return;
       state.currentTime = args.payload;
       state.selection = null;
     },

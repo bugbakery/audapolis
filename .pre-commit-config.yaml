@@ -24,7 +24,7 @@ repos:
     hooks:
     -   id: npm_lint
         name: npm lint
-        entry: bash -c "(cd app/ && (stat node_modules/ || npm i) && npm run lint)"
+        entry: npm --prefix app/ run lint
         language: system
         files: app/.*
         pass_filenames: false
@@ -32,7 +32,7 @@ repos:
     hooks:
       -   id: npm_format
           name: npm format
-          entry: bash -c "(cd app/ && (stat node_modules/ || npm i) && npm run format)"
+          entry: npm --prefix app/ run format
           language: system
           files: app/.*
           pass_filenames: false

@@ -68,7 +68,7 @@ export const startTranscription = createAsyncThunk<void, void, { state: RootStat
     formData.append('file', file); // TODO: Error handling
     dispatch(openTranscribing());
     const result = (await fetch(
-      'http://localhost:8000/tasks/start_transcription/?lang=de&model=de-small',
+      'http://localhost:8000/tasks/start_transcription/?lang=German&model=small',
       { method: 'POST', body: formData }
     ).then((x) => x.json())) as Task;
     dispatch(setState(result.state));

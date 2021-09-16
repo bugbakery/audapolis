@@ -1,7 +1,0 @@
-languages:
-  de:
-    name: Deutsch
-    models:
-      de-small:
-        path: "vosk-model-small-de-0.15"
-        name: "Small"

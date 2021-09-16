@@ -1,5 +1,0 @@
-# Ignore everything except the gitignore
-*
-!.gitignore
-!config.yml
-!download_models.sh

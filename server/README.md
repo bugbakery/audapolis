@@ -1,7 +1,7 @@
 # Server
 
 This directory contains the server part of audapolis.
-The server provides functionality that was either to annoying to implement in javascript or deemed too costly to perform only in the app.
+The server provides functionality that was either too annoying to implement in javascript or deemed too costly to perform only in the app.
 
 Currently the main functionality it will provide is transcription:
 With `vosk`, a great python-library for transcribing audio exists.
@@ -40,7 +40,7 @@ Either install poetry using your system package manager or by running
 pip install poetry
 ```
 
-After that you can install the needed dependencies by running
+After that you can install the required dependencies by running
 
 ```sh
 poetry install
@@ -71,7 +71,7 @@ To do that install `pre-commit` using you system package manager or by running
 pip install pre-commit
 ```
 
-After that install the hook by runnign
+After that install the hook by running
 
 ```sh
 pre-commit install

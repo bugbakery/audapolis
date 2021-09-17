@@ -1,8 +1,15 @@
 from fastapi import BackgroundTasks, FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
-from .models import DownloadModelTask, models
-from .tasks import tasks
+from .models import (
+    DownloadModelTask,
+    LanguageDoesNotExist,
+    ModelDoesNotExist,
+    ModelNotDownloaded,
+    models,
+)
+from .tasks import TaskNotFoundError, tasks
 from .transcribe import TranscriptionState, TranscriptionTask, process_audio
 
 app = FastAPI()
@@ -62,3 +69,23 @@ async def get_all_models():
 @app.get("/models/downloaded")
 async def get_downloaded_models():
     return models.downloaded
+
+
+@app.exception_handler(TaskNotFoundError)
+async def task_not_found_error_handler(request, exc):
+    return PlainTextResponse(str(exc), status_code=404)
+
+
+@app.exception_handler(LanguageDoesNotExist)
+async def language_does_not_exist_handler(request, exc):
+    return PlainTextResponse(str(exc), status_code=404)
+
+
+@app.exception_handler(ModelDoesNotExist)
+async def model_does_not_exist_handler(request, exc):
+    return PlainTextResponse(str(exc), status_code=404)
+
+
+@app.exception_handler(ModelNotDownloaded)
+async def model_not_downloaded_handler(request, exc):
+    return PlainTextResponse(str(exc), status_code=412)

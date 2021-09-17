@@ -8,6 +8,7 @@ import { sleep } from './util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
+import { Model } from './models';
 
 export interface TranscribeState {
   file?: string;
@@ -53,9 +54,9 @@ export const abortTranscription = createAsyncThunk('transcribe/abort', async (_,
   dispatch(openLanding());
 });
 
-export const startTranscription = createAsyncThunk<void, void, { state: RootState }>(
+export const startTranscription = createAsyncThunk<void, Model, { state: RootState }>(
   'transcribing/upload',
-  async (_, { dispatch, getState }) => {
+  async (model, { dispatch, getState }) => {
     const formData = new FormData();
     const state = getState();
     const path = state?.transcribe?.file;
@@ -68,7 +69,9 @@ export const startTranscription = createAsyncThunk<void, void, { state: RootStat
     formData.append('file', file); // TODO: Error handling
     dispatch(openTranscribing());
     const result = (await fetch(
-      'http://localhost:8000/tasks/start_transcription/?lang=German&model=small',
+      `http://localhost:8000/tasks/start_transcription/` +
+        `?lang=${encodeURIComponent(model.lang)}` +
+        `&model=${encodeURIComponent(model.name)}`,
       { method: 'POST', body: formData }
     ).then((x) => x.json())) as Task;
     dispatch(setState(result.state));

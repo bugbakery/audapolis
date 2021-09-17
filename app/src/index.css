@@ -37,6 +37,12 @@ body,
   margin: 0;
 }
 
+a {
+  color: darkblue;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 @font-face {
   font-family: 'Roboto';
   src: url('res/fonts/roboto/Roboto-Black.ttf') format('truetype');

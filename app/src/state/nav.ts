@@ -16,15 +16,16 @@ export const openSettings = createAsyncThunk('nav/openSettings', async (_, { dis
   dispatch(fetchModelState());
 });
 
+export const openTranscribe = createAsyncThunk('nav/openTranscribe', async (_, { dispatch }) => {
+  dispatch(fetchModelState());
+});
+
 export const navSlice = createSlice({
   name: 'nav',
   initialState: {
     page: Page.Landing,
   },
   reducers: {
-    openTranscribe: (state) => {
-      state.page = Page.Transcribe;
-    },
     openEditor: (state) => {
       state.page = Page.Editor;
     },
@@ -39,8 +40,11 @@ export const navSlice = createSlice({
     builder.addCase(openSettings.fulfilled, (state) => {
       state.page = Page.Settings;
     });
+    builder.addCase(openTranscribe.fulfilled, (state) => {
+      state.page = Page.Transcribe;
+    });
   },
 });
 
-export const { openTranscribe, openEditor, openLanding, openTranscribing } = navSlice.actions;
+export const { openEditor, openLanding, openTranscribing } = navSlice.actions;
 export default navSlice.reducer;

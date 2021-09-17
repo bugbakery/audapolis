@@ -120,6 +120,13 @@ class Models:
 
         task.state = DownloadModelState.DONE
 
+    def delete(self, lang: str, name: str):
+        model = self.model_description_from_lang_and_name(lang, name)
+        if model.is_downloaded():
+            shutil.rmtree(model.path())
+        else:
+            raise ModelNotDownloaded()
+
 
 models = Models()
 

@@ -66,6 +66,15 @@ async def get_all_models():
     return models.available
 
 
+@app.post("/models/delete")
+async def delete_model(
+    lang: str,
+    model: str,
+):
+    models.delete(lang, model)
+    return PlainTextResponse("", status_code=200)
+
+
 @app.get("/models/downloaded")
 async def get_downloaded_models():
     return models.downloaded

@@ -6,6 +6,7 @@ import { LandingPage } from './Landing';
 import { TranscribePage } from './Transcribe';
 import { EditorPage } from './Editor';
 import { TranscribingPage } from './Transcribing';
+import { SettingsPage } from './Settings';
 
 export default function App(): JSX.Element {
   return (
@@ -27,5 +28,7 @@ function CurrentPage(): JSX.Element {
       return <EditorPage />;
     case Page.Transcribing:
       return <TranscribingPage />;
+    case Page.Settings:
+      return <SettingsPage />;
   }
 }

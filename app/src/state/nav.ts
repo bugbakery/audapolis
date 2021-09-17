@@ -1,14 +1,20 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { fetchModelState } from './models';
 
 export enum Page {
   Landing,
   Transcribe,
   Editor,
   Transcribing,
+  Settings,
 }
 export interface NavState {
   page: Page;
 }
+
+export const openSettings = createAsyncThunk('nav/openSettings', async (_, { dispatch }) => {
+  dispatch(fetchModelState());
+});
 
 export const navSlice = createSlice({
   name: 'nav',
@@ -28,6 +34,11 @@ export const navSlice = createSlice({
     openTranscribing: (state) => {
       state.page = Page.Transcribing;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(openSettings.fulfilled, (state) => {
+      state.page = Page.Settings;
+    });
   },
 });
 

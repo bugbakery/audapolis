@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useSelector } from 'react-redux';
 import { TitleBar } from './TitleBar';
-import { AppContainer, CenterColumn } from './Util';
+import { AppContainer, MainCenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { Line } from 'rc-progress';
@@ -23,7 +23,7 @@ export function TranscribingPage(): JSX.Element {
   return (
     <AppContainer>
       <TitleBar />
-      <CenterColumn>
+      <MainCenterColumn>
         <FormRow>
           <p style={{ opacity: 0.5 }}>Transcribing</p>&nbsp;
           <p> {file.split('/').pop()}</p>
@@ -33,7 +33,7 @@ export function TranscribingPage(): JSX.Element {
           <p>{(progress * 100).toFixed(0)}&nbsp;%&nbsp;-&nbsp;</p>
           <p style={{ opacity: 0.5 }}>{server_state}</p>
         </FormRow>
-      </CenterColumn>
+      </MainCenterColumn>
     </AppContainer>
   );
 }

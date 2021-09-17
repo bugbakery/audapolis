@@ -2,12 +2,14 @@ import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
 import nav from './nav';
 import transcribe from './transcribe';
 import editor from './editor';
+import models from './models';
 
 export const store = configureStore({
   reducer: {
     nav,
     transcribe,
     editor,
+    models,
   },
   middleware: getDefaultMiddleware({
     serializableCheck: false,

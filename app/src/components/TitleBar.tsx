@@ -1,8 +1,7 @@
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { MdClose } from 'react-icons/md';
 import * as React from 'react';
-import { ButtonHTMLAttributes } from 'react';
-import { IconType } from 'react-icons';
+import { IconButton } from './Controls';
 
 function getWindowControlsRect(): DOMRect {
   const windowControlsOverlay = (window.navigator as any).windowControlsOverlay;
@@ -68,57 +67,9 @@ export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Elem
   );
 }
 
-const TitleBarButtonContainer = styled.button<{ clicked?: boolean; active?: boolean }>`
-  width: 30px;
-  height: 30px;
-  padding: 3px;
+export const TitleBarButton = styled(IconButton)`
   -webkit-app-region: no-drag;
-  border-radius: 10px;
-  transition: all 0.2s;
-
-  border: none;
-  background: var(--bg-color);
-
-  ${(props) =>
-    props.clicked &&
-    css`
-      box-shadow: inset 0 0 3px var(--fg-color) !important;
-    `}
-
-  ${(props) =>
-    props.active !== undefined &&
-    !props.active &&
-    css`
-      opacity: 0.5;
-    `}
-
-  &:hover, &:focus {
-    ${(props) =>
-      props.active !== undefined && !props.active
-        ? undefined
-        : css`
-            box-shadow: 0 0 3px var(--fg-color);
-          `}
-    outline: none;
-  }
-
-  & > * {
-    width: 100%;
-    height: 100%;
-    filter: var(--filter);
-  }
 `;
-export function TitleBarButton(
-  props: {
-    clicked?: boolean;
-    active?: boolean;
-    icon?: IconType;
-  } & ButtonHTMLAttributes<HTMLButtonElement>
-): JSX.Element {
-  const children = props.icon ? <props.icon /> : <></>;
-
-  return <TitleBarButtonContainer {...props}>{children}</TitleBarButtonContainer>;
-}
 
 export const TitleBarSection = styled.div`
   display: flex;

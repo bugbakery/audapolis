@@ -3,7 +3,7 @@ import { Button } from './Controls';
 import { useDispatch, useSelector } from 'react-redux';
 import { abortTranscription, startTranscription } from '../state/transcribe';
 import { TitleBar } from './TitleBar';
-import { AppContainer, CenterColumn } from './Util';
+import { AppContainer, MainCenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 
@@ -21,7 +21,7 @@ export function TranscribePage(): JSX.Element {
   return (
     <AppContainer>
       <TitleBar />
-      <CenterColumn>
+      <MainCenterColumn>
         <FormRow>
           <p style={{ opacity: 0.5 }}>opened</p>&nbsp;
           <p> {file.split('/').pop()}</p>
@@ -30,7 +30,7 @@ export function TranscribePage(): JSX.Element {
           Start Transcribing
         </Button>
         <Button onClick={() => dispatch(abortTranscription())}>abort</Button>
-      </CenterColumn>
+      </MainCenterColumn>
     </AppContainer>
   );
 }

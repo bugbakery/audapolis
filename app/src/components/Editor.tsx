@@ -1,7 +1,14 @@
 import * as React from 'react';
+import {
+  HTMLAttributes,
+  KeyboardEventHandler,
+  MouseEventHandler,
+  useEffect,
+  useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar, TitleBarButton, TitleBarGroup, TitleBarSection } from './TitleBar';
-import { AppContainer, CenterColumn } from './Util';
+import { AppContainer, MainCenterColumn, Title } from './Util';
 import { RootState } from '../state';
 import styled, { css } from 'styled-components';
 import { FaPause, FaPlay } from 'react-icons/fa';
@@ -15,35 +22,28 @@ import {
   TimedParagraphItem,
 } from '../core/document';
 import {
-  play,
+  deleteSomething,
+  goLeft,
+  goRight,
+  insertParagraph,
+  mouseSelectionEnd,
+  mouseSelectionOver,
+  mouseSelectionStart,
   pause,
+  play,
+  saveDocument,
+  selectLeft,
+  selectRight,
   setTime,
   toggleDisplaySpeakerNames,
   togglePlaying,
-  insertParagraph,
-  saveDocument,
-  goRight,
-  goLeft,
-  deleteSomething,
-  selectLeft,
-  selectRight,
   unselect,
-  mouseSelectionOver,
-  mouseSelectionStart,
-  mouseSelectionEnd,
 } from '../state/editor';
-import {
-  HTMLAttributes,
-  KeyboardEventHandler,
-  MouseEventHandler,
-  useEffect,
-  useState,
-} from 'react';
 import quarterRest from '../res/quarter_rest.svg';
 import { basename, extname } from 'path';
 import { ActionCreators } from 'redux-undo';
 
-const MainContainer = styled(CenterColumn)`
+const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
   overflow-y: auto;
 `;
@@ -177,21 +177,15 @@ function Document() {
   );
 }
 
-const DocumentTitle = styled.h1`
-  text-align: left;
-  font-weight: normal;
-  font-size: 20px;
-  grid-column-start: 2;
-`;
 function FileNameDisplay({ path }: { path: string }) {
   const extension = extname(path);
   const base = basename(path, extension);
 
   return (
-    <DocumentTitle>
+    <Title>
       {base}
       <span style={{ fontWeight: 'lighter' }}>{extension}</span>
-    </DocumentTitle>
+    </Title>
   );
 }
 

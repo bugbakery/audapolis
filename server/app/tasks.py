@@ -20,10 +20,17 @@ class Tasks:
         return to_return
 
     def get(self, uuid: str):
-        return self.tasks[uuid]
+        try:
+            return self.tasks[uuid]
+        except KeyError:
+            raise TaskNotFoundError()
 
     def list(self):
         return self.tasks.values()
+
+
+class TaskNotFoundError(Exception):
+    pass
 
 
 tasks = Tasks()

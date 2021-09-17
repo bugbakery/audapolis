@@ -1,2 +1,2 @@
 # audapolis
-an editor for spoken-word audio with transcription
+An editor for spoken-word audio with transcription.

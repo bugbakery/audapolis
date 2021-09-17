@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
-import { openTranscribe, openLanding, openTranscribing } from './nav';
+import { openTranscribe, openLanding, openTranscribing, openSettings } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
@@ -33,9 +33,16 @@ export interface Task {
   content?: Record<any, any>;
 }
 
-export const transcribeFile = createAsyncThunk(
+export const transcribeFile = createAsyncThunk<string, void, { state: RootState }>(
   'transcribe/transcribeFile',
-  async (_, { dispatch }) => {
+  async (_, { dispatch, getState }) => {
+    const downloadedModels = Object.values(getState().models.downloaded).flatMap((x) => x);
+    if (downloadedModels.length == 0) {
+      alert('you dont have any downloaded models! \n download a transcription model first');
+      dispatch(openSettings());
+      return;
+    }
+
     const file = await ipcRenderer.invoke('open-file', {
       properties: ['openFile'],
       promptToCreate: true,

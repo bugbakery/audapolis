@@ -66,7 +66,7 @@ export function SettingsPage(): JSX.Element {
 
 const StyledTable = styled.table`
   & tr:nth-child(odd) {
-    background-color: #f2f2f2;
+    background-color: var(--bg-color-accent);
   }
 
   padding-bottom: 20px;
@@ -76,7 +76,7 @@ const ProgressTr = styled.tr<{ progress?: number }>`
   ${(props) =>
     props.progress &&
     css`
-      background-image: linear-gradient(to right, lightblue, lightblue);
+      background-image: linear-gradient(to right, var(--bg-colorfull), var(--bg-colorfull));
       background-size: ${props.progress * 100}%;
       background-repeat: no-repeat;
     `}

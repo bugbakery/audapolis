@@ -4,6 +4,7 @@ import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
@@ -36,8 +37,8 @@ class ModelDescription:
     wer_speed: str
 
     def path(self):
-        idx = self.url.rfind("/")
-        return DATA_DIR / (self.url[idx + 1 :] + ".model")
+        url = urlparse(self.url)
+        return DATA_DIR / (Path(url.path).name + ".model")
 
     def is_downloaded(self):
         return self.path().exists()

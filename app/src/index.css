@@ -6,9 +6,11 @@
   :root {
     --bg-color: #282828;
     --bg-color-mild: #28282855;
+    --bg-color-accent: #444;
     --fg-color: white;
     --fg-color-mild: #fff5;
     --accent: #ed6a5e;
+    --bg-colorfull: darkslateblue;
     --filter: invert();
   }
 }
@@ -16,9 +18,11 @@
   :root {
     --bg-color: white;
     --bg-color-mild: #fff5;
+    --bg-color-accent: #f2f2f2;
     --fg-color: black;
     --fg-color-mild: #0005;
     --accent: #ed6a5e;
+    --bg-colorfull: lightblue;
     --filter: none;
   }
 }

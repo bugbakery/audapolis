@@ -8,7 +8,7 @@ from pydub import AudioSegment
 from vosk import KaldiRecognizer
 
 from .models import models
-from .tasks import tasks
+from .tasks import Task, tasks
 
 SAMPLE_RATE = 16000
 # Number of seconds that should be fed into vosk.
@@ -25,7 +25,7 @@ class TranscriptionState(str, enum.Enum):
 
 
 @dataclass
-class TranscriptionTask:
+class TranscriptionTask(Task):
     filename: str
     state: TranscriptionState
     total: float = 0

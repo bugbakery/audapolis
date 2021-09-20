@@ -101,7 +101,11 @@ function ModelsTable({
           <td>{model.name}</td>
           <td>{model.size}</td>
           <td>
-            <IconButton icon={actionIcon} onClick={() => onAction(model)} />
+            {model?.progress === undefined ? (
+              <IconButton icon={actionIcon} onClick={() => onAction(model)} />
+            ) : (
+              <IconButton active={false} />
+            )}
           </td>
         </ProgressTr>
       ))}

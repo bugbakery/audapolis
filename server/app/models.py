@@ -11,7 +11,7 @@ import yaml
 from vosk import Model
 
 from .config import DATA_DIR
-from .tasks import tasks
+from .tasks import Task, tasks
 
 
 class LanguageDoesNotExist(Exception):
@@ -139,7 +139,7 @@ class DownloadModelState(str, enum.Enum):
 
 
 @dataclass
-class DownloadModelTask:
+class DownloadModelTask(Task):
     lang: str
     name: str
     state: DownloadModelState = DownloadModelState.QUEUED

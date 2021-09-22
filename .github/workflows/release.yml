@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - pajowu/pyoxidizer
     paths-ignore:
       - '**.md'
       - '**.spec.js'

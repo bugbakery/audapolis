@@ -65,6 +65,15 @@ function getServerProcess() {
   });
 }
 
+interface ServerStartingMessage {
+  msg: 'server_starting';
+  port: number;
+}
+
+interface ServerStartedMessage {
+  msg: 'server_started';
+  token: string;
+}
 export const startServer = createAsyncThunk('server/startServer', async (_, { dispatch }) => {
   const proc = getServerProcess();
   if (proc == undefined) {
@@ -75,14 +84,13 @@ export const startServer = createAsyncThunk('server/startServer', async (_, { di
   dispatch(
     addServer({ hostname: 'http://localhost', port: 8000, token: null, name: 'Local Server' })
   );
-  proc.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
+  proc.stdout.on('data', (data: Buffer) => {
+    console.log(`Server stdout: ${data}`);
     try {
-      const parsed_data = JSON.parse(data);
-      console.log('parsed_data', parsed_data);
-      if (parsed_data['msg'] == 'server_starting') {
+      const parsed_data: ServerStartingMessage | ServerStartedMessage = JSON.parse(data.toString());
+      if (parsed_data.msg == 'server_starting') {
         dispatch(setPort({ hostname: 'http://localhost', port: parsed_data['port'] }));
-      } else if (parsed_data['msg'] == 'server_started') {
+      } else if (parsed_data.msg == 'server_started') {
         dispatch(setToken({ hostname: 'http://localhost', token: parsed_data['token'] }));
         dispatch(setLocalState(LocalServerStatus.Running));
       }
@@ -91,11 +99,11 @@ export const startServer = createAsyncThunk('server/startServer', async (_, { di
     }
   });
 
-  proc.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
+  proc.stderr.on('data', (data: Buffer) => {
+    console.error(`Server stderr: ${data}`);
   });
 
-  proc.on('close', (code) => {
+  proc.on('close', (code: number | null) => {
     if (code == 0) {
       dispatch(setLocalState(LocalServerStatus.Stopped));
     } else {

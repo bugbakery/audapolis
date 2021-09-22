@@ -6,8 +6,7 @@ import { TitleBar } from './TitleBar';
 import { AppContainer, MainCenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
-import { openSettings } from '../state/nav';
-import { openServerSettings } from '../state/nav';
+import { openSettings, openServerSettings } from '../state/nav';
 import { useState } from 'react';
 
 const Form = styled.div`

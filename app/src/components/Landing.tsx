@@ -7,8 +7,7 @@ import { AppContainer, MainCenterColumn } from './Util';
 import { openDocumentFromDisk } from '../state/editor';
 import styled from 'styled-components';
 import { MdDns, MdSettings } from 'react-icons/md';
-import { openSettings } from '../state/nav';
-import { openServerSettings } from '../state/nav';
+import { openSettings, openServerSettings } from '../state/nav';
 
 const SettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
   position: absolute;

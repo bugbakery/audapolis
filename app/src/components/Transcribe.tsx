@@ -7,6 +7,7 @@ import { AppContainer, MainCenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { openSettings } from '../state/nav';
+import { openServerSettings } from '../state/nav';
 import { useState } from 'react';
 
 const Form = styled.div`
@@ -26,6 +27,9 @@ export function TranscribePage(): JSX.Element {
 
   const [selectedModel, setSelectedModel] = useState(0);
 
+  const servers = useSelector((state: RootState) => state.server.servers);
+  const [selectedServer, setSelectedServer] = useState(0);
+
   return (
     <AppContainer>
       <TitleBar />
@@ -33,6 +37,21 @@ export function TranscribePage(): JSX.Element {
         <Form>
           <span style={{ opacity: 0.5 }}>opened</span>
           <span> {file.split('/').pop()}</span>
+
+          <span style={{ opacity: 0.5 }}>Server</span>
+          <select
+            value={selectedServer}
+            onChange={(e) => setSelectedServer(parseInt(e.target.value))}
+          >
+            {servers.map((server, i) => (
+              <option key={i} value={i}>
+                {server.name} ({server.hostname}:{server.port})
+              </option>
+            ))}
+          </select>
+          <a style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openServerSettings())}>
+            Manage Servers
+          </a>
 
           <span style={{ opacity: 0.5 }}>Transcription Model</span>
           <select
@@ -51,7 +70,14 @@ export function TranscribePage(): JSX.Element {
           </a>
         </Form>
 
-        <Button primary onClick={() => dispatch(startTranscription(models[selectedModel]))}>
+        <Button
+          primary
+          onClick={() =>
+            dispatch(
+              startTranscription({ server: servers[selectedServer], model: models[selectedModel] })
+            )
+          }
+        >
           Start Transcribing
         </Button>
         <Button onClick={() => dispatch(abortTranscription())}>abort</Button>

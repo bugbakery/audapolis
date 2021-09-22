@@ -17,10 +17,10 @@ const SettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
   margin: 10px;
 `;
 
-const LeftSettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
+const LeftSettingsButton = styled(IconButton).attrs({ icon: MdDns })`
   position: absolute;
   bottom: 0;
-  right: 0;
+  left: 0;
   margin: 10px;
 `;
 

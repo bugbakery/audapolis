@@ -9,7 +9,6 @@ import { RootState } from './index';
 export interface ServerState {
   local_state: LocalServerStatus;
   local_proc: ChildProcess | null;
-  selected_server: number | null;
   servers: ServerConfig[];
 }
 
@@ -17,6 +16,7 @@ export interface ServerConfig {
   hostname: string;
   port: number;
   token: string | null;
+  name: string;
 }
 export enum LocalServerStatus {
   Stopped,
@@ -72,7 +72,9 @@ export const startServer = createAsyncThunk('server/startServer', async (_, { di
   }
   dispatch(setLocalProc(proc));
   dispatch(setLocalState(LocalServerStatus.Starting));
-  dispatch(addServer({ hostname: 'http://localhost', port: 8000, token: null }));
+  dispatch(
+    addServer({ hostname: 'http://localhost', port: 8000, token: null, name: 'Local Server' })
+  );
   proc.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
     try {
@@ -151,25 +153,14 @@ export const serverSlice = createSlice({
 const { setLocalProc, setLocalState, setPort, setToken, addServer, removeServer } =
   serverSlice.actions;
 export default serverSlice.reducer;
-const getCurrentServer = (state: ServerState) => {
-  let server_idx = state.selected_server;
-  if (!server_idx) {
-    server_idx = 0;
-  }
-  if (server_idx >= state.servers.length) {
-    alert('Error: No server available.');
-  }
-  return state.servers[server_idx];
-};
-export const getServerName = (state: ServerState): string => {
-  const server = getCurrentServer(state);
+
+export const getServerName = (server: ServerConfig): string => {
   return `${server.hostname}:${server.port}`;
 };
 
 export const getServerIndex = (state: ServerState, hostname: string): number =>
   state.servers.findIndex((config) => config.hostname == hostname);
 
-export const getAuthHeader = (state: ServerState): string => {
-  const server = getCurrentServer(state);
+export const getAuthHeader = (server: ServerConfig): string => {
   return `Bearer ${server.token}`;
 };

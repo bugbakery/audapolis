@@ -9,7 +9,7 @@ import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
 import { fetchModelState, Model } from './models';
-import { getAuthHeader, getServerName } from './server';
+import { getAuthHeader, getServerName, ServerConfig } from './server';
 
 export interface TranscribeState {
   file?: string;
@@ -63,69 +63,70 @@ export const abortTranscription = createAsyncThunk('transcribe/abort', async (_,
   dispatch(openLanding());
 });
 
-export const startTranscription = createAsyncThunk<void, Model, { state: RootState }>(
-  'transcribing/upload',
-  async (model, { dispatch, getState }) => {
-    const formData = new FormData();
-    const state = getState();
-    const serverName = getServerName(state.server);
-    const path = state?.transcribe?.file;
-    if (path === undefined) {
-      throw Error('Failed to start transcription: No file for transcription given.');
-    }
-    const fileContent = readFileSync(path);
-    const fileName = basename(path);
-    const file = new File([fileContent], fileName);
-    formData.append('file', file); // TODO: Error handling
-    dispatch(openTranscribing());
-    const result = (await fetch(
-      `${serverName}/tasks/start_transcription/` +
-        `?lang=${encodeURIComponent(model.lang)}` +
-        `&model=${encodeURIComponent(model.name)}`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: { Authorization: getAuthHeader(state.server) },
-      }
-    ).then((x) => x.json())) as Task;
-    dispatch(setState(result.state));
-    const { uuid } = result;
-    while (true) {
-      const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
-        headers: { Authorization: getAuthHeader(getState().server) },
-      }).then((x) => x.json())) as Task;
-      dispatch(setProgress({ processed, total }));
-      dispatch(setState(state));
-      if (state == TranscriptionState.DONE) {
-        const fileContents = fileContent.buffer;
-        const decoded = await ctx.decodeAudioData(fileContents.slice(0));
-        const sources = [
-          {
-            fileName,
-            fileContents,
-            decoded,
-          },
-        ];
-        if (content === undefined) {
-          throw Error('Transcription failed: State is done, but no content was produced');
-        }
-        // TODO: proper typing
-        const contentWithSource = content.map((paragraph: any) => {
-          paragraph.content = paragraph.content.map((word: any) => {
-            word['source'] = 0;
-            return word;
-          });
-          return paragraph;
-        });
-        dispatch(
-          openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
-        );
-        break;
-      }
-      await sleep(100);
-    }
+export const startTranscription = createAsyncThunk<
+  void,
+  { server: ServerConfig; model: Model },
+  { state: RootState }
+>('transcribing/upload', async ({ server, model }, { dispatch, getState }) => {
+  const formData = new FormData();
+  const state = getState();
+  const serverName = getServerName(server);
+  const path = state?.transcribe?.file;
+  if (path === undefined) {
+    throw Error('Failed to start transcription: No file for transcription given.');
   }
-);
+  const fileContent = readFileSync(path);
+  const fileName = basename(path);
+  const file = new File([fileContent], fileName);
+  formData.append('file', file); // TODO: Error handling
+  dispatch(openTranscribing());
+  const result = (await fetch(
+    `${serverName}/tasks/start_transcription/` +
+      `?lang=${encodeURIComponent(model.lang)}` +
+      `&model=${encodeURIComponent(model.name)}`,
+    {
+      method: 'POST',
+      body: formData,
+      headers: { Authorization: getAuthHeader(server) },
+    }
+  ).then((x) => x.json())) as Task;
+  dispatch(setState(result.state));
+  const { uuid } = result;
+  while (true) {
+    const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
+      headers: { Authorization: getAuthHeader(server) },
+    }).then((x) => x.json())) as Task;
+    dispatch(setProgress({ processed, total }));
+    dispatch(setState(state));
+    if (state == TranscriptionState.DONE) {
+      const fileContents = fileContent.buffer;
+      const decoded = await ctx.decodeAudioData(fileContents.slice(0));
+      const sources = [
+        {
+          fileName,
+          fileContents,
+          decoded,
+        },
+      ];
+      if (content === undefined) {
+        throw Error('Transcription failed: State is done, but no content was produced');
+      }
+      // TODO: proper typing
+      const contentWithSource = content.map((paragraph: any) => {
+        paragraph.content = paragraph.content.map((word: any) => {
+          word['source'] = 0;
+          return word;
+        });
+        return paragraph;
+      });
+      dispatch(
+        openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
+      );
+      break;
+    }
+    await sleep(100);
+  }
+});
 
 export const importSlice = createSlice({
   name: 'nav',

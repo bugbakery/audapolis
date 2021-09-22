@@ -1,4 +1,4 @@
-from fastapi import BackgroundTasks, FastAPI, File, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, UploadFile, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
@@ -11,6 +11,9 @@ from .models import (
 )
 from .tasks import TaskNotFoundError, tasks
 from .transcribe import TranscriptionState, TranscriptionTask, process_audio
+import base64
+import os
+import json
 
 app = FastAPI()
 origins = [

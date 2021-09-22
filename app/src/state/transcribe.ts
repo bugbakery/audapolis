@@ -8,7 +8,7 @@ import { sleep } from './util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
-import { Model } from './models';
+import { fetchModelState, Model } from './models';
 
 export interface TranscribeState {
   file?: string;
@@ -36,6 +36,7 @@ export interface Task {
 export const transcribeFile = createAsyncThunk<string, void, { state: RootState }>(
   'transcribe/transcribeFile',
   async (_, { dispatch, getState }) => {
+    await dispatch(fetchModelState());
     const downloadedModels = Object.values(getState().models.downloaded).flatMap((x) => x);
     if (downloadedModels.length == 0) {
       alert('you dont have any downloaded models! \n download a transcription model first');

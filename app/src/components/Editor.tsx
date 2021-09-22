@@ -12,7 +12,7 @@ import { AppContainer, MainCenterColumn, Title } from './Util';
 import { RootState } from '../state';
 import styled, { css } from 'styled-components';
 import { FaPause, FaPlay } from 'react-icons/fa';
-import { MdPerson, MdRedo, MdSave, MdUndo } from 'react-icons/md';
+import { MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
 import {
   computeTimed,
   documentIterator,
@@ -23,6 +23,8 @@ import {
 } from '../core/document';
 import {
   deleteSomething,
+  exportDocument,
+  ExportState,
   goLeft,
   goRight,
   insertParagraph,
@@ -69,6 +71,10 @@ function EditorTitleBar(): JSX.Element {
     (state: RootState) => state.editor.present?.document != state.editor.present?.lastSavedDocument
   );
 
+  const exportRunning = useSelector(
+    (state: RootState) => state.editor.present?.exportState == ExportState.Running
+  );
+
   return (
     <TitleBar>
       <TitleBarSection>
@@ -95,6 +101,11 @@ function EditorTitleBar(): JSX.Element {
 
       <TitleBarSection>
         <TitleBarButton onClick={() => dispatch(saveDocument())} active={canSave} icon={MdSave} />
+        <TitleBarButton
+          onClick={() => dispatch(exportDocument())}
+          active={!exportRunning}
+          icon={exportRunning ? MdWatchLater : MdShare}
+        />
       </TitleBarSection>
     </TitleBar>
   );

@@ -8,3 +8,5 @@ interface ImportMeta {
     VITE_DEV_SERVER_URL: string;
   };
 }
+
+declare module 'fluent-ffmpeg/lib/fluent-ffmpeg';

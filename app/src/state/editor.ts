@@ -16,11 +16,13 @@ import {
 import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
 import { assertSome } from './util';
+import * as ffmpeg_exporter from '../exporters/ffmpeg';
 
 export interface Editor {
   path: string | null;
   document: Document;
   lastSavedDocument: Document | null;
+  exportState: ExportState;
 
   currentTime: number;
   playing: boolean;
@@ -31,8 +33,14 @@ export interface Editor {
   mouseSelection: boolean;
 }
 
+export enum ExportState {
+  NotRunning,
+  Running,
+}
+
 const editorDefaults = {
   lastSavedDocument: null,
+  exportState: ExportState.NotRunning,
 
   currentTime: 0,
   playing: false,
@@ -48,6 +56,11 @@ export interface Range {
   length: number;
 }
 
+export interface RenderItem {
+  start: number;
+  end: number;
+  source: number;
+}
 export const openDocumentFromDisk = createAsyncThunk(
   'editor/openDocumentFromDisk',
   async (_, { dispatch }): Promise<Editor> => {
@@ -146,6 +159,60 @@ export const saveDocument = createAsyncThunk<Document, void, { state: RootState 
     return document;
   }
 );
+
+export function renderItemsFromDocument(document: Document): RenderItem[] {
+  const renderItems = [];
+  let cur_start = 0;
+  let cur_end = 0;
+  let cur_source: number | null = null;
+  document.content.forEach((paragraph) => {
+    paragraph.content.forEach((item) => {
+      console.log('item', item);
+      if (cur_source == null) {
+        cur_start = item.start;
+        cur_end = item.end;
+        cur_source = item.source;
+      } else {
+        if (cur_source == item.source && cur_end == item.start) {
+          cur_end = item.end;
+        } else {
+          renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
+          cur_start = item.start;
+          cur_end = item.end;
+          cur_source = item.source;
+        }
+      }
+    });
+  });
+  if (cur_source != null) {
+    renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
+  }
+  return renderItems;
+}
+export const exportDocument = createAsyncThunk<Document, void, { state: RootState }>(
+  'editor/exportDocument',
+  async (_, { getState }) => {
+    const document = getState().editor.present?.document;
+    if (document === undefined) {
+      throw Error('cant export. document is undefined');
+    }
+    console.log('starting export', document.content);
+    const render_items = renderItemsFromDocument(document);
+    const path = await ipcRenderer
+      .invoke('save-file', {
+        properties: ['saveFile'],
+        filters: [
+          { name: 'mp3 Files', extensions: ['mp3'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      })
+      .then((x) => x.filePath);
+    console.log('saving to ', path);
+    await ffmpeg_exporter.exportContent(render_items, document.sources, path);
+    return document;
+  }
+);
+
 export const deleteSomething = createAsyncThunk<void, void, { state: RootState }>(
   'editor/delete',
   async (arg, { getState, dispatch }) => {
@@ -210,6 +277,10 @@ export const importSlice = createSlice({
     setPath: (state, args: PayloadAction<string>) => {
       assertSome(state);
       state.path = args.payload;
+    },
+    setExportState(state, args: PayloadAction<ExportState>) {
+      assertSome(state);
+      state.exportState = args.payload;
     },
 
     setTime: (state, args: PayloadAction<number>) => {
@@ -385,6 +456,20 @@ export const importSlice = createSlice({
     builder.addCase(saveDocument.fulfilled, (state, action) => {
       assertSome(state);
       state.lastSavedDocument = action.payload;
+    });
+    builder.addCase(exportDocument.pending, (state) => {
+      assertSome(state);
+      state.exportState = ExportState.Running;
+    });
+    builder.addCase(exportDocument.fulfilled, (state) => {
+      assertSome(state);
+      state.exportState = ExportState.NotRunning;
+    });
+    builder.addCase(exportDocument.rejected, (state, action) => {
+      assertSome(state);
+      state.exportState = ExportState.NotRunning;
+      console.error('an error occurred while trying to export the file', action.error);
+      alert('Failed to Export');
     });
   },
 });

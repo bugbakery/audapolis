@@ -168,9 +168,6 @@ export const getServerName = (server: ServerConfig): string => {
   return `${server.hostname}:${server.port}`;
 };
 
-export const getServerIndex = (state: ServerState, hostname: string): number =>
-  state.servers.findIndex((config) => config.hostname == hostname);
-
 export const getAuthHeader = (server: ServerConfig): string => {
   return `Bearer ${server.token}`;
 };

@@ -514,6 +514,33 @@ export const importSlice = createSlice({
         )
         .toParagraphs();
     },
+    reassignParagraph: (
+      state,
+      payload: PayloadAction<{ paragraphIdx: number; newSpeaker: string }>
+    ) => {
+      assertSome(state);
+      const { paragraphIdx, newSpeaker } = payload.payload;
+
+      state.document.content = state.document.content.map((paragraph, i) => {
+        if (i === paragraphIdx) {
+          return { ...paragraph, speaker: newSpeaker };
+        } else {
+          return paragraph;
+        }
+      });
+    },
+    renameSpeaker: (state, payload: PayloadAction<{ oldName: string; newName: string }>) => {
+      assertSome(state);
+      const { oldName, newName } = payload.payload;
+
+      state.document.content = state.document.content.map((paragraph) => {
+        if (paragraph.speaker === oldName) {
+          return { ...paragraph, speaker: newName };
+        } else {
+          return paragraph;
+        }
+      });
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(openDocumentFromDisk.fulfilled, (state, action) => {
@@ -593,11 +620,16 @@ export const {
   deleteSelection,
 
   setWord,
+  reassignParagraph,
+  renameSpeaker,
 } = importSlice.actions;
 export default undoable(importSlice.reducer, {
   filter: includeAction([
     insertParagraphBreak.type,
     deleteParagraphBreak.type,
     deleteSelection.type,
+    reassignParagraph.type,
+    renameSpeaker.type,
   ]),
+  ignoreInitialState: false,
 });

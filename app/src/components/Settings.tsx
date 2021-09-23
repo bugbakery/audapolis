@@ -1,113 +1,108 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar } from './TitleBar';
-import { AppContainer, MainMaxWidthContainer, Title } from './Util';
+import { AppContainer, MainCenterColumn, StyledTable, Title } from './Util';
 import { Button, IconButton } from './Controls';
-import { openLanding } from '../state/nav';
+import { openLanding, openManageServer } from '../state/nav';
 import { RootState } from '../state';
-import { deleteModel, downloadModel, Model } from '../state/models';
+import {
+  LocalServerStatus,
+  ServerConfig,
+  ServerState,
+  startServer,
+  stopServer,
+} from '../state/server';
+import { MdPlayArrow, MdSettings, MdStop } from 'react-icons/md';
 import { IconType } from 'react-icons';
-import { MdCloudDownload, MdDelete } from 'react-icons/md';
-import styled, { css } from 'styled-components';
 
 export function SettingsPage(): JSX.Element {
   const dispatch = useDispatch();
-  const all_available = useSelector((state: RootState) => state.models.available);
-  const downloaded = useSelector((state: RootState) => state.models.downloaded);
-  const downloading = useSelector((state: RootState) => state.models.downloading);
-
-  const flattened_downloaded = Object.values(downloaded).flatMap((x) => x);
-  const available = Object.fromEntries(
-    Object.entries(all_available).map(([lang, models]) => {
-      return [
-        lang,
-        models.flatMap((model) => {
-          const predicate = (candidate: Model) =>
-            candidate.lang == lang && candidate.name == model.name;
-          const downloadedModel = flattened_downloaded.find(predicate);
-          const downloadingModel = downloading.find(predicate);
-          return downloadedModel ? [] : downloadingModel ? [downloadingModel] : [model];
-        }),
-      ];
-    })
+  const local_server_running = useSelector(
+    (state: RootState) =>
+      state.server.local_state == LocalServerStatus.Running ||
+      state.server.local_state == LocalServerStatus.Starting
   );
+  const server_state = useSelector((state: RootState) => state.server);
 
   return (
     <AppContainer>
       <TitleBar />
-      <MainMaxWidthContainer>
-        <StyledTable>
-          {Object.keys(downloaded).length ? (
-            <>
-              <Title>Downloaded Transcription Models</Title>
-              <ModelsTable
-                models={downloaded}
-                actionIcon={MdDelete}
-                onAction={(model) => dispatch(deleteModel(model))}
-              />
-            </>
-          ) : (
-            <></>
-          )}
+      <MainCenterColumn>
+        <Title
+          style={{
+            textAlign: 'left',
+            // backgroundColor: '#ff0000',
+            gridColumn: '1 / 1',
+          }}
+        >
+          Manage Servers
+        </Title>
 
-          <Title>Available Transcription Models</Title>
-          <ModelsTable
-            models={available}
-            actionIcon={MdCloudDownload}
-            onAction={(model) => dispatch(downloadModel(model))}
+        <StyledTable style={{ width: '70%' }}>
+          <ServerTable
+            server_state={server_state}
+            actionIcon={MdSettings}
+            onAction={(server) => dispatch(openManageServer(server))}
+            localActionIcon={local_server_running ? MdStop : MdPlayArrow}
+            localOnAction={() =>
+              local_server_running ? dispatch(stopServer()) : dispatch(startServer())
+            }
           />
         </StyledTable>
-
         <Button onClick={() => dispatch(openLanding())}>Back</Button>
-      </MainMaxWidthContainer>
+      </MainCenterColumn>
     </AppContainer>
   );
 }
 
-const StyledTable = styled.table`
-  & tr:nth-child(odd) {
-    background-color: var(--bg-color-accent);
-  }
-
-  padding-bottom: 20px;
-`;
-
-const ProgressTr = styled.tr<{ progress?: number }>`
-  ${(props) =>
-    props.progress &&
-    css`
-      background-image: linear-gradient(to right, var(--bg-colorfull), var(--bg-colorfull));
-      background-size: ${props.progress * 100}%;
-      background-repeat: no-repeat;
-    `}
-`;
-
-function ModelsTable({
-  models,
+function ServerTableRow({
+  server,
+  actionIcons,
+}: {
+  server: ServerConfig;
+  actionIcons: JSX.Element | JSX.Element[];
+}): JSX.Element {
+  return (
+    <tr>
+      <td>{server.name}</td>
+      <td>
+        {server.hostname}:{server.port}
+      </td>
+      <td>{actionIcons}</td>
+    </tr>
+  );
+}
+function ServerTable({
+  server_state,
   actionIcon,
   onAction,
+  localActionIcon,
+  localOnAction,
 }: {
-  models: Record<string, (Model & { progress?: number })[]>;
+  server_state: ServerState;
   actionIcon: IconType;
-  onAction: (model: Model) => void;
+  onAction: (server: ServerConfig) => void;
+  localActionIcon: IconType;
+  localOnAction: () => void;
 }): JSX.Element {
-  const flattened = Object.values(models).flatMap((x) => x);
-
   return (
     <tbody>
-      {flattened.map((model, i) => (
-        <ProgressTr key={i} progress={model?.progress}>
-          <td>{model.lang}</td>
-          <td>{model.name}</td>
-          <td>{model.size}</td>
-          <td>
-            {model?.progress === undefined ? (
-              <IconButton icon={actionIcon} onClick={() => onAction(model)} />
-            ) : (
-              <IconButton active={false} />
-            )}
-          </td>
-        </ProgressTr>
+      <ServerTableRow
+        key="local"
+        server={server_state.local_config}
+        actionIcons={
+          <>
+            <IconButton icon={actionIcon} onClick={() => onAction(server_state.local_config)} />
+            <IconButton icon={localActionIcon} onClick={() => localOnAction()} />
+          </>
+        }
+      />
+      {server_state.servers.map((server, i) => (
+        <ServerTableRow
+          key={i}
+          server={server}
+          actionIcons={<IconButton icon={actionIcon} onClick={() => onAction(server)} />}
+        />
       ))}
     </tbody>
   );

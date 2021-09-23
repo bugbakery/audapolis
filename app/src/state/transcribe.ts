@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
-import { openTranscribe, openLanding, openTranscribing, openSettings } from './nav';
+import { openTranscribe, openLanding, openTranscribing } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
@@ -8,7 +8,7 @@ import { sleep } from './util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
-import { fetchModelState, Model } from './models';
+import { Model } from './models';
 import { getAuthHeader, getServerName, ServerConfig } from './server';
 
 export interface TranscribeState {
@@ -36,15 +36,7 @@ export interface Task {
 
 export const transcribeFile = createAsyncThunk<string, void, { state: RootState }>(
   'transcribe/transcribeFile',
-  async (_, { dispatch, getState }) => {
-    await dispatch(fetchModelState());
-    const downloadedModels = Object.values(getState().models.downloaded).flatMap((x) => x);
-    if (downloadedModels.length == 0) {
-      alert('you dont have any downloaded models! \n download a transcription model first');
-      dispatch(openSettings());
-      return;
-    }
-
+  async (_, { dispatch }) => {
     const file = await ipcRenderer.invoke('open-file', {
       properties: ['openFile'],
       promptToCreate: true,

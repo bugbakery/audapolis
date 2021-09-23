@@ -6,8 +6,10 @@ import { TitleBar } from './TitleBar';
 import { AppContainer, MainCenterColumn } from './Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
-import { openSettings, openServerSettings } from '../state/nav';
+import { openSettings, openManageServer } from '../state/nav';
 import { useState } from 'react';
+import { changeServer } from '../state/models';
+import { getServers } from '../state/server';
 
 const Form = styled.div`
   padding: 20px;
@@ -26,8 +28,17 @@ export function TranscribePage(): JSX.Element {
 
   const [selectedModel, setSelectedModel] = useState(0);
 
-  const servers = useSelector((state: RootState) => state.server.servers);
-  const [selectedServer, setSelectedServer] = useState(0);
+  const servers = useSelector(getServers);
+  const selectedServer = useSelector((state: RootState) => state.models.server);
+  let selectedServerIdx = 0;
+  if (selectedServer == undefined) {
+    dispatch(changeServer(servers[0]));
+  } else {
+    selectedServerIdx = Math.max(servers.indexOf(selectedServer), 0);
+  }
+  if (selectedServer != servers[selectedServerIdx]) {
+    dispatch(changeServer(servers[selectedServerIdx]));
+  }
 
   return (
     <AppContainer>
@@ -39,8 +50,8 @@ export function TranscribePage(): JSX.Element {
 
           <span style={{ opacity: 0.5 }}>Server</span>
           <select
-            value={selectedServer}
-            onChange={(e) => setSelectedServer(parseInt(e.target.value))}
+            value={selectedServerIdx}
+            onChange={(e) => changeServer(servers[parseInt(e.target.value)])}
           >
             {servers.map((server, i) => (
               <option key={i} value={i}>
@@ -48,7 +59,7 @@ export function TranscribePage(): JSX.Element {
               </option>
             ))}
           </select>
-          <a style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openServerSettings())}>
+          <a style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openSettings())}>
             Manage Servers
           </a>
 
@@ -64,7 +75,10 @@ export function TranscribePage(): JSX.Element {
             ))}
           </select>
 
-          <a style={{ gridColumn: '1 / 3' }} onClick={() => dispatch(openSettings())}>
+          <a
+            style={{ gridColumn: '2 / 2' }}
+            onClick={() => dispatch(openManageServer(servers[selectedServerIdx]))}
+          >
             Download More Transcription Models
           </a>
         </Form>
@@ -73,7 +87,10 @@ export function TranscribePage(): JSX.Element {
           primary
           onClick={() =>
             dispatch(
-              startTranscription({ server: servers[selectedServer], model: models[selectedModel] })
+              startTranscription({
+                server: servers[selectedServerIdx],
+                model: models[selectedModel],
+              })
             )
           }
         >

@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { sleep } from './util';
+import { assertSome, sleep } from './util';
+import { RootState } from './index';
+import { getAuthHeader, getServerName, ServerConfig } from './server';
 
 export interface Model {
   lang: string;
@@ -22,7 +24,7 @@ export type DownloadingModel = Model & {
   state: DownloadingModelState;
 };
 
-export interface DownoadModelTask {
+export interface DownloadModelTask {
   lang: string;
   name: string;
   state: DownloadingModelState;
@@ -34,29 +36,42 @@ export interface ModelsState {
   downloaded: Record<string, Model[]>;
   available: Record<string, Model[]>;
   downloading: DownloadingModel[];
+  server?: ServerConfig;
 }
 
-export const fetchModelState = createAsyncThunk('models/fetchModelState', async () => {
-  const available = await fetch('http://localhost:8000/models/available').then((x) => x.json());
-  const downloaded = await fetch('http://localhost:8000/models/downloaded').then((x) => x.json());
+export const fetchModelState = createAsyncThunk<
+  { downloaded: Record<string, Model[]>; available: Record<string, Model[]> },
+  void,
+  { state: RootState }
+>('models/fetchModelState', async (_, { getState }) => {
+  const server = getState().models.server;
+  assertSome(server);
+  const available = await fetch(`${getServerName(server)}/models/available`, {
+    headers: { Authorization: getAuthHeader(server) },
+  }).then((x) => x.json());
+  const downloaded = await fetch(`${getServerName(server)}/models/downloaded`, {
+    headers: { Authorization: getAuthHeader(server) },
+  }).then((x) => x.json());
 
   return { available, downloaded };
 });
 
-export const downloadModel = createAsyncThunk<void, Model>(
+export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>(
   'models/downloadModel',
-  async (model, { dispatch }) => {
+  async (model, { dispatch, getState }) => {
+    const server = getState().models.server;
+    assertSome(server);
     const { uuid } = await fetch(
-      `http://localhost:8000/tasks/download_model/` +
+      `${getServerName(server)}/tasks/download_model/` +
         `?lang=${encodeURIComponent(model.lang)}` +
         `&model=${encodeURIComponent(model.name)}`,
-      { method: 'POST' }
+      { method: 'POST', headers: { Authorization: getAuthHeader(server) } }
     ).then((x) => x.json());
 
     while (true) {
-      const { state, processed, total } = (await fetch(`http://localhost:8000/tasks/${uuid}/`).then(
-        (x) => x.json()
-      )) as DownoadModelTask;
+      const { state, processed, total } = (await fetch(`${getServerName(server)}/tasks/${uuid}/`, {
+        headers: { Authorization: getAuthHeader(server) },
+      }).then((x) => x.json())) as DownloadModelTask;
       dispatch(setProgress({ model, state, progress: processed / total }));
       if (state == DownloadingModelState.DONE) {
         dispatch(setProgress({ model, state, progress: processed / total }));
@@ -68,15 +83,25 @@ export const downloadModel = createAsyncThunk<void, Model>(
   }
 );
 
-export const deleteModel = createAsyncThunk<void, Model>(
+export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
   'models/downloadModel',
-  async (model, { dispatch }) => {
+  async (model, { dispatch, getState }) => {
+    const server = getState().models.server;
+    assertSome(server);
     await fetch(
-      `http://localhost:8000/models/delete/` +
+      `${getServerName(server)}/models/delete/` +
         `?lang=${encodeURIComponent(model.lang)}` +
         `&model=${encodeURIComponent(model.name)}`,
-      { method: 'POST' }
+      { method: 'POST', headers: { Authorization: getAuthHeader(server) } }
     );
+    dispatch(fetchModelState());
+  }
+);
+
+export const changeServer = createAsyncThunk<void, ServerConfig, { state: RootState }>(
+  'models/changeServer',
+  async (server, { dispatch }) => {
+    await dispatch(setServer(server));
     dispatch(fetchModelState());
   }
 );
@@ -110,6 +135,9 @@ export const modelsSlice = createSlice({
         slice.downloading[idx] = newDownloadingRow;
       }
     },
+    setServer: (slice, payload: PayloadAction<ServerConfig>) => {
+      slice.server = payload.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchModelState.fulfilled, (state, action) => {
@@ -118,5 +146,5 @@ export const modelsSlice = createSlice({
   },
 });
 
-export const { setProgress } = modelsSlice.actions;
+export const { setProgress, setServer } = modelsSlice.actions;
 export default modelsSlice.reducer;

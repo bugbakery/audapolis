@@ -9,6 +9,7 @@ import { RootState } from './index';
 export interface ServerState {
   local_state: LocalServerStatus;
   local_proc: ChildProcess | null;
+  local_config: ServerConfig;
   servers: ServerConfig[];
 }
 
@@ -19,6 +20,7 @@ export interface ServerConfig {
   name: string;
 }
 export enum LocalServerStatus {
+  NotStarted,
   Stopped,
   Starting,
   Running,
@@ -81,17 +83,14 @@ export const startServer = createAsyncThunk('server/startServer', async (_, { di
   }
   dispatch(setLocalProc(proc));
   dispatch(setLocalState(LocalServerStatus.Starting));
-  dispatch(
-    addServer({ hostname: 'http://localhost', port: 8000, token: null, name: 'Local Server' })
-  );
   proc.stdout.on('data', (data: Buffer) => {
     console.log(`Server stdout: ${data}`);
     try {
       const parsed_data: ServerStartingMessage | ServerStartedMessage = JSON.parse(data.toString());
       if (parsed_data.msg == 'server_starting') {
-        dispatch(setPort({ hostname: 'http://localhost', port: parsed_data['port'] }));
+        dispatch(setLocalPort(parsed_data['port']));
       } else if (parsed_data.msg == 'server_started') {
-        dispatch(setToken({ hostname: 'http://localhost', token: parsed_data['token'] }));
+        dispatch(setLocalToken(parsed_data['token']));
         dispatch(setLocalState(LocalServerStatus.Running));
       }
     } catch (e) {
@@ -121,7 +120,6 @@ export const stopServer = createAsyncThunk<void, void, { state: RootState }>(
     if (proc) {
       console.log('killing proc', proc);
       proc.kill();
-      dispatch(removeServer('http://localhost'));
       dispatch(setLocalState(LocalServerStatus.Stopping));
     }
   }
@@ -130,8 +128,14 @@ export const stopServer = createAsyncThunk<void, void, { state: RootState }>(
 export const serverSlice = createSlice({
   name: 'server',
   initialState: {
-    local_state: LocalServerStatus.Stopped,
+    local_state: LocalServerStatus.NotStarted,
     local_proc: null,
+    local_config: {
+      hostname: 'http://localhost',
+      port: 0,
+      name: 'Local Server',
+      token: null,
+    },
     servers: [],
     selected_server: null,
   } as ServerState,
@@ -142,13 +146,11 @@ export const serverSlice = createSlice({
     setLocalProc: (state, args: PayloadAction<ChildProcess | null>) => {
       state.local_proc = args.payload;
     },
-    setPort: (state, args: PayloadAction<{ hostname: string; port: number }>) => {
-      const server_idx = getServerIndex(state, args.payload.hostname);
-      state.servers[server_idx].port = args.payload.port;
+    setLocalPort: (state, args: PayloadAction<number>) => {
+      state.local_config.port = args.payload;
     },
-    setToken: (state, args: PayloadAction<{ hostname: string; token: string }>) => {
-      const server_idx = getServerIndex(state, args.payload.hostname);
-      state.servers[server_idx].token = args.payload.token;
+    setLocalToken: (state, args: PayloadAction<string>) => {
+      state.local_config.token = args.payload;
     },
     addServer: (state, args: PayloadAction<ServerConfig>) => {
       state.servers.push(args.payload);
@@ -158,7 +160,7 @@ export const serverSlice = createSlice({
     },
   },
 });
-const { setLocalProc, setLocalState, setPort, setToken, addServer, removeServer } =
+const { setLocalProc, setLocalState, setLocalPort, setLocalToken, addServer, removeServer } =
   serverSlice.actions;
 export default serverSlice.reducer;
 
@@ -171,4 +173,10 @@ export const getServerIndex = (state: ServerState, hostname: string): number =>
 
 export const getAuthHeader = (server: ServerConfig): string => {
   return `Bearer ${server.token}`;
+};
+
+export const getServers = (state: RootState): ServerConfig[] => {
+  const servers = state.server.servers.slice();
+  servers.unshift(state.server.local_config);
+  return servers;
 };

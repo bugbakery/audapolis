@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { fetchModelState } from './models';
+import { fetchModelState, setServer } from './models';
+import { RootState } from './index';
+import { ServerConfig } from './server';
 
 export enum Page {
   Landing,
@@ -7,19 +9,19 @@ export enum Page {
   Editor,
   Transcribing,
   Settings,
-  ServerSettings,
+  ManageServer,
 }
 export interface NavState {
   page: Page;
 }
 
-export const openSettings = createAsyncThunk('nav/openSettings', async (_, { dispatch }) => {
-  dispatch(fetchModelState());
-});
-
-export const openTranscribe = createAsyncThunk('nav/openTranscribe', async (_, { dispatch }) => {
-  dispatch(fetchModelState());
-});
+export const openManageServer = createAsyncThunk<void, ServerConfig, { state: RootState }>(
+  'nav/openManageServer',
+  async (server, { dispatch }) => {
+    await dispatch(setServer(server));
+    dispatch(fetchModelState());
+  }
+);
 
 export const navSlice = createSlice({
   name: 'nav',
@@ -36,19 +38,20 @@ export const navSlice = createSlice({
     openTranscribing: (state) => {
       state.page = Page.Transcribing;
     },
-    openServerSettings: (state) => {
-      state.page = Page.ServerSettings;
+    openTranscribe: (state) => {
+      state.page = Page.Transcribe;
+    },
+    openSettings: (state) => {
+      state.page = Page.Settings;
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(openSettings.fulfilled, (state) => {
-      state.page = Page.Settings;
-    });
-    builder.addCase(openTranscribe.fulfilled, (state) => {
-      state.page = Page.Transcribe;
+    builder.addCase(openManageServer.fulfilled, (state) => {
+      state.page = Page.ManageServer;
     });
   },
 });
 
-export const { openEditor, openLanding, openTranscribing, openServerSettings } = navSlice.actions;
+export const { openTranscribe, openEditor, openLanding, openTranscribing, openSettings } =
+  navSlice.actions;
 export default navSlice.reducer;

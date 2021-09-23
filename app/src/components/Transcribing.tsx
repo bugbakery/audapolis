@@ -10,6 +10,8 @@ const FormRow = styled.div`
   flex-direction: row;
   padding: 10px;
   font-size: 18px;
+  justify-content: center;
+  width: 80%;
 `;
 const Progress = styled(Line)`
   width: 80%;
@@ -26,7 +28,7 @@ export function TranscribingPage(): JSX.Element {
       <MainCenterColumn>
         <FormRow>
           <p style={{ opacity: 0.5 }}>Transcribing</p>&nbsp;
-          <p> {file.split('/').pop()}</p>
+          <p style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}> {file.split('/').pop()}</p>
         </FormRow>
         <Progress percent={progress * 100} />
         <FormRow>

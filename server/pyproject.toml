@@ -12,12 +12,12 @@ python-multipart = "^0.0.5"
 pydub = "^0.25.1"
 appdirs = "^1.4.4"
 vosk = "^0.3.31"
+requests = "^2.26.0"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"
 black = "^21.8b0"
 flake8 = "^3.9.2"
-requests = "^2.26.0"
 rich = "^10.9.0"
 types-requests = "^2.25.6"
 types-PyYAML = "^5.4.10"

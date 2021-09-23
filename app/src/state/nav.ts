@@ -23,6 +23,13 @@ export const openManageServer = createAsyncThunk<void, ServerConfig, { state: Ro
   }
 );
 
+export const openTranscribe = createAsyncThunk<void, void, { state: RootState }>(
+  'nav/openTranscribe',
+  async (_, { dispatch }) => {
+    dispatch(fetchModelState());
+  }
+);
+
 export const navSlice = createSlice({
   name: 'nav',
   initialState: {
@@ -38,9 +45,6 @@ export const navSlice = createSlice({
     openTranscribing: (state) => {
       state.page = Page.Transcribing;
     },
-    openTranscribe: (state) => {
-      state.page = Page.Transcribe;
-    },
     openSettings: (state) => {
       state.page = Page.Settings;
     },
@@ -49,9 +53,11 @@ export const navSlice = createSlice({
     builder.addCase(openManageServer.fulfilled, (state) => {
       state.page = Page.ManageServer;
     });
+    builder.addCase(openTranscribe.pending, (state) => {
+      state.page = Page.Transcribe;
+    });
   },
 });
 
-export const { openTranscribe, openEditor, openLanding, openTranscribing, openSettings } =
-  navSlice.actions;
+export const { openEditor, openLanding, openTranscribing, openSettings } = navSlice.actions;
 export default navSlice.reducer;

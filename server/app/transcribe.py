@@ -74,13 +74,17 @@ def transform_vosk_result(name: str, result: dict) -> dict:
     for word in result["result"]:
         if word["start"] > current_time:
             content.append(
-                {"start": current_time, "end": word["start"], "type": "silence"}
+                {
+                    "sourceStart": current_time,
+                    "length": word["start"] - current_time,
+                    "type": "silence",
+                }
             )
 
         content.append(
             {
-                "start": word["start"],
-                "end": word["end"],
+                "sourceStart": word["start"],
+                "length": word["end"] - word["start"],
                 "type": "word",
                 "word": word["word"],
                 "conf": word["conf"],

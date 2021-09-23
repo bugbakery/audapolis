@@ -256,7 +256,7 @@ function ParagraphBlock({ speaker, content }: ParagraphGeneric<TimedParagraphIte
     } else {
       return (
         item.absoluteStart >= selection.start &&
-        item.absoluteStart + (item.end - item.start) <= selection.start + selection.length
+        item.absoluteStart + item.length <= selection.start + selection.length
       );
     }
   };
@@ -298,7 +298,7 @@ function ParagraphBlock({ speaker, content }: ParagraphGeneric<TimedParagraphIte
             case 'word':
               return <Word {...commonProps}>{' ' + item.word}</Word>;
             case 'silence':
-              if (item.end - item.start > 0.4) {
+              if (item.length > 0.4) {
                 return <LongSilence {...commonProps} selected={isSelected(item)} />;
               } else {
                 return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
@@ -422,10 +422,9 @@ function computeCursorPosition(
   time: number
 ): { x: number; y: number } {
   const item = skipToTime(time, documentIterator(content), true).next().value || {
-    end: 1,
-    start: 0,
     globalIdx: 0,
     absoluteStart: time,
+    length: 1,
   };
   const itemElement = ref
     .getElementsByClassName('item')
@@ -438,9 +437,8 @@ function computeCursorPosition(
   const y = itemElement.offsetTop;
   let x = itemElement.offsetLeft;
   if (item.absoluteStart <= time) {
-    const itemLength = item.end - item.start;
     const timeInWord = time - item.absoluteStart;
-    x += (timeInWord / itemLength) * itemElement.offsetWidth;
+    x += (timeInWord / item.length) * itemElement.offsetWidth;
   }
   return { x, y };
 }

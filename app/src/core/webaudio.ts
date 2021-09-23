@@ -25,8 +25,8 @@ class Player {
           const timeInWord = first ? start - item.absoluteStart : 0;
           await this.playInternal(
             document.sources[item.source].decoded,
-            item.start + timeInWord,
-            item.end,
+            item.sourceStart + timeInWord,
+            item.sourceStart + item.length,
             progressCallback,
             item.absoluteStart + timeInWord
           );

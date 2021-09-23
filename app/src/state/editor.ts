@@ -9,6 +9,7 @@ import {
   documentIterator,
   filterItems,
   getCurrentItem,
+  renderItemsFromDocument,
   serializeDocument,
   skipToTime,
   TimedParagraphItem,
@@ -160,35 +161,6 @@ export const saveDocument = createAsyncThunk<Document, void, { state: RootState 
   }
 );
 
-export function renderItemsFromDocument(document: Document): RenderItem[] {
-  const renderItems = [];
-  let cur_start = 0;
-  let cur_end = 0;
-  let cur_source: number | null = null;
-  document.content.forEach((paragraph) => {
-    paragraph.content.forEach((item) => {
-      console.log('item', item);
-      if (cur_source == null) {
-        cur_start = item.start;
-        cur_end = item.end;
-        cur_source = item.source;
-      } else {
-        if (cur_source == item.source && cur_end == item.start) {
-          cur_end = item.end;
-        } else {
-          renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
-          cur_start = item.start;
-          cur_end = item.end;
-          cur_source = item.source;
-        }
-      }
-    });
-  });
-  if (cur_source != null) {
-    renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
-  }
-  return renderItems;
-}
 export const exportDocument = createAsyncThunk<Document, void, { state: RootState }>(
   'editor/exportDocument',
   async (_, { getState }) => {

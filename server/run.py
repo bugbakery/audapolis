@@ -1,6 +1,7 @@
 import json
 import random
 import socket
+import sys
 
 import uvicorn
 
@@ -27,6 +28,7 @@ def get_open_port(retries=10):
 if __name__ == "__main__":
     port = get_open_port()
     print(json.dumps({"msg": "server_starting", "port": port}), flush=True)
+    reload = not getattr(sys, "oxidized", False)
     uvicorn.run(
-        "app.main:app", host="127.0.0.1", port=port, access_log=False, reload=True
+        "app.main:app", host="127.0.0.1", port=port, access_log=False, reload=reload
     )

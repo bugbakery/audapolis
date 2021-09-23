@@ -1,6 +1,20 @@
-from fastapi import BackgroundTasks, FastAPI, File, UploadFile, Request, Depends
+import base64
+import json
+import os
+from pathlib import Path
+
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+from starlette.status import HTTP_401_UNAUTHORIZED
 
 from .models import (
     DownloadModelTask,
@@ -11,9 +25,6 @@ from .models import (
 )
 from .tasks import TaskNotFoundError, tasks
 from .transcribe import TranscriptionState, TranscriptionTask, process_audio
-import base64
-import os
-import json
 
 app = FastAPI()
 origins = [
@@ -68,7 +79,7 @@ async def download_model(
     background_tasks: BackgroundTasks,
     lang: str,
     model: str,
-    auth: str = Depends(token_auth)
+    auth: str = Depends(token_auth),
 ):
     task = tasks.add(DownloadModelTask(lang, model))
     background_tasks.add_task(models.download, lang, model, task.uuid)
@@ -82,7 +93,7 @@ async def list_tasks(auth: str = Depends(token_auth)):
 
 
 @app.get("/tasks/{task_uuid}/")
-async def get_task(task_uuid: str,auth: str = Depends(token_auth)):
+async def get_task(task_uuid: str, auth: str = Depends(token_auth)):
     return tasks.get(task_uuid)
 
 
@@ -92,11 +103,7 @@ async def get_all_models(auth: str = Depends(token_auth)):
 
 
 @app.post("/models/delete")
-async def delete_model(
-    lang: str,
-    model: str,
-    auth: str = Depends(token_auth)
-):
+async def delete_model(lang: str, model: str, auth: str = Depends(token_auth)):
     models.delete(lang, model)
     return PlainTextResponse("", status_code=200)
 

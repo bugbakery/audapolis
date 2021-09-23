@@ -46,7 +46,9 @@ export function TranscribePage(): JSX.Element {
       <MainCenterColumn>
         <Form>
           <span style={{ opacity: 0.5 }}>opened</span>
-          <span> {file.split('/').pop()}</span>
+          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
+            {file.split('/').pop()}
+          </span>
 
           <span style={{ opacity: 0.5 }}>Server</span>
           <select

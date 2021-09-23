@@ -55,28 +55,37 @@ export function EditorTitleBar(): JSX.Element {
             onClick={() => dispatch(ActionCreators.undo())}
             active={canUndo}
             icon={MdUndo}
+            text={'undo'}
           />
           <TitleBarButton
             onClick={() => dispatch(ActionCreators.redo())}
             active={canRedo}
             icon={MdRedo}
+            text={'redo'}
           />
         </TitleBarGroup>
         <TitleBarButton
           clicked={displaySpeakerNames}
           onClick={() => dispatch(toggleDisplaySpeakerNames())}
           icon={MdPerson}
+          text={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}
         />
       </TitleBarSection>
 
       <PlayerControls />
 
       <TitleBarSection>
-        <TitleBarButton onClick={() => dispatch(saveDocument())} active={canSave} icon={MdSave} />
+        <TitleBarButton
+          onClick={() => dispatch(saveDocument())}
+          active={canSave}
+          icon={MdSave}
+          text={'save document'}
+        />
         <TitleBarButton
           onClick={() => dispatch(exportDocument())}
           active={!exportRunning && canExport}
           icon={exportRunning ? MdWatchLater : MdShare}
+          text={'export document'}
         />
       </TitleBarSection>
     </TitleBar>

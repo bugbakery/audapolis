@@ -9,7 +9,7 @@ import { MdSettings } from 'react-icons/md';
 import { openSettings } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 
-const SettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
+const SettingsButton = styled(IconButton).attrs({ icon: MdSettings, text: 'settings' })`
   position: absolute;
   bottom: 0;
   right: 0;
@@ -33,9 +33,7 @@ export function LandingPage(): JSX.Element {
           New Blank Document
         </Button>
       </MainCenterColumn>
-      <SettingsButton onClick={() => dispatch(openSettings())}>
-        <MdSettings />
-      </SettingsButton>
+      <SettingsButton onClick={() => dispatch(openSettings())} />
     </AppContainer>
   );
 }

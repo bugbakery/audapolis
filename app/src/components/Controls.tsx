@@ -2,6 +2,7 @@ import styled, { css } from 'styled-components';
 import { IconType } from 'react-icons';
 import { ButtonHTMLAttributes } from 'react';
 import * as React from 'react';
+import { Popup } from 'reactjs-popup';
 
 export const Button = styled.button<{ primary?: boolean }>`
   display: inline-block;
@@ -69,14 +70,56 @@ export function IconButton(
     clicked?: boolean;
     active?: boolean;
     icon?: IconType;
+    text?: string;
   } & ButtonHTMLAttributes<HTMLButtonElement>
 ): JSX.Element {
   const children = props.icon ? <props.icon /> : <></>;
   const onClick = props.active === false ? undefined : props.onClick;
 
-  return (
+  const iconButton = (
     <IconButtonContainer {...props} onClick={onClick}>
       {children}
     </IconButtonContainer>
   );
+  if ((props.active === undefined || props.active) && props.text) {
+    return (
+      <StyledPopup
+        trigger={() => iconButton}
+        closeOnDocumentClick
+        keepTooltipInside="#root"
+        position={['bottom center', 'left center', 'right center']}
+        on={['hover', 'focus']}
+      >
+        <span>{props.text}</span>
+      </StyledPopup>
+    );
+  } else {
+    return iconButton;
+  }
 }
+
+const StyledPopup = styled(Popup)`
+  &-content {
+    margin: auto;
+    background: var(--bg-color);
+    padding: 5px;
+    border: 1px solid var(--fg-color-mild);
+    box-shadow: 0 0 3px var(--fg-color-mild);
+    border-radius: 5px;
+  }
+  &-arrow {
+    filter: drop-shadow(0 -3px 3px var(--fg-color-mild));
+    color: var(--bg-color);
+    stroke-width: 2px;
+    stroke: var(--fg-color-mild);
+    stroke-dasharray: 30px;
+    stroke-dashoffset: -54px;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  &-overlay {
+    background: transparent;
+  }
+`;

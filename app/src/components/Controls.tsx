@@ -2,7 +2,7 @@ import styled, { css } from 'styled-components';
 import { IconType } from 'react-icons';
 import { ButtonHTMLAttributes } from 'react';
 import * as React from 'react';
-import { Popup } from 'reactjs-popup';
+import { Popup as RawPopup } from 'reactjs-popup';
 
 export const Button = styled.button<{ primary?: boolean }>`
   display: inline-block;
@@ -83,22 +83,23 @@ export function IconButton(
   );
   if ((props.active === undefined || props.active) && props.text) {
     return (
-      <StyledPopup
+      <Popup
         trigger={() => iconButton}
-        closeOnDocumentClick
-        keepTooltipInside="#root"
         position={['bottom center', 'left center', 'right center']}
         on={['hover', 'focus']}
       >
         <span>{props.text}</span>
-      </StyledPopup>
+      </Popup>
     );
   } else {
     return iconButton;
   }
 }
 
-const StyledPopup = styled(Popup)`
+export const Popup = styled(RawPopup).attrs({
+  closeOnDocumentClick: true,
+  keepTooltipInside: '#root',
+})`
   &-content {
     margin: auto;
     background: var(--bg-color);

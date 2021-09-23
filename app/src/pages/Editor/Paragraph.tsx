@@ -15,15 +15,14 @@ import {
   selectItem,
   selectParagraph,
   setWord,
+  reassignParagraph,
+  renameSpeaker,
 } from '../../state/editor';
+import { Button, Popup } from '../../components/Controls';
 import { assertSome } from '../../util';
 
 const ParagraphContainer = styled.div`
   user-select: none;
-`;
-const SpeakerContainer = styled.div`
-  text-overflow: ellipsis;
-  white-space: nowrap;
 `;
 const LongSilenceSpan = styled.span<{ selected: boolean }>`
   padding: 0 8px;
@@ -137,7 +136,115 @@ const SelectableSpan = styled.span<{ selected: boolean }>`
       color: black;
     `}
 `;
-export function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphItem>): JSX.Element {
+
+const SpeakerPopupButton = styled(Button)`
+  border: none;
+  display: block;
+  padding: 10px;
+  width: 100%;
+  margin: 0;
+  &:hover {
+    background: var(--fg-color-mild);
+  }
+`;
+
+enum EditingType {
+  Reassign,
+  Rename,
+}
+type SpeakerEditing = null | {
+  type: EditingType;
+  currentText: string;
+  isNew: boolean;
+};
+
+const SpeakerInput = styled.input`
+  width: 100%;
+  font-size: inherit;
+`;
+const SpeakerLabel = styled.div`
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+`;
+function Speaker(
+  props: HTMLAttributes<HTMLDivElement> & { name: string; paragraphIdx: number }
+): JSX.Element {
+  const [editing, setEditing] = useState(null as SpeakerEditing);
+  const dispatch = useDispatch();
+
+  if (!editing) {
+    return (
+      <div>
+        <Popup
+          trigger={() => <SpeakerLabel>{props.name}</SpeakerLabel>}
+          position={['right center', 'bottom center', 'top center']}
+          on={['click']}
+        >
+          <SpeakerPopupButton
+            onClick={() =>
+              setEditing({ isNew: true, type: EditingType.Rename, currentText: props.name })
+            }
+          >
+            Rename Speaker
+          </SpeakerPopupButton>
+          <SpeakerPopupButton
+            onClick={() =>
+              setEditing({ isNew: true, type: EditingType.Reassign, currentText: props.name })
+            }
+          >
+            Reassign Speaker
+          </SpeakerPopupButton>
+        </Popup>
+      </div>
+    );
+  } else {
+    return (
+      <div>
+        <SpeakerInput
+          value={editing.currentText}
+          ref={(ref) => {
+            if (editing.isNew) {
+              ref?.focus();
+              ref?.select();
+              setEditing({ ...editing, isNew: false });
+            }
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key == 'Enter') {
+              if (editing.type == EditingType.Reassign) {
+                dispatch(
+                  reassignParagraph({
+                    paragraphIdx: props.paragraphIdx,
+                    newSpeaker: editing.currentText,
+                  })
+                );
+              } else if (editing.type == EditingType.Rename) {
+                dispatch(renameSpeaker({ oldName: props.name, newName: editing.currentText }));
+              }
+              setEditing(null);
+            } else if (e.key == 'Escape') {
+              setEditing(null);
+            }
+          }}
+          onChange={(e) => {
+            setEditing({ ...editing, currentText: e.target.value });
+          }}
+          onBlur={() => {
+            setEditing(null);
+          }}
+        />
+      </div>
+    );
+  }
+}
+
+export function Paragraph({
+  speaker,
+  content,
+  paragraphIdx,
+}: ParagraphGeneric<TimedParagraphItem> & { paragraphIdx: number }): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const dispatch = useDispatch();
@@ -154,7 +261,7 @@ export function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphI
 
   return (
     <>
-      <SpeakerContainer>{speaker}</SpeakerContainer>
+      <Speaker name={speaker} paragraphIdx={paragraphIdx} />
       <ParagraphContainer>
         {content.map((item, i) => {
           const onClick = async () => {

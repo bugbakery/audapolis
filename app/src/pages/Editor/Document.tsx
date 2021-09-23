@@ -104,12 +104,13 @@ export function Document(): JSX.Element {
       <FileNameDisplay path={fileName} />
 
       {content.length > 0 ? (
-        content.map((p, i) => <Paragraph key={i} speaker={p.speaker} content={p.content} />)
+        content.map((p, i) => <Paragraph key={i} speaker={p.speaker} content={p.content} paragraphIdx={i} />)
       ) : (
         <Paragraph
           key={0}
           speaker=""
           content={[{ type: 'artificial_silence', absoluteStart: 0, length: 0 }]}
+          paragraphIdx={0}
         />
       )}
     </DocumentContainer>

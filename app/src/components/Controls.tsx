@@ -4,7 +4,6 @@ import { ButtonHTMLAttributes } from 'react';
 import * as React from 'react';
 
 export const Button = styled.button<{ primary?: boolean }>`
-  /* This renders the buttons above... Edit me! */
   display: inline-block;
   text-align: center;
   border-radius: 5px;

@@ -39,3 +39,11 @@ export const Title = styled.h1`
   font-size: 20px;
   grid-column-start: 2;
 `;
+
+export const StyledTable = styled.table`
+  & tr:nth-child(odd) {
+    background-color: var(--bg-color-accent);
+  }
+
+  padding-bottom: 20px;
+`;

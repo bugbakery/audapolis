@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
-import { openTranscribe, openLanding, openTranscribing, openSettings } from './nav';
+import { openTranscribe, openLanding, openTranscribing } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
@@ -8,7 +8,8 @@ import { sleep } from './util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
-import { fetchModelState, Model } from './models';
+import { Model } from './models';
+import { getAuthHeader, getServerName, ServerConfig } from './server';
 
 export interface TranscribeState {
   file?: string;
@@ -35,15 +36,7 @@ export interface Task {
 
 export const transcribeFile = createAsyncThunk<string, void, { state: RootState }>(
   'transcribe/transcribeFile',
-  async (_, { dispatch, getState }) => {
-    await dispatch(fetchModelState());
-    const downloadedModels = Object.values(getState().models.downloaded).flatMap((x) => x);
-    if (downloadedModels.length == 0) {
-      alert('you dont have any downloaded models! \n download a transcription model first');
-      dispatch(openSettings());
-      return;
-    }
-
+  async (_, { dispatch }) => {
     const file = await ipcRenderer.invoke('open-file', {
       properties: ['openFile'],
       promptToCreate: true,
@@ -62,64 +55,70 @@ export const abortTranscription = createAsyncThunk('transcribe/abort', async (_,
   dispatch(openLanding());
 });
 
-export const startTranscription = createAsyncThunk<void, Model, { state: RootState }>(
-  'transcribing/upload',
-  async (model, { dispatch, getState }) => {
-    const formData = new FormData();
-    const state = getState();
-    const path = state?.transcribe?.file;
-    if (path === undefined) {
-      throw Error('Failed to start transcription: No file for transcription given.');
-    }
-    const fileContent = readFileSync(path);
-    const fileName = basename(path);
-    const file = new File([fileContent], fileName);
-    formData.append('file', file); // TODO: Error handling
-    dispatch(openTranscribing());
-    const result = (await fetch(
-      `http://localhost:8000/tasks/start_transcription/` +
-        `?lang=${encodeURIComponent(model.lang)}` +
-        `&model=${encodeURIComponent(model.name)}`,
-      { method: 'POST', body: formData }
-    ).then((x) => x.json())) as Task;
-    dispatch(setState(result.state));
-    const { uuid } = result;
-    while (true) {
-      const { content, state, processed, total } = (await fetch(
-        `http://localhost:8000/tasks/${uuid}/`
-      ).then((x) => x.json())) as Task;
-      dispatch(setProgress({ processed, total }));
-      dispatch(setState(state));
-      if (state == TranscriptionState.DONE) {
-        const fileContents = fileContent.buffer;
-        const decoded = await ctx.decodeAudioData(fileContents.slice(0));
-        const sources = [
-          {
-            fileName,
-            fileContents,
-            decoded,
-          },
-        ];
-        if (content === undefined) {
-          throw Error('Transcription failed: State is done, but no content was produced');
-        }
-        // TODO: proper typing
-        const contentWithSource = content.map((paragraph: any) => {
-          paragraph.content = paragraph.content.map((word: any) => {
-            word['source'] = 0;
-            return word;
-          });
-          return paragraph;
-        });
-        dispatch(
-          openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
-        );
-        break;
-      }
-      await sleep(100);
-    }
+export const startTranscription = createAsyncThunk<
+  void,
+  { server: ServerConfig; model: Model },
+  { state: RootState }
+>('transcribing/upload', async ({ server, model }, { dispatch, getState }) => {
+  const formData = new FormData();
+  const state = getState();
+  const serverName = getServerName(server);
+  const path = state?.transcribe?.file;
+  if (path === undefined) {
+    throw Error('Failed to start transcription: No file for transcription given.');
   }
-);
+  const fileContent = readFileSync(path);
+  const fileName = basename(path);
+  const file = new File([fileContent], fileName);
+  formData.append('file', file); // TODO: Error handling
+  dispatch(openTranscribing());
+  const result = (await fetch(
+    `${serverName}/tasks/start_transcription/` +
+      `?lang=${encodeURIComponent(model.lang)}` +
+      `&model=${encodeURIComponent(model.name)}`,
+    {
+      method: 'POST',
+      body: formData,
+      headers: { Authorization: getAuthHeader(server) },
+    }
+  ).then((x) => x.json())) as Task;
+  dispatch(setState(result.state));
+  const { uuid } = result;
+  while (true) {
+    const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
+      headers: { Authorization: getAuthHeader(server) },
+    }).then((x) => x.json())) as Task;
+    dispatch(setProgress({ processed, total }));
+    dispatch(setState(state));
+    if (state == TranscriptionState.DONE) {
+      const fileContents = fileContent.buffer;
+      const decoded = await ctx.decodeAudioData(fileContents.slice(0));
+      const sources = [
+        {
+          fileName,
+          fileContents,
+          decoded,
+        },
+      ];
+      if (content === undefined) {
+        throw Error('Transcription failed: State is done, but no content was produced');
+      }
+      // TODO: proper typing
+      const contentWithSource = content.map((paragraph: any) => {
+        paragraph.content = paragraph.content.map((word: any) => {
+          word['source'] = 0;
+          return word;
+        });
+        return paragraph;
+      });
+      dispatch(
+        openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
+      );
+      break;
+    }
+    await sleep(100);
+  }
+});
 
 export const importSlice = createSlice({
   name: 'nav',

@@ -1,12 +1,14 @@
 import * as React from 'react';
 import { RootState, store } from '../state';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { Page } from '../state/nav';
 import { LandingPage } from './Landing';
 import { TranscribePage } from './Transcribe';
 import { EditorPage } from './Editor';
 import { TranscribingPage } from './Transcribing';
+import { ManageServerPage } from './ManageServer';
 import { SettingsPage } from './Settings';
+import { LocalServerStatus, startServer } from '../state/server';
 
 export default function App(): JSX.Element {
   return (
@@ -17,6 +19,12 @@ export default function App(): JSX.Element {
 }
 
 function CurrentPage(): JSX.Element {
+  const dispatch = useDispatch();
+  const localServerState = useSelector((state: RootState) => state.server.local_state);
+  if (localServerState == LocalServerStatus.NotStarted) {
+    dispatch(startServer());
+  }
+
   const page = useSelector((state: RootState) => state.nav.page);
 
   switch (page) {
@@ -30,5 +38,7 @@ function CurrentPage(): JSX.Element {
       return <TranscribingPage />;
     case Page.Settings:
       return <SettingsPage />;
+    case Page.ManageServer:
+      return <ManageServerPage />;
   }
 }

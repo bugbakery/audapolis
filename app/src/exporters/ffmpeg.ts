@@ -2,8 +2,7 @@ import ffmpeg from 'fluent-ffmpeg/lib/fluent-ffmpeg';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { Source } from '../core/document';
-import { RenderItem } from '../state/editor';
+import { Source, RenderItem } from '../core/document';
 
 function encodePartAsMp3(source_path: string, part: RenderItem, output: string): Promise<string> {
   return new Promise(function (resolve, reject) {

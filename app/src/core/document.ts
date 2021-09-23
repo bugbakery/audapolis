@@ -1,15 +1,14 @@
 import JSZip from 'jszip';
 import { readFileSync, createWriteStream } from 'fs';
 import { ctx } from './webaudio';
-import { RenderItem } from '../state/editor';
 
 export interface Word {
   type: 'word';
   word: string;
 
   source: number;
-  start: number;
-  end: number;
+  sourceStart: number;
+  length: number;
 
   conf: number;
 }
@@ -17,8 +16,8 @@ export interface Silence {
   type: 'silence';
 
   source: number;
-  start: number;
-  end: number;
+  sourceStart: number;
+  length: number;
 }
 export type ParagraphItem = Word | Silence;
 
@@ -108,7 +107,7 @@ export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagr
           absoluteStart: accumulatedTime,
           ...item,
         };
-        accumulatedTime += item.end - item.start;
+        accumulatedTime += item.length;
         return mapped;
       }),
     };
@@ -137,7 +136,7 @@ export function* documentIterator(content: Paragraph[]): DocumentGenerator {
         itemIdx: i,
         speaker: paragraph.speaker,
       };
-      accumulatedTime += item.end - item.start;
+      accumulatedTime += item.length;
       globalIdx += 1;
     }
   }
@@ -162,7 +161,7 @@ export function* skipToTime(
 ): DocumentGenerator {
   let last = null;
   for (const item of iterator) {
-    if (item.absoluteStart + (item.end - item.start) <= targetTime) {
+    if (item.absoluteStart + item.length <= targetTime) {
       last = item;
     } else {
       if (before && last) {
@@ -204,6 +203,11 @@ export function getCurrentItem(
   return iter.next().value;
 }
 
+export interface RenderItem {
+  start: number;
+  end: number;
+  source: number;
+}
 export function renderItemsFromDocument(document: Document): RenderItem[] {
   const renderItems = [];
   let cur_start = 0;
@@ -212,16 +216,16 @@ export function renderItemsFromDocument(document: Document): RenderItem[] {
   document.content.forEach((paragraph) => {
     paragraph.content.forEach((item) => {
       if (cur_source == null) {
-        cur_start = item.start;
-        cur_end = item.end;
+        cur_start = item.sourceStart;
+        cur_end = item.sourceStart + item.length;
         cur_source = item.source;
       } else {
-        if (cur_source == item.source && cur_end == item.start) {
-          cur_end = item.end;
+        if (cur_source == item.source && cur_end == item.sourceStart) {
+          cur_end = item.sourceStart + item.length;
         } else {
           renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
-          cur_start = item.start;
-          cur_end = item.end;
+          cur_start = item.sourceStart;
+          cur_end = item.sourceStart + item.length;
           cur_source = item.source;
         }
       }

@@ -56,7 +56,7 @@ def make_exe():
     # policy.file_scanner_classify_files = True
 
     # Controls whether `File` instances are emitted by the file scanner.
-    # policy.file_scanner_emit_files = False
+    policy.file_scanner_emit_files = True
 
     # Controls the `add_include` attribute of "classified" resources
     # (`PythonModuleSource`, `PythonPackageResource`, etc).
@@ -95,7 +95,6 @@ def make_exe():
     # Attempt to add resources relative to the built binary when
     # `resources_location` fails.
     policy.resources_location = "filesystem-relative:lib"
-    # policy.resources_location_fallback = "filesystem-relative:lib"
 
     # Clear out a fallback resource location.
     # policy.resources_location_fallback = None
@@ -250,9 +249,18 @@ def make_exe():
 
     # Invoke `pip install` using a requirements file and add the collected resources
     # to our binary.
-    # exe.add_python_resources(exe.pip_install(["-r", "requirements.txt"]))
-    exe.add_python_resources(exe.pip_install(["-r", "requirements.txt"]))
+    # Normally the call would be this:
+    #     exe.add_python_resources(exe.pip_install(["-r", "requirements.txt"]))
+    # However this fails to add some native libraries, which vosk needs so
+    # instead manually add them to the bundle. Our heuristic for "library" is
+    # "anything that contains '.so.'".
+    for resource in exe.pip_install(["-r", "requirements.txt"]):
+        if type(resource) == "File" and ".so." in resource.path:
+            print("Adding " + resource.path + " to bundle")
+            resource.add_include = True
+        exe.add_python_resource(resource)
     exe.add_python_resources(exe.read_package_root(CWD, ["run","app"]))
+
     # Read Python files from a local directory and add them to our embedded
     # context, taking just the resources belonging to the `foo` and `bar`
     # Python packages.
@@ -264,6 +272,7 @@ def make_exe():
     # Discover Python files from a virtualenv and add them to our embedded
     # context.
     #exe.add_python_resources(exe.read_virtualenv(path="/path/to/venv"))
+
 
     # Filter all resources collected so far through a filter of names
     # in a file.

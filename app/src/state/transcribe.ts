@@ -4,7 +4,7 @@ import { openTranscribe, openLanding, openTranscribing } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
-import { sleep } from './util';
+import { sleep } from '../util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';

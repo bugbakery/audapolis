@@ -16,7 +16,7 @@ import {
 } from '../core/document';
 import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
-import { assertSome } from './util';
+import { assertSome } from '../util';
 import * as ffmpeg_exporter from '../exporters/ffmpeg';
 
 export interface Editor {

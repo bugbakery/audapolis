@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow, dialog, session } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
@@ -51,9 +51,6 @@ const createWindow = (): void => {
   mainWindow.on('ready-to-show', () => mainWindow.show());
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -64,7 +61,6 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -73,20 +69,4 @@ app.on('activate', () => {
   }
 });
 
-ipcMain.handle('open-file', (event, options) => {
-  const win = BrowserWindow.getFocusedWindow();
-  if (win) {
-    return dialog.showOpenDialog(win, options);
-  } else {
-    dialog.showOpenDialog(options);
-  }
-});
-
-ipcMain.handle('save-file', (event, options) => {
-  const win = BrowserWindow.getFocusedWindow();
-  if (win) {
-    return dialog.showSaveDialog(win, options);
-  } else {
-    dialog.showSaveDialog(options);
-  }
-});
+import './ipc';

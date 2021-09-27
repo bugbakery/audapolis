@@ -1,0 +1,112 @@
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../state';
+import { computeTimed, Paragraph as ParagraphType } from '../../core/document';
+import * as React from 'react';
+import { KeyboardEventHandler } from 'react';
+import {
+  deleteSomething,
+  goLeft,
+  goRight,
+  insertParagraph,
+  selectLeft,
+  selectRight,
+  unselect,
+  saveDocument,
+  togglePlaying,
+} from '../../state/editor';
+import { ActionCreators } from 'redux-undo';
+import { Cursor } from './Cursor';
+import { Paragraph } from './Paragraph';
+import { basename, extname } from 'path';
+import { Title } from '../../components/Util';
+import styled from 'styled-components';
+
+const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
+  position: relative;
+  padding: 30px;
+  width: 100%;
+  line-height: 1.5;
+
+  display: grid;
+  row-gap: 1em;
+  column-gap: 1em;
+  transition: all 1s;
+  grid-template-columns: ${(props) => (props.displaySpeakerNames ? '100' : '0')}px min(
+      800px,
+      calc(100% - ${(props) => (props.displaySpeakerNames ? '100' : '0')}px)
+    );
+  justify-content: center;
+
+  & > * {
+    overflow-x: hidden;
+  }
+
+  &:focus {
+    outline: none;
+  }
+`;
+
+export function Document(): JSX.Element {
+  const dispatch = useDispatch();
+  const contentRaw = useSelector((state: RootState) => state.editor.present?.document?.content);
+  const displaySpeakerNames =
+    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+  const content = computeTimed(contentRaw || ([] as ParagraphType[]));
+
+  const handleKeyPress: KeyboardEventHandler = (e) => {
+    if (e.key === ' ') {
+      dispatch(togglePlaying());
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
+      dispatch(insertParagraph());
+    } else if (e.key === 'Backspace') {
+      dispatch(deleteSomething());
+    } else if (e.key === 'ArrowRight') {
+      if (e.shiftKey) dispatch(selectRight());
+      else dispatch(goRight());
+    } else if (e.key === 'ArrowLeft') {
+      if (e.shiftKey) dispatch(selectLeft());
+      else dispatch(goLeft());
+    } else if (e.key === 'z' && e.ctrlKey) {
+      dispatch(ActionCreators.undo());
+    } else if (e.key === 'Z' && e.ctrlKey) {
+      dispatch(ActionCreators.redo());
+    } else if (e.key === 'y' && e.ctrlKey) {
+      dispatch(ActionCreators.redo());
+    } else if (e.key === 's' && e.ctrlKey) {
+      dispatch(saveDocument());
+    } else if (e.key === 'Escape') {
+      dispatch(unselect());
+    }
+  };
+
+  const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
+
+  return (
+    <DocumentContainer
+      displaySpeakerNames={displaySpeakerNames}
+      tabIndex={0}
+      onKeyDown={handleKeyPress}
+      ref={(ref) => ref?.focus()}
+    >
+      <Cursor />
+      <FileNameDisplay path={fileName} />
+
+      {content.map((p, i) => (
+        <Paragraph key={i} speaker={p.speaker} content={p.content} />
+      ))}
+    </DocumentContainer>
+  );
+}
+
+function FileNameDisplay({ path }: { path: string }) {
+  const extension = extname(path);
+  const base = basename(path, extension);
+
+  return (
+    <Title>
+      {base}
+      <span style={{ fontWeight: 'lighter' }}>{extension}</span>
+    </Title>
+  );
+}

@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { Button, IconButton } from './Controls';
+import { Button, IconButton } from '../components/Controls';
 import { useDispatch } from 'react-redux';
 import { transcribeFile } from '../state/transcribe';
-import { TitleBar } from './TitleBar';
-import { AppContainer, MainCenterColumn } from './Util';
-import { openDocumentFromDisk } from '../state/editor';
+import { TitleBar } from '../components/TitleBar';
+import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { MdSettings } from 'react-icons/md';
 import { openSettings } from '../state/nav';
+import { openDocumentFromDisk } from '../state/editor';
 
 const SettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
   position: absolute;

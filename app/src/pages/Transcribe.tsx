@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { Button } from './Controls';
+import { Button } from '../components/Controls';
 import { useDispatch, useSelector } from 'react-redux';
 import { abortTranscription, startTranscription } from '../state/transcribe';
-import { TitleBar } from './TitleBar';
-import { AppContainer, MainCenterColumn } from './Util';
+import { TitleBar } from '../components/TitleBar';
+import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { openSettings, openManageServer } from '../state/nav';

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useSelector } from 'react-redux';
-import { TitleBar } from './TitleBar';
-import { AppContainer, MainCenterColumn } from './Util';
+import { TitleBar } from '../components/TitleBar';
+import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { Line } from 'rc-progress';

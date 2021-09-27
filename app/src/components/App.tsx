@@ -2,12 +2,12 @@ import * as React from 'react';
 import { RootState, store } from '../state';
 import { Provider, useSelector } from 'react-redux';
 import { Page } from '../state/nav';
-import { LandingPage } from './Landing';
-import { TranscribePage } from './Transcribe';
-import { EditorPage } from './Editor';
-import { TranscribingPage } from './Transcribing';
-import { ManageServerPage } from './ManageServer';
-import { SettingsPage } from './Settings';
+import { LandingPage } from '../pages/Landing';
+import { TranscribePage } from '../pages/Transcribe';
+import { EditorPage } from '../pages/Editor';
+import { TranscribingPage } from '../pages/Transcribing';
+import { ManageServerPage } from '../pages/ManageServer';
+import { SettingsPage } from '../pages/Settings';
 
 export default function App(): JSX.Element {
   return (

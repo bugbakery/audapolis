@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { TitleBar } from './TitleBar';
-import { AppContainer, MainMaxWidthContainer, StyledTable, Title } from './Util';
-import { Button, IconButton } from './Controls';
+import { TitleBar } from '../components/TitleBar';
+import { AppContainer, MainMaxWidthContainer, StyledTable, Title } from '../components/Util';
+import { Button, IconButton } from '../components/Controls';
 import { openLanding } from '../state/nav';
 import { RootState } from '../state';
 import { deleteModel, downloadModel, Model } from '../state/models';

@@ -22,7 +22,7 @@ export default defineConfig({
   plugins: [reactRefresh(), commonjsExternals({ externals: commonjsPackages })],
   build: {
     lib: {
-      entry: 'start.ts',
+      entry: 'main_process/index.ts',
       fileName: 'start',
       formats: ['cjs'],
     },

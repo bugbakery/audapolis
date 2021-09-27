@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { assertSome, sleep } from './util';
+import { assertSome, sleep } from '../util';
 import { RootState } from './index';
 import { getAuthHeader, getServerName, ServerConfig } from './server';
 

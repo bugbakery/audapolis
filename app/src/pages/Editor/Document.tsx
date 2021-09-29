@@ -13,6 +13,7 @@ import {
   unselect,
   saveDocument,
   togglePlaying,
+  copy,
 } from '../../state/editor';
 import { ActionCreators } from 'redux-undo';
 import { Cursor } from './Cursor';
@@ -54,6 +55,7 @@ export function Document(): JSX.Element {
   const content = computeTimed(contentRaw || ([] as ParagraphType[]));
 
   const handleKeyPress: KeyboardEventHandler = (e) => {
+    const ctrlOrCmdKey = e.ctrlKey || e.metaKey;
     if (e.key === ' ') {
       dispatch(togglePlaying());
       e.preventDefault();
@@ -67,16 +69,20 @@ export function Document(): JSX.Element {
     } else if (e.key === 'ArrowLeft') {
       if (e.shiftKey) dispatch(selectLeft());
       else dispatch(goLeft());
-    } else if (e.key === 'z' && e.ctrlKey) {
+    } else if (e.key === 'z' && ctrlOrCmdKey) {
       dispatch(ActionCreators.undo());
-    } else if (e.key === 'Z' && e.ctrlKey) {
+    } else if (e.key === 'Z' && ctrlOrCmdKey) {
       dispatch(ActionCreators.redo());
-    } else if (e.key === 'y' && e.ctrlKey) {
+    } else if (e.key === 'y' && ctrlOrCmdKey) {
       dispatch(ActionCreators.redo());
-    } else if (e.key === 's' && e.ctrlKey) {
+    } else if (e.key === 's' && ctrlOrCmdKey) {
       dispatch(saveDocument());
     } else if (e.key === 'Escape') {
       dispatch(unselect());
+    } else if (e.key === 'c' && ctrlOrCmdKey) {
+      console.log('copying');
+      dispatch(copy());
+      e.preventDefault();
     }
   };
 

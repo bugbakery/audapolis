@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session, Menu } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
@@ -15,6 +15,7 @@ const createWindow = (): void => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      enableBlinkFeatures: 'ClipboardCustomFormats',
     },
     show: false,
   });
@@ -49,6 +50,23 @@ const createWindow = (): void => {
   });
 
   mainWindow.on('ready-to-show', () => mainWindow.show());
+
+  const template = [
+    {
+      label: 'Audapolis',
+      submenu: [
+        {
+          label: 'Quit',
+          accelerator: 'Command+Q',
+          click: function () {
+            app.quit();
+          },
+        },
+      ],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 };
 
 app.on('ready', createWindow);

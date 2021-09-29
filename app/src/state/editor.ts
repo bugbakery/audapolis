@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, clipboard } from 'electron';
 import { RootState } from './index';
 import { openEditor } from './nav';
 import {
@@ -7,12 +7,15 @@ import {
   Document,
   documentFromIterator,
   documentIterator,
+  DocumentIteratorItem,
   filterItems,
   getCurrentItem,
   renderItemsFromDocument,
   serializeDocument,
+  serializeDocumentToFile,
   skipToTime,
   TimedParagraphItem,
+  Word,
 } from '../core/document';
 import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
@@ -136,7 +139,7 @@ export const saveDocument = createAsyncThunk<Document, void, { state: RootState 
     }
     const state_path = getState().editor.present?.path;
     if (state_path) {
-      await serializeDocument(document, state_path);
+      await serializeDocumentToFile(document, state_path);
     } else {
       console.log('opening save dialog');
       const path = await ipcRenderer
@@ -150,7 +153,7 @@ export const saveDocument = createAsyncThunk<Document, void, { state: RootState 
         .then((x) => x.filePath);
       console.log('saving to ', path);
       dispatch(setPath(path));
-      await serializeDocument(document, path);
+      await serializeDocumentToFile(document, path);
     }
     return document;
   }
@@ -197,6 +200,49 @@ export const deleteSomething = createAsyncThunk<void, void, { state: RootState }
         dispatch(selectLeft());
       }
     }
+  }
+);
+
+export const copy = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/copy',
+  async (arg, { getState }) => {
+    const state = getState().editor.present;
+    assertSome(state);
+
+    const selection = state.selection;
+    if (!selection) {
+      return;
+    }
+
+    const filter = (item: DocumentIteratorItem) =>
+      item.absoluteStart >= selection.start &&
+      item.absoluteStart + item.length <= selection.start + selection.length;
+    const documentSlice = documentFromIterator(
+      filterItems(filter, documentIterator(state.document.content))
+    );
+
+    const selectionText = documentSlice
+      .map((paragraph) => {
+        let paragraphText = '';
+        if (state.displaySpeakerNames) {
+          paragraphText += `${paragraph.speaker}:\t`;
+        }
+        paragraphText += paragraph.content
+          .filter((x) => x.type == 'word')
+          .map((x) => (x as Word).word)
+          .join(' ');
+        return paragraphText;
+      })
+      .join('\n\n');
+
+    const serializedSlice = await serializeDocument({
+      content: documentSlice,
+      sources: state.document.sources,
+    }).generateAsync({
+      type: 'nodebuffer',
+      streamFiles: true,
+    });
+    clipboard.writeBuffer('x-audapolis/document-zip', serializedSlice);
   }
 );
 

@@ -72,6 +72,11 @@ export function IconButton(
   } & ButtonHTMLAttributes<HTMLButtonElement>
 ): JSX.Element {
   const children = props.icon ? <props.icon /> : <></>;
+  const onClick = props.active === false ? undefined : props.onClick;
 
-  return <IconButtonContainer {...props}>{children}</IconButtonContainer>;
+  return (
+    <IconButtonContainer {...props} onClick={onClick}>
+      {children}
+    </IconButtonContainer>
+  );
 }

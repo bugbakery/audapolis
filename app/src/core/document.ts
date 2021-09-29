@@ -70,18 +70,31 @@ export async function deserializeDocument(path: string): Promise<Document> {
 
   return { content, sources };
 }
-export async function serializeDocument(document: Document, path: string): Promise<void> {
+
+export function serializeDocument(document: Document): JSZip {
   // TODO: Do we really need to write an entire new file here? Can we check for existing file content and only overwrite
   // what's needed?
   const zip = JSZip();
 
-  Object.entries(document.sources).map(([k, source]) => {
-    zip.file(`sources/${k}`, source.fileContents);
-  });
+  const neededSources = new Set(
+    Array.from(documentIterator(document.content))
+      .map((v) => ('source' in v ? v.source : undefined))
+      .filter((v) => v !== undefined)
+  );
+
+  Object.entries(document.sources)
+    .filter(([hash, _]) => neededSources.has(hash))
+    .map(([k, source]) => {
+      zip.file(`sources/${k}`, source.fileContents);
+    });
 
   const encodedDocument: ParagraphGeneric<ParagraphItem>[] = document.content;
   zip.file('document.json', JSON.stringify(encodedDocument));
+  return zip;
+}
 
+export async function serializeDocumentToFile(document: Document, path: string): Promise<void> {
+  const zip = serializeDocument(document);
   return new Promise((resolve, reject) => {
     zip
       .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
@@ -111,7 +124,7 @@ export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagr
   });
 }
 
-type DocumentIteratorItem = TimedParagraphItem & {
+export type DocumentIteratorItem = TimedParagraphItem & {
   globalIdx: number;
   paragraphIdx: number;
   itemIdx: number;

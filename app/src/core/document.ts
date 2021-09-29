@@ -1,12 +1,13 @@
 import JSZip from 'jszip';
 import { readFileSync, createWriteStream } from 'fs';
 import { ctx } from './webaudio';
+import { basename } from 'path';
 
 export interface Word {
   type: 'word';
   word: string;
 
-  source: number;
+  source: string;
   sourceStart: number;
   length: number;
 
@@ -15,7 +16,7 @@ export interface Word {
 export interface Silence {
   type: 'silence';
 
-  source: number;
+  source: string;
   sourceStart: number;
   length: number;
 }
@@ -34,16 +35,11 @@ export interface ParagraphGeneric<I> {
 export type Paragraph = ParagraphGeneric<ParagraphItem>;
 
 export interface Source {
-  fileName: string;
   fileContents: ArrayBuffer;
   decoded: AudioBuffer;
 }
-export interface SerializedSource {
-  fileName: string;
-}
-
 export interface DocumentGeneric<S, I> {
-  sources: S[];
+  sources: Record<string, S>;
   content: ParagraphGeneric<I>[];
 }
 export type Document = DocumentGeneric<Source, ParagraphItem>;
@@ -55,40 +51,35 @@ export async function deserializeDocument(path: string): Promise<Document> {
   if (!documentFile) {
     throw Error('document.json missing in audapolis file');
   }
-  const document = JSON.parse(await documentFile.async('text')) as Document;
-
-  const sources = await Promise.all(
-    document.sources.map(async (source) => {
-      const fileName = source.fileName;
-      const fileHandle = zip.file(fileName);
-      if (!fileHandle) {
-        throw Error(
-          `audio source file '${fileName}' referenced in document.json but not found in audapolis file`
-        );
-      }
-      const fileContents = await fileHandle.async('arraybuffer');
-      const decoded = await ctx.decodeAudioData(fileContents.slice(0));
-      return { fileName, fileContents, decoded };
-    })
+  const content = JSON.parse(await documentFile.async('text')) as ParagraphGeneric<ParagraphItem>[];
+  const sourceFiles = zip.file(/^sources\//);
+  console.log(sourceFiles);
+  const sources = Object.fromEntries(
+    await Promise.all(
+      sourceFiles.map(async (file) => {
+        console.log('namefile', file.name);
+        const fileContents = await file.async('arraybuffer');
+        console.log('filecontent', fileContents);
+        const decoded = await ctx.decodeAudioData(fileContents.slice(0));
+        return [basename(file.name), { fileContents, decoded }];
+      })
+    )
   );
 
-  return { content: document.content, sources };
+  // TODO: check that all sources referenced in items are found in zip file
+
+  return { content, sources };
 }
 export async function serializeDocument(document: Document, path: string): Promise<void> {
   // TODO: Do we really need to write an entire new file here? Can we check for existing file content and only overwrite
   // what's needed?
   const zip = JSZip();
 
-  const sources = document.sources.map((source) => {
-    const fileName = source.fileName;
-    zip.file(fileName, source.fileContents);
-    return { fileName };
+  Object.entries(document.sources).map(([k, source]) => {
+    zip.file(`sources/${k}`, source.fileContents);
   });
 
-  const encodedDocument: DocumentGeneric<SerializedSource, ParagraphItem> = {
-    sources,
-    content: document.content,
-  };
+  const encodedDocument: ParagraphGeneric<ParagraphItem>[] = document.content;
   zip.file('document.json', JSON.stringify(encodedDocument));
 
   return new Promise((resolve, reject) => {
@@ -212,13 +203,13 @@ export function getCurrentItem(
 export interface RenderItem {
   start: number;
   end: number;
-  source: number;
+  source: string;
 }
 export function renderItemsFromDocument(document: Document): RenderItem[] {
   const renderItems = [];
   let cur_start = 0;
   let cur_end = 0;
-  let cur_source: number | null = null;
+  let cur_source: string | null = null;
   document.content.forEach((paragraph) => {
     paragraph.content.forEach((item) => {
       if (item.type === 'artificial_silence') {

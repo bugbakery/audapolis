@@ -10,7 +10,7 @@ import { Paragraph } from '../core/document';
 import { ctx } from '../core/webaudio';
 import { Model } from './models';
 import { getAuthHeader, getServerName, ServerConfig } from './server';
-
+import { createHash } from 'crypto';
 export interface TranscribeState {
   file?: string;
   processed: number;
@@ -92,21 +92,24 @@ export const startTranscription = createAsyncThunk<
     dispatch(setState(state));
     if (state == TranscriptionState.DONE) {
       const fileContents = fileContent.buffer;
+      const hash = createHash('sha256');
+      hash.update(fileContent.slice(0));
+      const hashValue = hash.digest('hex');
       const decoded = await ctx.decodeAudioData(fileContents.slice(0));
-      const sources = [
-        {
+      const sources = {
+        [hashValue]: {
           fileName,
           fileContents,
           decoded,
         },
-      ];
+      };
       if (content === undefined) {
         throw Error('Transcription failed: State is done, but no content was produced');
       }
       // TODO: proper typing
       const contentWithSource = content.map((paragraph: any) => {
         paragraph.content = paragraph.content.map((word: any) => {
-          word['source'] = 0;
+          word['source'] = hashValue;
           return word;
         });
         return paragraph;

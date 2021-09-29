@@ -29,7 +29,7 @@ export function LandingPage(): JSX.Element {
         <Button primary onClick={() => dispatch(openDocumentFromDisk())}>
           Open Existing
         </Button>
-        <Button onClick={() => dispatch(openDocumentFromMemory({ sources: [], content: [] }))}>
+        <Button onClick={() => dispatch(openDocumentFromMemory({ sources: {}, content: [] }))}>
           New Blank Document
         </Button>
       </MainCenterColumn>

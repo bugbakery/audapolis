@@ -170,6 +170,7 @@ export const exportDocument = createAsyncThunk<Document, void, { state: RootStat
         properties: ['saveFile'],
         filters: [
           { name: 'mp3 Files', extensions: ['mp3'] },
+          { name: 'wav Files', extensions: ['wav'] },
           { name: 'All Files', extensions: ['*'] },
         ],
       })

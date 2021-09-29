@@ -53,7 +53,7 @@ function getTempDir(): Promise<string> {
 }
 export async function exportContent(
   content: RenderItem[],
-  sources: Source[],
+  sources: Record<string, Source>,
   output_path: string
 ): Promise<void> {
   const files = [];

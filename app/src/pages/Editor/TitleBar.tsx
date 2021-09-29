@@ -19,6 +19,7 @@ import {
   play,
   pause,
 } from '../../state/editor';
+import { documentIterator } from '../../core/document';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -28,6 +29,12 @@ export function EditorTitleBar(): JSX.Element {
   const canRedo = useSelector((state: RootState) => state.editor.future.length > 0);
   const canSave = useSelector(
     (state: RootState) => state.editor.present?.document != state.editor.present?.lastSavedDocument
+  );
+
+  const canExport = useSelector(
+    (state: RootState) =>
+      state.editor.present?.document.content != undefined &&
+      !documentIterator(state.editor.present?.document.content).next().done
   );
 
   const exportRunning = useSelector(
@@ -62,7 +69,7 @@ export function EditorTitleBar(): JSX.Element {
         <TitleBarButton onClick={() => dispatch(saveDocument())} active={canSave} icon={MdSave} />
         <TitleBarButton
           onClick={() => dispatch(exportDocument())}
-          active={!exportRunning}
+          active={!exportRunning && canExport}
           icon={exportRunning ? MdWatchLater : MdShare}
         />
       </TitleBarSection>

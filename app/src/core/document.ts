@@ -19,7 +19,13 @@ export interface Silence {
   sourceStart: number;
   length: number;
 }
-export type ParagraphItem = Word | Silence;
+
+export interface ArtificialSilence {
+  type: 'artificial_silence';
+  length: number;
+}
+
+export type ParagraphItem = Word | Silence | ArtificialSilence;
 
 export interface ParagraphGeneric<I> {
   speaker: string;
@@ -215,6 +221,11 @@ export function renderItemsFromDocument(document: Document): RenderItem[] {
   let cur_source: number | null = null;
   document.content.forEach((paragraph) => {
     paragraph.content.forEach((item) => {
+      if (item.type === 'artificial_silence') {
+        // TODO: Handle properly
+        throw new Error('not implemented');
+      }
+
       if (cur_source == null) {
         cur_start = item.sourceStart;
         cur_end = item.sourceStart + item.length;

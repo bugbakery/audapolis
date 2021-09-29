@@ -21,16 +21,19 @@ class Player {
     let first = true;
     try {
       for (const item of iterator) {
-        if (item.type == 'word' || item.type == 'silence') {
-          const timeInWord = first ? start - item.absoluteStart : 0;
-          await this.playInternal(
-            document.sources[item.source].decoded,
-            item.sourceStart + timeInWord,
-            item.sourceStart + item.length,
-            progressCallback,
-            item.absoluteStart + timeInWord
-          );
+        if (item.type === 'artificial_silence') {
+          // TODO: Handle properly
+          throw new Error('not implemented');
         }
+
+        const timeInWord = first ? start - item.absoluteStart : 0;
+        await this.playInternal(
+          document.sources[item.source].decoded,
+          item.sourceStart + timeInWord,
+          item.sourceStart + item.length,
+          progressCallback,
+          item.absoluteStart + timeInWord
+        );
 
         first = false;
       }

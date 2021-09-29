@@ -7,7 +7,7 @@ import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { MdSettings } from 'react-icons/md';
 import { openSettings } from '../state/nav';
-import { openDocumentFromDisk } from '../state/editor';
+import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 
 const SettingsButton = styled(IconButton).attrs({ icon: MdSettings })`
   position: absolute;
@@ -29,7 +29,9 @@ export function LandingPage(): JSX.Element {
         <Button primary onClick={() => dispatch(openDocumentFromDisk())}>
           Open Existing
         </Button>
-        <Button>New Blank Document</Button>
+        <Button onClick={() => dispatch(openDocumentFromMemory({ sources: [], content: [] }))}>
+          New Blank Document
+        </Button>
       </MainCenterColumn>
       <SettingsButton onClick={() => dispatch(openSettings())}>
         <MdSettings />

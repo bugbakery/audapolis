@@ -118,8 +118,8 @@ export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagr
       ...paragraph,
       content: paragraph.content.map((item) => {
         const mapped = {
-          absoluteStart: accumulatedTime,
           ...item,
+          absoluteStart: accumulatedTime,
         };
         accumulatedTime += item.length;
         return mapped;

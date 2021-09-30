@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session, Menu } from 'electron';
+import { app, BrowserWindow, session, Menu, shell } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
@@ -51,15 +51,48 @@ const createWindow = (): void => {
 
   mainWindow.on('ready-to-show', () => mainWindow.show());
 
-  const template = [
+  const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: 'Audapolis',
       submenu: [
         {
           label: 'Quit',
-          accelerator: 'Command+Q',
+          accelerator: 'CommandOrControl+Q',
           click: function () {
             app.quit();
+          },
+        },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Open Developer Tools',
+          accelerator: 'CommandOrControl+Alt+I',
+          click: async function () {
+            if (mainWindow.webContents.isDevToolsOpened()) {
+              mainWindow.webContents.closeDevTools();
+            } else {
+              await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
+                .then((name: string) => console.log(`Added Extension:  ${name}`))
+                .catch((err: string) => console.log('An error occurred: ', err))
+                .finally(() => {
+                  mainWindow.webContents.openDevTools();
+                });
+            }
+          },
+        },
+      ],
+    },
+    {
+      role: 'help',
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Learn More',
+          click: async () => {
+            await shell.openExternal('https://github.com/audapolis/audapolis');
           },
         },
       ],

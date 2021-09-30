@@ -10,7 +10,7 @@ import {
   TitleBarSection,
 } from '../../components/TitleBar';
 import { ActionCreators } from 'redux-undo';
-import { MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
+import { MdHome, MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
 import {
   exportDocument,
   ExportState,
@@ -20,6 +20,7 @@ import {
   pause,
 } from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
+import { openLanding } from '../../state/nav';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -43,6 +44,11 @@ export function EditorTitleBar(): JSX.Element {
 
   return (
     <TitleBar>
+      <TitleBarSection>
+        <TitleBarGroup>
+          <TitleBarButton onClick={() => dispatch(openLanding())} icon={MdHome} />
+        </TitleBarGroup>
+      </TitleBarSection>
       <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton

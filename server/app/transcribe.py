@@ -33,13 +33,15 @@ class TranscriptionTask(Task):
     content: Optional[dict] = None
 
 
-def process_audio(lang: str, model: str, file: UploadFile, task_uuid: str):
+def process_audio(
+    lang: str, model: str, file: UploadFile, fileName: str, task_uuid: str
+):
     model = models.get(lang, model)
 
     task = tasks.get(task_uuid)
     task.state = TranscriptionState.LOADING
 
-    audio = AudioSegment.from_file(file)
+    audio = AudioSegment.from_wav(file)
     audio = audio.set_frame_rate(SAMPLE_RATE)
     audio = audio.set_channels(1)
 
@@ -63,7 +65,7 @@ def process_audio(lang: str, model: str, file: UploadFile, task_uuid: str):
         task.processed = block_end
     task.state = TranscriptionState.POST_PROCESSING
     vosk_result = json.loads(rec.FinalResult())
-    content = transform_vosk_result(task.filename, vosk_result)
+    content = transform_vosk_result(fileName, vosk_result)
     task.content = [content]
     task.state = TranscriptionState.DONE
 

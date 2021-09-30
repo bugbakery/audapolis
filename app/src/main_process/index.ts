@@ -4,7 +4,7 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-const createWindow = (): void => {
+export const createWindow = (): void => {
   const mainWindow = new BrowserWindow({
     height: 600,
     width: 800,

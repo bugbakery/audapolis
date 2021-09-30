@@ -68,7 +68,11 @@ const ProgressTr = styled.tr<{ progress?: number }>`
   ${(props) =>
     props.progress &&
     css`
-      background-image: linear-gradient(to right, var(--bg-colorfull), var(--bg-colorfull));
+      background-image: linear-gradient(
+        to right,
+        ${({ theme }) => theme.bgSelection},
+        ${({ theme }) => theme.bgSelection}
+      );
       background-size: ${props.progress * 100}%;
       background-repeat: no-repeat;
     `}

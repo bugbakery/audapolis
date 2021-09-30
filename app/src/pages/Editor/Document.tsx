@@ -21,7 +21,7 @@ import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
 import { Title } from '../../components/Util';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -53,6 +53,8 @@ export function Document(): JSX.Element {
   const contentRaw = useSelector((state: RootState) => state.editor.present?.document?.content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+  const theme = useTheme();
+
   const content = computeTimed(contentRaw || ([] as ParagraphType[]));
 
   const handleKeyPress: KeyboardEventHandler = (e) => {
@@ -92,6 +94,9 @@ export function Document(): JSX.Element {
   };
 
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
+  const speakerIndices = Object.fromEntries(
+    Array.from(new Set(content.map((p) => p.speaker))).map((name, i) => [name, i])
+  );
 
   return (
     <DocumentContainer
@@ -104,13 +109,25 @@ export function Document(): JSX.Element {
       <FileNameDisplay path={fileName} />
 
       {content.length > 0 ? (
-        content.map((p, i) => <Paragraph key={i} speaker={p.speaker} content={p.content} paragraphIdx={i} />)
+        content.map((p, i) => {
+          const speakerColor = theme.speakers[speakerIndices[p.speaker]];
+          return (
+            <Paragraph
+              key={i}
+              speaker={p.speaker}
+              content={p.content}
+              paragraphIdx={i}
+              color={displaySpeakerNames ? speakerColor : theme.fg}
+            />
+          );
+        })
       ) : (
         <Paragraph
           key={0}
           speaker=""
           content={[{ type: 'artificial_silence', absoluteStart: 0, length: 0 }]}
           paragraphIdx={0}
+          color={theme.fg}
         />
       )}
     </DocumentContainer>

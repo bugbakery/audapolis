@@ -1,5 +1,6 @@
 import styled, { css } from 'styled-components';
-import quarterRest from '../../resources/quarter_rest.svg';
+// eslint-disable-next-line import/no-unresolved
+import quarterRest from '../../resources/quarter_rest.svg?raw';
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, MouseEventHandler, useRef, useState } from 'react';
 import { ParagraphGeneric, TimedParagraphItem } from '../../core/document';
@@ -24,23 +25,24 @@ import { assertSome } from '../../util';
 const ParagraphContainer = styled.div`
   user-select: none;
 `;
-const LongSilenceSpan = styled.span<{ selected: boolean }>`
+const LongSilenceSpan = styled.span<{ selected: boolean; icon: string }>`
   padding: 0 8px;
   color: transparent;
-  background: center / auto 80% no-repeat url(${quarterRest});
+  background: center / auto 80% no-repeat url(${(props) => props.icon});
   ${(props) =>
-    props.selected
-      ? css`
-          background-color: lightblue;
-        `
-      : css`
-          filter: var(--filter);
-        `}
+    props.selected &&
+    css`
+      background-color: lightblue;
+    `}
 `;
 
-function LongSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
+function LongSilence(
+  props: { selected: boolean; color: string } & HTMLAttributes<HTMLSpanElement>
+): JSX.Element {
+  const dataUri =
+    'data:image/svg+xml;base64,' + btoa(quarterRest.replaceAll('#000000', props.color));
   return (
-    <LongSilenceSpan className={'item'} {...props}>
+    <LongSilenceSpan className={'item'} icon={dataUri} {...props}>
       {' '}
     </LongSilenceSpan>
   );
@@ -144,7 +146,7 @@ const SpeakerPopupButton = styled(Button)`
   width: 100%;
   margin: 0;
   &:hover {
-    background: var(--fg-color-mild);
+    background: ${({ theme }) => theme.fg.alpha(0.3).toString()};
   }
 `;
 
@@ -175,7 +177,7 @@ function Speaker(
 
   if (!editing) {
     return (
-      <div>
+      <div {...props}>
         <Popup
           trigger={() => <SpeakerLabel>{props.name}</SpeakerLabel>}
           position={['right center', 'bottom center', 'top center']}
@@ -200,7 +202,7 @@ function Speaker(
     );
   } else {
     return (
-      <div>
+      <div {...props}>
         <SpeakerInput
           value={editing.currentText}
           ref={(ref) => {
@@ -244,7 +246,8 @@ export function Paragraph({
   speaker,
   content,
   paragraphIdx,
-}: ParagraphGeneric<TimedParagraphItem> & { paragraphIdx: number }): JSX.Element {
+  color,
+}: ParagraphGeneric<TimedParagraphItem> & { paragraphIdx: number; color: string }): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const dispatch = useDispatch();
@@ -261,8 +264,8 @@ export function Paragraph({
 
   return (
     <>
-      <Speaker name={speaker} paragraphIdx={paragraphIdx} />
-      <ParagraphContainer>
+      <Speaker name={speaker} paragraphIdx={paragraphIdx} style={{ color: color }} />
+      <ParagraphContainer style={{ color: color }}>
         {content.map((item, i) => {
           const onClick = async () => {
             await dispatch(pause());
@@ -309,13 +312,13 @@ export function Paragraph({
               return <Word {...commonProps} word={item.word} />;
             case 'silence':
               if (item.length > 0.4) {
-                return <LongSilence {...commonProps} selected={isSelected(item)} />;
+                return <LongSilence {...commonProps} color={color} selected={isSelected(item)} />;
               } else {
                 return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
               }
             case 'artificial_silence':
               if (item.length > 0.4) {
-                return <LongSilence {...commonProps} selected={isSelected(item)} />;
+                return <LongSilence {...commonProps} color={color} selected={isSelected(item)} />;
               } else {
                 return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
               }

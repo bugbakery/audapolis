@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { IconType } from 'react-icons';
 import { ButtonHTMLAttributes } from 'react';
 import * as React from 'react';
@@ -11,8 +11,8 @@ export const Button = styled.button<{ primary?: boolean }>`
   padding: 0.5rem 0;
   margin: 0.5rem 1rem;
   background: transparent;
-  border: 1px solid var(--fg-color);
-  color: var(--fg-color);
+  border: 1px solid ${({ theme }) => theme.fg};
+  color: ${({ theme }) => theme.fg};
   font-size: 18px;
   width: 265px;
   height: 40px;
@@ -20,8 +20,8 @@ export const Button = styled.button<{ primary?: boolean }>`
   ${(props) =>
     props.primary &&
     css`
-      background: var(--fg-color);
-      color: var(--bg-color);
+      background: ${({ theme }) => theme.fg};
+      color: ${({ theme }) => theme.bg};
     `}
 `;
 
@@ -38,7 +38,7 @@ const IconButtonContainer = styled.button<{ clicked?: boolean; active?: boolean 
   ${(props) =>
     props.clicked &&
     css`
-      box-shadow: inset 0 0 3px var(--fg-color) !important;
+      box-shadow: inset 0 0 3px ${({ theme }) => theme.fg} !important;
     `}
 
   ${(props) =>
@@ -53,7 +53,7 @@ const IconButtonContainer = styled.button<{ clicked?: boolean; active?: boolean 
       props.active !== undefined && !props.active
         ? undefined
         : css`
-            box-shadow: 0 0 3px var(--fg-color);
+            box-shadow: 0 0 3px ${({ theme }) => theme.fg};
           `}
     outline: none;
   }
@@ -61,7 +61,6 @@ const IconButtonContainer = styled.button<{ clicked?: boolean; active?: boolean 
   & > * {
     width: 100%;
     height: 100%;
-    filter: var(--filter);
   }
 `;
 
@@ -73,8 +72,9 @@ export function IconButton(
     text?: string;
   } & ButtonHTMLAttributes<HTMLButtonElement>
 ): JSX.Element {
-  const children = props.icon ? <props.icon /> : <></>;
+  const theme = useTheme();
   const onClick = props.active === false ? undefined : props.onClick;
+  const children = props.icon ? <props.icon style={{ color: theme.fg }} /> : <></>;
 
   const iconButton = (
     <IconButtonContainer {...props} onClick={onClick}>
@@ -101,18 +101,20 @@ export const Popup = styled(RawPopup).attrs({
   keepTooltipInside: '#root',
 })`
   &-content {
+    font-family: 'Roboto', sans-serif;
+    background-color: ${({ theme }) => theme.bg};
+    color: ${({ theme }) => theme.fg};
     margin: auto;
-    background: var(--bg-color);
     padding: 5px;
-    border: 1px solid var(--fg-color-mild);
-    box-shadow: 0 0 3px var(--fg-color-mild);
+    border: 1px solid ${({ theme }) => theme.fg.alpha(0.3).toString()};
+    box-shadow: 0 0 3px ${({ theme }) => theme.fg.alpha(0.3).toString()};
     border-radius: 5px;
   }
   &-arrow {
-    filter: drop-shadow(0 -3px 3px var(--fg-color-mild));
-    color: var(--bg-color);
+    filter: drop-shadow(0 -3px 3px ${({ theme }) => theme.fg.alpha(0.1).toString()});
+    color: ${({ theme }) => theme.bg};
     stroke-width: 2px;
-    stroke: var(--fg-color-mild);
+    stroke: ${({ theme }) => theme.fg.alpha(0.3).toString()};
     stroke-dasharray: 30px;
     stroke-dashoffset: -54px;
     left: 0;
@@ -123,4 +125,10 @@ export const Popup = styled(RawPopup).attrs({
   &-overlay {
     background: transparent;
   }
+`;
+
+export const Link = styled.a`
+  color: ${({ theme }) => theme.linkColor};
+  text-decoration: underline;
+  cursor: pointer;
 `;

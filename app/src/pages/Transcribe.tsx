@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button } from '../components/Controls';
+import { Button, Link } from '../components/Controls';
 import { useDispatch, useSelector } from 'react-redux';
 import { abortTranscription, startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
@@ -61,9 +61,9 @@ export function TranscribePage(): JSX.Element {
               </option>
             ))}
           </select>
-          <a style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openSettings())}>
+          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openSettings())}>
             Manage Servers
-          </a>
+          </Link>
 
           <span style={{ opacity: 0.5 }}>Transcription Model</span>
           <select
@@ -77,12 +77,12 @@ export function TranscribePage(): JSX.Element {
             ))}
           </select>
 
-          <a
+          <Link
             style={{ gridColumn: '2 / 2' }}
             onClick={() => dispatch(openManageServer(servers[selectedServerIdx]))}
           >
             Download More Transcription Models
-          </a>
+          </Link>
         </Form>
 
         <Button

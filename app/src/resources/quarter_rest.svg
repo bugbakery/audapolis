@@ -5,69 +5,10 @@
    version="1.1"
    width="43.742905"
    height="117.90248"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <title
-     id="title3954">Quarter Rest</title>
-  <defs
-     id="defs3914" />
+   xmlns="http://www.w3.org/2000/svg">
+
   <path
      id="path126"
      style="fill:#000000;fill-rule:evenodd;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10"
      d="m 14.112048,0.26765701 c -1.13141,0.47899 -1.80861,2.13068999 -1.28832,3.28687999 0.15691,0.16517 1.80035,2.13069 3.45204,4.29441 3.77413,4.25311 4.41829,5.26065 5.2524,7.22617 3.29513,6.73892 1.48652,15.31948 -4.28615,20.7453 -0.48725,0.64416 -2.61794,2.44451 -4.6165,3.93104 -5.7396405,4.93857 -8.3823505,7.74645 -9.3568505,10.22399 -0.35512,0.65242 -0.35512,1.29659 -0.35512,2.29586 -0.15691,2.2876 0,2.4858 6.78022,10.35613 9.1916805,11.03333 15.7736905,18.77153 16.2857205,19.25878 l 0.48725,0.47899 -0.64416,-0.32208 c -9.06781,-3.77412 -19.2587805,-5.58273 -22.7108205,-3.93104 -1.16445,0.479 -1.84164,1.15619 -2.32062998,2.2876 -1.32962,2.80789 -0.97451,6.93712 0.99926998,12.99885 1.80035,5.4506 5.41756,12.676773 9.0265205,18.102593 1.48652,2.32063 4.29441,5.92959 4.61649,6.09476 0.48725,0.48725 1.16445,0.32208 1.64344,0 0.48725,-0.64417 0.48725,-1.16445 -0.47899,-2.2876 -3.45205,-4.93857 -5.09549,-15.16257 -3.12997,-20.588393 0.80107,-2.44452 1.80861,-3.77413 3.60896,-4.60823 4.7734,-2.13069 15.32774,0.51202 19.74602,4.93031 0.32208,0.33034 0.99928,1.00753 1.32136,1.16444 1.16445,0.48725 2.80788,-0.15691 3.29513,-1.32135 0.6772,-1.16445 0.32208,-1.96552 -1.16444,-3.77413 -2.77485,-3.29513 -11.16547,-13.16402 -12.32165,-14.65054 -2.97306,-3.45205 -4.29442,-6.73892 -4.6165,-10.86816 -0.15691,-5.26065 1.96552,-10.83513 5.93785,-14.48538 0.47899,-0.64416 2.60968,-2.45276 4.58346,-3.93103 6.09476,-5.10374 8.58056,-7.90337 9.5468,-10.55434 0.6772,-2.13069 0.35512,-4.09621 -1.13141,-5.90481 -0.51203,-0.479 -6.25993,-7.58129 -12.99885,-15.64156 -9.22472,-10.84339 -12.51985,-14.80745999 -12.99885,-14.97262999 -0.67719,-0.15691 -1.48652,-0.15691 -2.16372,0.16517 z" />
-  <metadata
-     id="metadata1129">
-    <rdf:RDF>
-      <cc:Work>
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <cc:license
-           rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
-        <dc:publisher>
-          <cc:Agent
-             rdf:about="http://openclipart.org/">
-            <dc:title>Openclipart</dc:title>
-          </cc:Agent>
-        </dc:publisher>
-        <dc:title>Quarter Rest</dc:title>
-        <dc:date>2010-11-04T18:45:26</dc:date>
-        <dc:description>A single quarter rest.</dc:description>
-        <dc:source>http://openclipart.org/detail/93883/quarter-rest-by-jaschon</dc:source>
-        <dc:creator>
-          <cc:Agent>
-            <dc:title>jaschon</dc:title>
-          </cc:Agent>
-        </dc:creator>
-        <dc:subject>
-          <rdf:Bag>
-            <rdf:li>black and white</rdf:li>
-            <rdf:li>clip art</rdf:li>
-            <rdf:li>clipart</rdf:li>
-            <rdf:li>flag</rdf:li>
-            <rdf:li>music</rdf:li>
-            <rdf:li>music note</rdf:li>
-            <rdf:li>musical notation</rdf:li>
-            <rdf:li>quarter</rdf:li>
-            <rdf:li>quaver</rdf:li>
-            <rdf:li>rest</rdf:li>
-            <rdf:li>sound</rdf:li>
-            <rdf:li>staff</rdf:li>
-          </rdf:Bag>
-        </dc:subject>
-      </cc:Work>
-      <cc:License
-         rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#Reproduction" />
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#Distribution" />
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
-      </cc:License>
-    </rdf:RDF>
-  </metadata>
 </svg>

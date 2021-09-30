@@ -19,7 +19,7 @@ import {
   play,
   pause,
 } from '../../state/editor';
-import { documentIterator } from '../../core/document';
+import { DocumentGenerator } from '../../core/document';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -34,7 +34,7 @@ export function EditorTitleBar(): JSX.Element {
   const canExport = useSelector(
     (state: RootState) =>
       state.editor.present?.document.content != undefined &&
-      !documentIterator(state.editor.present?.document.content).next().done
+      !DocumentGenerator.fromParagraphs(state.editor.present?.document.content).next().done
   );
 
   const exportRunning = useSelector(

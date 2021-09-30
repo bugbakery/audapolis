@@ -121,6 +121,12 @@ export function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphI
               } else {
                 return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
               }
+            case 'artificial_silence':
+              if (item.length > 0.4) {
+                return <LongSilence {...commonProps} selected={isSelected(item)} />;
+              } else {
+                return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
+              }
           }
         })}
       </ParagraphContainer>

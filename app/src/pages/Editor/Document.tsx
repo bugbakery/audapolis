@@ -7,13 +7,14 @@ import {
   deleteSomething,
   goLeft,
   goRight,
-  insertParagraph,
+  insertParagraphBreak,
   selectLeft,
   selectRight,
   unselect,
   saveDocument,
   togglePlaying,
   copy,
+  paste,
 } from '../../state/editor';
 import { ActionCreators } from 'redux-undo';
 import { Cursor } from './Cursor';
@@ -60,7 +61,7 @@ export function Document(): JSX.Element {
       dispatch(togglePlaying());
       e.preventDefault();
     } else if (e.key === 'Enter') {
-      dispatch(insertParagraph());
+      dispatch(insertParagraphBreak());
     } else if (e.key === 'Backspace') {
       dispatch(deleteSomething());
     } else if (e.key === 'ArrowRight') {
@@ -82,6 +83,10 @@ export function Document(): JSX.Element {
     } else if (e.key === 'c' && ctrlOrCmdKey) {
       console.log('copying');
       dispatch(copy());
+      e.preventDefault();
+    } else if (e.key === 'v' && ctrlOrCmdKey) {
+      console.log('pasting');
+      dispatch(paste());
       e.preventDefault();
     }
   };

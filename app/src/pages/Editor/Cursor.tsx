@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
-import { documentIterator, Paragraph, skipToTime } from '../../core/document';
+import { DocumentGenerator, Paragraph } from '../../core/document';
 
 const CursorContainer = styled.div`
   display: flex;
@@ -68,7 +68,9 @@ function computeCursorPosition(
   ref: HTMLDivElement,
   time: number
 ): { x: number; y: number } {
-  const item = skipToTime(time, documentIterator(content), true).next().value || {
+  const item = new DocumentGenerator(DocumentGenerator.fromParagraphs(content).enumerate())
+    .skipToTime(time, true)
+    .next().value || {
     globalIdx: 0,
     absoluteStart: time,
     length: 1,

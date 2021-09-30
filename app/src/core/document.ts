@@ -2,7 +2,8 @@ import JSZip from 'jszip';
 import { readFileSync, createWriteStream } from 'fs';
 import { ctx } from './webaudio';
 import { basename } from 'path';
-
+import { GeneratorBox, map } from '../util/itertools';
+import { v4 as uuidv4 } from 'uuid';
 export interface Word {
   type: 'word';
   word: string;
@@ -44,8 +45,11 @@ export interface DocumentGeneric<S, I> {
 }
 export type Document = DocumentGeneric<Source, ParagraphItem>;
 
-export async function deserializeDocument(path: string): Promise<Document> {
+export async function deserializeDocumentFromFile(path: string): Promise<Document> {
   const zipBinary = readFileSync(path);
+  return await deserializeDocument(zipBinary);
+}
+export async function deserializeDocument(zipBinary: Buffer): Promise<Document> {
   const zip = await JSZip.loadAsync(zipBinary);
   const documentFile = zip.file('document.json');
   if (!documentFile) {
@@ -77,9 +81,9 @@ export function serializeDocument(document: Document): JSZip {
   const zip = JSZip();
 
   const neededSources = new Set(
-    Array.from(documentIterator(document.content))
-      .map((v) => ('source' in v ? v.source : undefined))
-      .filter((v) => v !== undefined)
+    DocumentGenerator.fromParagraphs(document.content).filterMap((v) =>
+      'source' in v ? v.source : undefined
+    )
   );
 
   Object.entries(document.sources)
@@ -124,52 +128,71 @@ export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagr
   });
 }
 
-export type DocumentIteratorItem = TimedParagraphItem & {
-  globalIdx: number;
-  paragraphIdx: number;
+export type DocumentGeneratorItem = TimedParagraphItem & {
+  paragraphUuid: string;
   itemIdx: number;
+
   speaker: string;
 };
-type DocumentGenerator = Generator<DocumentIteratorItem, void, undefined>;
-export function* documentIterator(content: Paragraph[]): DocumentGenerator {
+
+export class DocumentGenerator<T extends DocumentGeneratorItem> extends GeneratorBox<T> {
+  static fromParagraphs(content: Paragraph[]): DocumentGenerator<DocumentGeneratorItem> {
+    return new DocumentGenerator(rawDocumentIterator(content));
+  }
+
+  skipToTime(targetTime: number, alwaysLast?: boolean, before?: boolean): DocumentGenerator<T> {
+    return new DocumentGenerator(rawSkipToTime(this, targetTime, alwaysLast, before));
+  }
+
+  itemMap(mapper: (x: DocumentGeneratorItem) => DocumentGeneratorItem): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(map(mapper, this));
+  }
+
+  toParagraphs(): Paragraph[] {
+    const paragraphs: Paragraph[] = [];
+    let lastParagraph = null;
+    for (const item of this) {
+      if (lastParagraph != item.paragraphUuid) {
+        paragraphs.push({ speaker: item.speaker, content: [item] });
+      } else {
+        // eslint-disable-next-line unused-imports/no-unused-vars
+        const { absoluteStart, paragraphUuid, itemIdx, speaker, ...rest } = item;
+        paragraphs[paragraphs.length - 1].content.push(rest as ParagraphItem);
+      }
+      lastParagraph = item.paragraphUuid;
+    }
+
+    return paragraphs;
+  }
+}
+
+function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGeneratorItem> {
   let accumulatedTime = 0;
-  let globalIdx = 0;
   for (let p = 0; p < content.length; p++) {
     const paragraph = content[p];
+    const paragraphUuid = uuidv4();
     for (let i = 0; i < paragraph.content.length; i++) {
       const item = paragraph.content[i];
       yield {
         ...item,
         absoluteStart: accumulatedTime,
-        globalIdx,
-        paragraphIdx: p,
+        paragraphUuid,
         itemIdx: i,
         speaker: paragraph.speaker,
       };
       accumulatedTime += item.length;
-      globalIdx += 1;
     }
   }
 }
-export function* filterItems(
-  predicate: (x: DocumentIteratorItem) => boolean,
-  iterator: DocumentGenerator
-): DocumentGenerator {
-  let globalIdx = 0;
-  for (const item of iterator) {
-    if (predicate(item)) {
-      yield { ...item, globalIdx };
-      globalIdx += 1;
-    }
-  }
-}
-export function* skipToTime(
+
+export function* rawSkipToTime<I extends DocumentGeneratorItem>(
+  iterator: DocumentGenerator<I>,
   targetTime: number,
-  iterator: DocumentGenerator,
   alwaysLast?: boolean,
   before?: boolean
-): DocumentGenerator {
-  let last = null;
+): Generator<I> {
+  let last: I | null = null;
   for (const item of iterator) {
     if (item.absoluteStart + item.length <= targetTime) {
       last = item;
@@ -187,29 +210,12 @@ export function* skipToTime(
   }
 }
 
-export function documentFromIterator(iter: DocumentGenerator): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
-  let lastParagraph = -1;
-  for (const item of iter) {
-    if (lastParagraph < item.paragraphIdx) {
-      paragraphs.push({ speaker: item.speaker, content: [item] });
-    } else {
-      // eslint-disable-next-line unused-imports/no-unused-vars
-      const { absoluteStart, paragraphIdx, itemIdx, globalIdx, speaker, ...rest } = item;
-      paragraphs[paragraphs.length - 1].content.push(rest);
-    }
-    lastParagraph = item.paragraphIdx;
-  }
-
-  return paragraphs;
-}
-
 export function getCurrentItem(
   document: Paragraph[],
   time: number,
   prev?: boolean
-): DocumentIteratorItem | void {
-  const iter = skipToTime(time, documentIterator(document), true, prev);
+): DocumentGeneratorItem | void {
+  const iter = DocumentGenerator.fromParagraphs(document).skipToTime(time, true, prev);
   return iter.next().value;
 }
 

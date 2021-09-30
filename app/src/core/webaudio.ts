@@ -1,4 +1,4 @@
-import { documentIterator, skipToTime, Document } from './document';
+import { Document, DocumentGenerator } from './document';
 
 export const ctx = new AudioContext();
 
@@ -17,7 +17,7 @@ class Player {
     start: number,
     progressCallback: (time: number) => void
   ): Promise<void> {
-    const iterator = skipToTime(start, documentIterator(document.content));
+    const iterator = DocumentGenerator.fromParagraphs(document.content).skipToTime(start);
     let first = true;
     try {
       for (const item of iterator) {

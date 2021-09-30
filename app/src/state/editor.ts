@@ -4,16 +4,14 @@ import { RootState } from './index';
 import { openEditor } from './nav';
 import {
   deserializeDocument,
+  deserializeDocumentFromFile,
   Document,
-  documentFromIterator,
-  documentIterator,
-  DocumentIteratorItem,
-  filterItems,
+  DocumentGenerator,
+  DocumentGeneratorItem,
   getCurrentItem,
   renderItemsFromDocument,
   serializeDocument,
   serializeDocumentToFile,
-  skipToTime,
   TimedParagraphItem,
   Word,
 } from '../core/document';
@@ -21,7 +19,7 @@ import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
 import { assertSome } from '../util';
 import * as ffmpeg_exporter from '../exporters/ffmpeg';
-
+import { v4 as uuidv4 } from 'uuid';
 export interface Editor {
   path: string | null;
   document: Document;
@@ -74,7 +72,7 @@ export const openDocumentFromDisk = createAsyncThunk(
         ],
       })
       .then((x) => x.filePaths[0]);
-    const document = await deserializeDocument(path);
+    const document = await deserializeDocumentFromFile(path);
 
     dispatch(openEditor());
     return {
@@ -195,7 +193,7 @@ export const deleteSomething = createAsyncThunk<void, void, { state: RootState }
     } else {
       const item = getCurrentItem(state.document.content, state.currentTime);
       if (item?.itemIdx == 0) {
-        dispatch(deleteParagraph());
+        dispatch(deleteParagraphBreak());
       } else {
         dispatch(selectLeft());
       }
@@ -214,12 +212,12 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
       return;
     }
 
-    const filter = (item: DocumentIteratorItem) =>
+    const filterFn = (item: DocumentGeneratorItem) =>
       item.absoluteStart >= selection.start &&
       item.absoluteStart + item.length <= selection.start + selection.length;
-    const documentSlice = documentFromIterator(
-      filterItems(filter, documentIterator(state.document.content))
-    );
+    const documentSlice = DocumentGenerator.fromParagraphs(state.document.content)
+      .filter(filterFn)
+      .toParagraphs();
 
     const selectionText = documentSlice
       .map((paragraph) => {
@@ -235,6 +233,8 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
       })
       .join('\n\n');
 
+    console.log('copying', selectionText);
+
     const serializedSlice = await serializeDocument({
       content: documentSlice,
       sources: state.document.sources,
@@ -243,6 +243,23 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
       streamFiles: true,
     });
     clipboard.writeBuffer('x-audapolis/document-zip', serializedSlice);
+  }
+);
+
+export const paste = createAsyncThunk<Document, void, { state: RootState }>(
+  'editor/paste',
+  async (arg, { getState }) => {
+    const state = getState().editor.present;
+    assertSome(state);
+
+    if (!clipboard.has('x-audapolis/document-zip')) {
+      throw new Error('cannot paste clipboard contents');
+    }
+    const buffer = clipboard.readBuffer('x-audapolis/document-zip');
+    // TODO: Don't extract sources from zip we already have in our file
+    const deserialized = await deserializeDocument(buffer);
+    console.log('deserialized', deserialized);
+    return deserialized;
   }
 );
 
@@ -308,7 +325,10 @@ export const importSlice = createSlice({
     },
     goRight: (state) => {
       assertSome(state);
-      const iter = skipToTime(state.currentTime, documentIterator(state.document.content), true);
+      const iter = DocumentGenerator.fromParagraphs(state.document.content).skipToTime(
+        state.currentTime,
+        true
+      );
       iter.next();
       const item = iter.next().value;
       assertSome(item);
@@ -391,43 +411,41 @@ export const importSlice = createSlice({
       state.mouseSelection = false;
     },
 
-    insertParagraph: (state) => {
+    insertParagraphBreak: (state) => {
       assertSome(state);
 
-      const item = skipToTime(
-        state.currentTime,
-        documentIterator(state.document.content),
-        true
-      ).next().value;
-      assertSome(item);
+      const newUuid = uuidv4();
+      let prevUuid = '';
+      const splitParagraphs = (item: DocumentGeneratorItem): DocumentGeneratorItem => {
+        if (item.paragraphUuid == prevUuid && item.absoluteStart >= state.currentTime) {
+          item.paragraphUuid = newUuid;
+        } else if (item.absoluteStart < state.currentTime) {
+          prevUuid = item.paragraphUuid;
+        }
+        return item;
+      };
 
-      const oldParagraph = state.document.content[item.paragraphIdx];
-      const wordsBefore = oldParagraph.content.slice(0, item.itemIdx);
-      const wordsAfter = oldParagraph.content.slice(item.itemIdx);
-
-      state.document.content = [
-        ...state.document.content.slice(0, item.paragraphIdx),
-        { ...oldParagraph, content: wordsBefore },
-        { ...oldParagraph, content: wordsAfter },
-        ...state.document.content.slice(item.paragraphIdx + 1),
-      ];
+      state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
+        .itemMap(splitParagraphs)
+        .toParagraphs();
     },
-    deleteParagraph: (state) => {
+    deleteParagraphBreak: (state) => {
       assertSome(state);
-      const item = getCurrentItem(state.document.content, state.currentTime);
-      assertSome(item);
-      const prevParagraph = state.document.content[item.paragraphIdx - 1];
-      const thisParagraph = state.document.content[item.paragraphIdx];
 
-      if (thisParagraph?.speaker !== prevParagraph?.speaker) {
-        throw Error('can only merge paragraphs if speaker is the same');
-      }
-
-      state.document.content = [
-        ...state.document.content.slice(0, item.paragraphIdx - 1),
-        { ...thisParagraph, content: [...prevParagraph.content, ...thisParagraph.content] },
-        ...state.document.content.slice(item.paragraphIdx + 1),
-      ];
+      let parUuid: string | null = null;
+      let prevUuid = '';
+      const mergeParagraphs = (item: DocumentGeneratorItem): DocumentGeneratorItem => {
+        if (item.absoluteStart < state.currentTime) {
+          prevUuid = item.paragraphUuid;
+        } else if (parUuid === null || item.paragraphUuid === parUuid) {
+          parUuid = item.paragraphUuid;
+          item.paragraphUuid = prevUuid;
+        }
+        return item;
+      };
+      state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
+        .itemMap(mergeParagraphs)
+        .toParagraphs();
     },
     deleteSelection: (state) => {
       assertSome(state);
@@ -441,9 +459,9 @@ export const importSlice = createSlice({
           item.absoluteStart + item.length <= selection.start + selection.length
         );
       };
-      state.document.content = documentFromIterator(
-        filterItems(isNotSelected, documentIterator(state.document.content))
-      );
+      state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
+        .filter(isNotSelected)
+        .toParagraphs();
       state.currentTime = selection.start;
       state.selection = null;
     },
@@ -483,6 +501,23 @@ export const importSlice = createSlice({
       console.error('an error occurred while trying to export the file', action.error);
       alert('Failed to Export');
     });
+    builder.addCase(paste.rejected, (state, action) => {
+      console.error('paste rejected:', action.payload);
+    });
+    builder.addCase(paste.fulfilled, (state, action) => {
+      assertSome(state);
+      state.document.sources = { ...state.document.sources, ...action.payload.sources };
+      const beforeSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
+        (item) => item.absoluteStart + item.length <= state.currentTime
+      );
+      const pastedSlice = DocumentGenerator.fromParagraphs(action.payload.content);
+      const afterSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
+        (item) => item.absoluteStart + item.length > state.currentTime
+      );
+
+      const combinedDocument = beforeSlice.chain(pastedSlice).chain(afterSlice).toParagraphs();
+      state.document.content = combinedDocument;
+    });
   },
 });
 export const {
@@ -501,10 +536,14 @@ export const {
   mouseSelectionOver,
   mouseSelectionEnd,
 
-  insertParagraph,
-  deleteParagraph,
+  insertParagraphBreak,
+  deleteParagraphBreak,
   deleteSelection,
 } = importSlice.actions;
 export default undoable(importSlice.reducer, {
-  filter: includeAction([insertParagraph.type, deleteParagraph.type, deleteSelection.type]),
+  filter: includeAction([
+    insertParagraphBreak.type,
+    deleteParagraphBreak.type,
+    deleteSelection.type,
+  ]),
 });

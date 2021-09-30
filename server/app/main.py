@@ -27,10 +27,7 @@ from .tasks import TaskNotFoundError, tasks
 from .transcribe import TranscriptionState, TranscriptionTask, process_audio
 
 app = FastAPI()
-origins = [
-    "http://localhost:3000",
-    "http://localhost",
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

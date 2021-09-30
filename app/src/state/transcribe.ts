@@ -11,6 +11,7 @@ import { ctx } from '../core/webaudio';
 import { Model } from './models';
 import { getAuthHeader, getServerName, ServerConfig } from './server';
 import { createHash } from 'crypto';
+import { convertToWav } from '../exporters/ffmpeg';
 export interface TranscribeState {
   file?: string;
   processed: number;
@@ -67,10 +68,11 @@ export const startTranscription = createAsyncThunk<
   if (path === undefined) {
     throw Error('Failed to start transcription: No file for transcription given.');
   }
-  const fileContent = readFileSync(path);
   const fileName = basename(path);
-  const file = new File([fileContent], fileName);
+  const wavFileContent = await convertToWav(path);
+  const file = new File([wavFileContent], 'input.wav');
   formData.append('file', file); // TODO: Error handling
+  formData.append('fileName', fileName);
   dispatch(openTranscribing());
   const result = (await fetch(
     `${serverName}/tasks/start_transcription/` +
@@ -91,6 +93,7 @@ export const startTranscription = createAsyncThunk<
     dispatch(setProgress({ processed, total }));
     dispatch(setState(state));
     if (state == TranscriptionState.DONE) {
+      const fileContent = readFileSync(path);
       const fileContents = fileContent.buffer;
       const hash = createHash('sha256');
       hash.update(fileContent.slice(0));

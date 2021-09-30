@@ -65,6 +65,7 @@
     "color": "^4.0.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-squirrel-startup": "^1.0.0",
+    "ffmpeg-static": "^4.4.0",
     "fluent-ffmpeg": "^2.1.2",
     "immer": "^9.0.6",
     "jszip": "^3.7.1",

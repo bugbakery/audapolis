@@ -8,6 +8,7 @@ from fastapi import (
     Depends,
     FastAPI,
     File,
+    Form,
     HTTPException,
     Request,
     UploadFile,
@@ -64,10 +65,13 @@ async def start_transcription(
     lang: str,
     model: str,
     file: UploadFile = File(...),
+    fileName: str = Form(...),
     auth: str = Depends(token_auth),
 ):
     task = tasks.add(TranscriptionTask(file.filename, TranscriptionState.QUEUED))
-    background_tasks.add_task(process_audio, lang, model, file.file, task.uuid)
+    background_tasks.add_task(
+        process_audio, lang, model, file.file, fileName, task.uuid
+    )
     return task
 
 

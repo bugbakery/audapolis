@@ -3,10 +3,17 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { Source, RenderItem } from '../core/document';
+import ffmpegPath from 'ffmpeg-static';
+
+function getFfmpeg() {
+  const cmd = ffmpeg({ logger: console });
+  ffmpeg.setFfmpegPath(ffmpegPath);
+  return cmd;
+}
 
 function encodePartAsMp3(source_path: string, part: RenderItem, output: string): Promise<string> {
   return new Promise(function (resolve, reject) {
-    const command = ffmpeg({ logger: console });
+    const command = getFfmpeg();
     command.input(source_path);
     command.seekInput(part.start);
     command.duration(part.end - part.start);
@@ -25,7 +32,7 @@ function encodePartAsMp3(source_path: string, part: RenderItem, output: string):
 }
 function combineParts(parts: string[], output: string, tmpdir: string): Promise<string> {
   return new Promise(function (resolve, reject) {
-    const command = ffmpeg({ logger: console });
+    const command = getFfmpeg();
     for (const part of parts) {
       command.input(part);
     }
@@ -73,4 +80,27 @@ export async function exportContent(
   console.log('Combining temp files: ', files);
   await combineParts(files, output_path, tempdir);
   fs.rmdirSync(tempdir, { recursive: true });
+}
+
+export async function convertToWav(input_path: string): Promise<Buffer> {
+  const tempdir: string = await getTempDir();
+  const outputFile = path.join(tempdir, 'output.wav');
+  await new Promise(function (resolve, reject) {
+    const command = getFfmpeg();
+    command.input(input_path);
+    command.outputFormat('wav');
+    command.on('start', function (commandLine: string) {
+      console.log('Spawned Ffmpeg with command: ' + commandLine);
+    });
+    command.on('end', function () {
+      resolve(null);
+    });
+    command.on('error', function () {
+      reject();
+    });
+    command.save(outputFile);
+  });
+  const fileData = fs.readFileSync(outputFile);
+  fs.rmdirSync(tempdir, { recursive: true });
+  return fileData;
 }

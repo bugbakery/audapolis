@@ -13,6 +13,11 @@
     --bg-colorfull: darkslateblue;
     --filter: invert();
   }
+  a {
+    color: lightblue;
+    text-decoration: underline;
+    cursor: pointer;
+  }
 }
 @media (prefers-color-scheme: light) {
   :root {
@@ -24,6 +29,11 @@
     --accent: #ed6a5e;
     --bg-colorfull: lightblue;
     --filter: none;
+  }
+  a {
+    color: darkblue;
+    text-decoration: underline;
+    cursor: pointer;
   }
 }
 
@@ -39,12 +49,6 @@ body,
   height: 100%;
   padding: 0;
   margin: 0;
-}
-
-a {
-  color: darkblue;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 @font-face {

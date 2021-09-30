@@ -1,3 +1,5 @@
 .idea/
 .vscode/
 app/server/
+
+.DS_Store

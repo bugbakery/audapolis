@@ -502,6 +502,18 @@ export const importSlice = createSlice({
       state.currentTime = selection.start;
       state.selection = null;
     },
+
+    setWord: (state, arg: PayloadAction<{ absoluteStart: number; text: string }>) => {
+      console.log(state, arg.payload);
+      assertSome(state);
+      state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
+        .itemMap((item) =>
+          item.absoluteStart == arg.payload.absoluteStart && item.type == 'word'
+            ? { ...item, word: arg.payload.text }
+            : item
+        )
+        .toParagraphs();
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(openDocumentFromDisk.fulfilled, (state, action) => {
@@ -579,6 +591,8 @@ export const {
   insertParagraphBreak,
   deleteParagraphBreak,
   deleteSelection,
+
+  setWord,
 } = importSlice.actions;
 export default undoable(importSlice.reducer, {
   filter: includeAction([

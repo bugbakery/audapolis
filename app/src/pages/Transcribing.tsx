@@ -5,6 +5,7 @@ import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
 import { Line } from 'rc-progress';
+
 const FormRow = styled.div`
   display: flex;
   flex-direction: row;

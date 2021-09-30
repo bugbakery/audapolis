@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
@@ -46,10 +46,12 @@ export function EditorTitleBar(): JSX.Element {
     <TitleBar>
       <TitleBarSection>
         <TitleBarGroup>
-          <TitleBarButton onClick={() => dispatch(openLanding())} icon={MdHome} />
+          <TitleBarButton
+            onClick={() => dispatch(openLanding())}
+            icon={MdHome}
+            text={'close document'}
+          />
         </TitleBarGroup>
-      </TitleBarSection>
-      <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
             onClick={() => dispatch(ActionCreators.undo())}
@@ -75,26 +77,28 @@ export function EditorTitleBar(): JSX.Element {
       <PlayerControls />
 
       <TitleBarSection>
-        <TitleBarButton
-          onClick={() => dispatch(saveDocument())}
-          active={canSave}
-          icon={MdSave}
-          text={'save document'}
-        />
-        <TitleBarButton
-          onClick={() => dispatch(exportDocument())}
-          active={!exportRunning && canExport}
-          icon={exportRunning ? MdWatchLater : MdShare}
-          text={'export document'}
-        />
+        <TitleBarGroup>
+          <TitleBarButton
+            onClick={() => dispatch(saveDocument())}
+            active={canSave}
+            icon={MdSave}
+            text={'save document'}
+          />
+          <TitleBarButton
+            onClick={() => dispatch(exportDocument())}
+            active={!exportRunning && canExport}
+            icon={exportRunning ? MdWatchLater : MdShare}
+            text={'export document'}
+          />
+        </TitleBarGroup>
       </TitleBarSection>
     </TitleBar>
   );
 }
 
 const PlayerControlsContainer = styled.div`
-  background-color: var(--bg-color);
-  box-shadow: inset 0 0 3px var(--fg-color-mild);
+  background-color: ${({ theme }) => theme.bg};
+  box-shadow: inset 0 0 3px ${({ theme }) => theme.fg.alpha(0.3).toString()};
   border-radius: 20px;
   height: 30px;
   width: 200px;
@@ -118,6 +122,7 @@ const PlayerControlsContainer = styled.div`
 
 function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
   const time = useSelector((state: RootState) => state.editor.present?.currentTime) || 0;
+  const theme = useTheme();
   const formatInt = (x: number) => {
     const str = Math.floor(x).toString();
     return (str.length == 1 ? '0' + str : str).substr(0, 2);
@@ -130,14 +135,8 @@ function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
       <div>
         {formatInt(time / 60)}:{formatInt(time % 60)}:{formatInt((time * 100) % 100)}
       </div>
-      <FaPlay
-        color={playing ? 'var(--accent)' : 'var(--fg-color)'}
-        onClick={() => dispatch(play())}
-      />
-      <FaPause
-        color={playing ? 'var(--fg-color)' : 'var(--accent)'}
-        onClick={() => dispatch(pause())}
-      />
+      <FaPlay color={playing ? theme.playAccent : theme.fg} onClick={() => dispatch(play())} />
+      <FaPause color={playing ? theme.fg : theme.playAccent} onClick={() => dispatch(pause())} />
     </PlayerControlsContainer>
   );
 }

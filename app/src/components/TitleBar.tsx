@@ -43,7 +43,7 @@ const TitleBarContainer = styled.div`
   flex-direction: row;
   justify-content: space-evenly;
   align-items: center;
-  box-shadow: 0 0 3px var(--fg-color-mild);
+  box-shadow: 0 0 3px ${({ theme }) => theme.fg.alpha(0.3).toString()};
 
   -webkit-app-region: drag;
   -webkit-user-select: none;

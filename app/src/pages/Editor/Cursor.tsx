@@ -19,13 +19,13 @@ const CursorPoint = styled.div`
   height: 8px;
   margin-bottom: -2px;
   border-radius: 100%;
-  background-color: var(--accent);
+  background-color: ${({ theme }) => theme.playAccent};
   transition: all 0.1s;
 `;
 const CursorNeedle = styled.div`
   width: 2px;
   height: 100%;
-  background-color: var(--accent);
+  background-color: ${({ theme }) => theme.playAccent};
 `;
 
 export function Cursor(): JSX.Element {

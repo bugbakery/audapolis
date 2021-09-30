@@ -26,6 +26,14 @@ export class GeneratorBox<T> implements Generator<T> {
     return new C.constructor(filterMap(predicate, this));
   }
 
+  reduce<V>(reducer: (previousValue: V, x: T) => V, initialValue: V): V {
+    let value = initialValue;
+    for (const item of this) {
+      value = reducer(value, item);
+    }
+    return value;
+  }
+
   log(text?: string): this {
     const C = Object.getPrototypeOf(this);
     return new C.constructor(logOnUse(this, text || ''));

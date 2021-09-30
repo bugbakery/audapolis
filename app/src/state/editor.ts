@@ -17,7 +17,7 @@ import {
 } from '../core/document';
 import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
-import { assertSome } from '../util';
+import { assertSome, EPSILON } from '../util';
 import * as ffmpeg_exporter from '../exporters/ffmpeg';
 import { v4 as uuidv4 } from 'uuid';
 export interface Editor {
@@ -388,6 +388,43 @@ export const importSlice = createSlice({
         }
       }
     },
+    selectItem: (state, arg: PayloadAction<TimedParagraphItem>) => {
+      assertSome(state);
+      const item = arg.payload;
+      state.selection = { start: item.absoluteStart, length: item.length };
+    },
+    selectParagraph: (state, arg: PayloadAction<TimedParagraphItem>) => {
+      assertSome(state);
+      const item = arg.payload;
+      const findParagraph = (
+        [found, paraUuid, pStart, pLength]: [boolean, string | null, number, number],
+        x: DocumentGeneratorItem
+      ): [boolean, string | null, number, number] => {
+        if (found) {
+          if (paraUuid == x.paragraphUuid) {
+            pLength = pLength + x.length;
+          }
+        } else {
+          if (paraUuid != x.paragraphUuid) {
+            pStart = x.absoluteStart;
+            pLength = x.length;
+            paraUuid = x.paragraphUuid;
+          } else {
+            pLength += x.length;
+          }
+          if (x.absoluteStart >= item.absoluteStart) {
+            found = true;
+          }
+        }
+        return [found, paraUuid, pStart, pLength];
+      };
+      const [found, _p, paraStart, paraLength] = DocumentGenerator.fromParagraphs(
+        state.document.content
+      ).reduce(findParagraph, [false, null, 0, 0]);
+      if (found) {
+        state.selection = { start: paraStart, length: paraLength + EPSILON };
+      }
+    },
     mouseSelectionStart: (state, arg: PayloadAction<TimedParagraphItem>) => {
       assertSome(state);
       state.mouseSelection = true;
@@ -535,6 +572,9 @@ export const {
   mouseSelectionStart,
   mouseSelectionOver,
   mouseSelectionEnd,
+
+  selectItem,
+  selectParagraph,
 
   insertParagraphBreak,
   deleteParagraphBreak,

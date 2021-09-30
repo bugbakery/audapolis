@@ -12,6 +12,8 @@ import {
   setTime,
   play,
   pause,
+  selectItem,
+  selectParagraph,
 } from '../../state/editor';
 
 const ParagraphContainer = styled.div`
@@ -93,10 +95,15 @@ export function Paragraph({ speaker, content }: ParagraphGeneric<TimedParagraphI
           };
           const onMouseDown: MouseEventHandler = (e) => {
             dispatch(mouseSelectionStart(item));
-            const listener = () => {
+            const listener = (e: MouseEvent) => {
               dispatch(mouseSelectionEnd());
-              e.target.removeEventListener('click', listener);
+              e.target?.removeEventListener('click', listener);
               document.removeEventListener('click', listener);
+              if (e.detail == 2) {
+                dispatch(selectItem(item));
+              } else if (e.detail == 3) {
+                dispatch(selectParagraph(item));
+              }
             };
             e.target.addEventListener('click', listener, { once: true });
             document.addEventListener('click', listener, { once: true });

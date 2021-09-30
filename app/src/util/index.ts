@@ -7,3 +7,5 @@ export function assertSome<T>(x: T | null | undefined | void): asserts x is T {
     throw Error(`x is not loaded (it is '${x}')`);
   }
 }
+
+export const EPSILON = 0.00001;

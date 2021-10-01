@@ -270,6 +270,39 @@ export const paste = createAsyncThunk<Document, void, { state: RootState }>(
   }
 );
 
+export const exportSelection = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/exportSelection',
+  async (arg, { getState }) => {
+    const state = getState().editor.present;
+    assertSome(state);
+
+    const selection = state.selection;
+    if (!selection) {
+      return;
+    }
+
+    const filterFn = (item: DocumentGeneratorItem) =>
+      item.absoluteStart >= selection.start &&
+      item.absoluteStart + item.length <= selection.start + selection.length;
+    const render_items = DocumentGenerator.fromParagraphs(state.document.content)
+      .filter(filterFn)
+      .toRenderItems()
+      .collect();
+
+    const path = await ipcRenderer
+      .invoke('save-file', {
+        properties: ['saveFile'],
+        filters: [
+          { name: 'mp3 Files', extensions: ['mp3'] },
+          { name: 'wav Files', extensions: ['wav'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      })
+      .then((x) => x.filePath);
+    console.log('exporting to', path);
+    await ffmpeg_exporter.exportContent(render_items, state.document.sources, path);
+  }
+);
 function getSelectionInfo(
   selection: Range | null,
   selectionStartItem: TimedParagraphItem | null

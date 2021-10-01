@@ -25,6 +25,22 @@ export const Button = styled.button<{ primary?: boolean }>`
     `}
 `;
 
+export const SmallButton = styled.button<{ primary?: boolean }>`
+  display: inline-block;
+  text-align: center;
+  border-radius: 5px;
+  padding: 0.25rem;
+  margin: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid ${({ theme }) => theme.fg};
+  color: ${({ theme }) => theme.fg};
+  ${(props) =>
+    props.primary &&
+    css`
+      background: ${({ theme }) => theme.fg};
+      color: ${({ theme }) => theme.bg};
+    `}
+`;
 const IconButtonContainer = styled.button<{ clicked?: boolean; active?: boolean }>`
   width: 30px;
   height: 30px;

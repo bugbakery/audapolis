@@ -79,7 +79,7 @@ export function Document(): JSX.Element {
     } else if (e.key === 'y' && ctrlOrCmdKey) {
       dispatch(ActionCreators.redo());
     } else if (e.key === 's' && ctrlOrCmdKey) {
-      dispatch(saveDocument());
+      dispatch(saveDocument(e.shiftKey));
     } else if (e.key === 'Escape') {
       dispatch(unselect());
     } else if (e.key === 'c' && ctrlOrCmdKey) {

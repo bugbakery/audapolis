@@ -79,7 +79,7 @@ export function EditorTitleBar(): JSX.Element {
       <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
-            onClick={() => dispatch(saveDocument())}
+            onClick={() => dispatch(saveDocument(false))}
             active={canSave}
             icon={MdSave}
             text={'save document'}

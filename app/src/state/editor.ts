@@ -128,15 +128,15 @@ export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
   }
 );
 
-export const saveDocument = createAsyncThunk<Document, void, { state: RootState }>(
+export const saveDocument = createAsyncThunk<Document, boolean, { state: RootState }>(
   'editor/saveDocument',
-  async (_, { dispatch, getState }) => {
+  async (saveAsNew, { dispatch, getState }) => {
     const document = getState().editor.present?.document;
     if (document === undefined) {
       throw Error('cant save. document is undefined');
     }
     const state_path = getState().editor.present?.path;
-    if (state_path) {
+    if (state_path && !saveAsNew) {
       await serializeDocumentToFile(document, state_path);
     } else {
       console.log('opening save dialog');

@@ -42,7 +42,7 @@ export const Title = styled.h1`
 
 export const StyledTable = styled.table`
   & tr:nth-child(odd) {
-    background-color: ${({ theme }) => theme.bgTableAccent};
+    background-color: ${({ theme }) => theme.bgAccent};
   }
 
   padding-bottom: 20px;

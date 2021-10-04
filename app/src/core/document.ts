@@ -37,6 +37,7 @@ export type Paragraph = ParagraphGeneric<ParagraphItem>;
 
 export interface Source {
   fileContents: ArrayBuffer;
+  objectUrl: string;
 }
 export interface DocumentGeneric<S, I> {
   sources: Record<string, S>;
@@ -63,7 +64,8 @@ export async function deserializeDocument(zipBinary: Buffer): Promise<Document> 
         console.log('namefile', file.name);
         const fileContents = await file.async('arraybuffer');
         console.log('filecontent', fileContents);
-        return [basename(file.name), { fileContents }];
+        const objectUrl = URL.createObjectURL(new Blob([fileContents]));
+        return [basename(file.name), { fileContents, objectUrl }];
       })
     )
   );

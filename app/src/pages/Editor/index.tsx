@@ -8,6 +8,7 @@ import { Player } from './Player';
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
   overflow-y: auto;
+  padding-bottom: 200px;
 `;
 export function EditorPage(): JSX.Element {
   return (

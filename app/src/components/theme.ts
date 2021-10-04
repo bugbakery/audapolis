@@ -9,7 +9,7 @@ function Color(x: string): RawColor & string {
 
 export const darkTheme: DefaultTheme = {
   bg: Color('#282828'),
-  bgTableAccent: Color('#444'),
+  bgAccent: Color('#444'),
   bgSelection: Color('darkslateblue'),
 
   fg: Color('white'),
@@ -23,7 +23,7 @@ export const darkTheme: DefaultTheme = {
 
 export const lightTheme: DefaultTheme = {
   bg: Color('white'),
-  bgTableAccent: Color('#f2f2f2'),
+  bgAccent: Color('#f2f2f2'),
   bgSelection: Color('lightblue'),
 
   fg: Color('black'),

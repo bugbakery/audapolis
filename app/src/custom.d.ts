@@ -9,5 +9,4 @@ interface ImportMeta {
   };
 }
 
-declare module 'fluent-ffmpeg/lib/fluent-ffmpeg';
 declare module 'ffmpeg-static';

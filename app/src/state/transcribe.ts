@@ -7,7 +7,6 @@ import { basename } from 'path';
 import { sleep } from '../util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
-import { ctx } from '../core/webaudio';
 import { Model } from './models';
 import { getAuthHeader, getServerName, ServerConfig } from './server';
 import { createHash } from 'crypto';
@@ -98,12 +97,10 @@ export const startTranscription = createAsyncThunk<
       const hash = createHash('sha256');
       hash.update(fileContent.slice(0));
       const hashValue = hash.digest('hex');
-      const decoded = await ctx.decodeAudioData(fileContents.slice(0));
       const sources = {
         [hashValue]: {
           fileName,
           fileContents,
-          decoded,
         },
       };
       if (content === undefined) {
@@ -122,7 +119,7 @@ export const startTranscription = createAsyncThunk<
       );
       break;
     }
-    await sleep(100);
+    await sleep(0.1);
   }
 });
 

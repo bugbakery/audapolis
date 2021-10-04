@@ -78,7 +78,7 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
         dispatch(fetchModelState());
         break;
       }
-      await sleep(100);
+      await sleep(0.1);
     }
   }
 );

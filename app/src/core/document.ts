@@ -1,9 +1,9 @@
 import JSZip from 'jszip';
 import { readFileSync, createWriteStream } from 'fs';
-import { ctx } from './webaudio';
 import { basename } from 'path';
 import { GeneratorBox, map } from '../util/itertools';
 import { v4 as uuidv4 } from 'uuid';
+import { roughEq } from '../util';
 export interface Word {
   type: 'word';
   word: string;
@@ -37,7 +37,6 @@ export type Paragraph = ParagraphGeneric<ParagraphItem>;
 
 export interface Source {
   fileContents: ArrayBuffer;
-  decoded: AudioBuffer;
 }
 export interface DocumentGeneric<S, I> {
   sources: Record<string, S>;
@@ -64,8 +63,7 @@ export async function deserializeDocument(zipBinary: Buffer): Promise<Document> 
         console.log('namefile', file.name);
         const fileContents = await file.async('arraybuffer');
         console.log('filecontent', fileContents);
-        const decoded = await ctx.decodeAudioData(fileContents.slice(0));
-        return [basename(file.name), { fileContents, decoded }];
+        return [basename(file.name), { fileContents }];
       })
     )
   );
@@ -135,13 +133,24 @@ export type DocumentGeneratorItem = TimedParagraphItem & {
   speaker: string;
 };
 
-export class DocumentGenerator<T extends DocumentGeneratorItem> extends GeneratorBox<T> {
-  static fromParagraphs(content: Paragraph[]): DocumentGenerator<DocumentGeneratorItem> {
+export class DocumentGenerator<
+  T extends DocumentGeneratorItem = DocumentGeneratorItem
+> extends GeneratorBox<T> {
+  static fromParagraphs(content: Paragraph[]): DocumentGenerator {
     return new DocumentGenerator(rawDocumentIterator(content));
   }
 
   skipToTime(targetTime: number, alwaysLast?: boolean, before?: boolean): DocumentGenerator<T> {
     return new DocumentGenerator(rawSkipToTime(this, targetTime, alwaysLast, before));
+  }
+
+  exactFrom(time: number): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(rawExactFrom(this, time));
+  }
+  exactUntil(time: number): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(rawExactUntil(this, time));
   }
 
   itemMap(mapper: (x: DocumentGeneratorItem) => DocumentGeneratorItem): this {
@@ -153,17 +162,25 @@ export class DocumentGenerator<T extends DocumentGeneratorItem> extends Generato
     const paragraphs: Paragraph[] = [];
     let lastParagraph = null;
     for (const item of this) {
-      if (lastParagraph != item.paragraphUuid) {
-        paragraphs.push({ speaker: item.speaker, content: [item] });
-      } else {
+      const generatorItemToParagraphItem = (item: DocumentGeneratorItem): ParagraphItem => {
         // eslint-disable-next-line unused-imports/no-unused-vars
         const { absoluteStart, paragraphUuid, itemIdx, speaker, ...rest } = item;
-        paragraphs[paragraphs.length - 1].content.push(rest as ParagraphItem);
+        return rest;
+      };
+
+      if (lastParagraph != item.paragraphUuid) {
+        paragraphs.push({ speaker: item.speaker, content: [generatorItemToParagraphItem(item)] });
+      } else {
+        paragraphs[paragraphs.length - 1].content.push(generatorItemToParagraphItem(item));
       }
       lastParagraph = item.paragraphUuid;
     }
 
     return paragraphs;
+  }
+
+  toRenderItems(): GeneratorBox<RenderItem> {
+    return new GeneratorBox(renderItemsFromDocumentGenerator(this));
   }
 }
 
@@ -210,6 +227,96 @@ export function* rawSkipToTime<I extends DocumentGeneratorItem>(
   }
 }
 
+// this is subtly different from the rawSkipToTime method: it modifies even items inside the iterator to achieve
+// sub-item time accuracy
+export function* rawExactFrom<I extends DocumentGeneratorItem>(
+  iterator: DocumentGenerator<I>,
+  time: number
+): Generator<I> {
+  let first = true;
+  for (const item of iterator) {
+    const itemStartOffset = time - item.absoluteStart;
+    const length = item.length - itemStartOffset;
+    if (first && length >= 0) {
+      const modified = {
+        ...item,
+        ...('sourceStart' in item ? { sourceStart: item.sourceStart + itemStartOffset } : {}),
+        absoluteStart: item.absoluteStart + itemStartOffset,
+        length: length,
+      };
+      yield modified;
+      first = false;
+    } else if (length >= 0) {
+      yield item;
+    }
+  }
+}
+export function* rawExactUntil<I extends DocumentGeneratorItem>(
+  iterator: DocumentGenerator<I>,
+  time: number
+): Generator<I> {
+  for (const item of iterator) {
+    const newLength = time - item.absoluteStart;
+    if (newLength > item.length) {
+      yield item;
+    } else if (newLength > 0) {
+      yield { ...item, length: newLength };
+    }
+  }
+}
+
+export interface NonSourceRenderItem {
+  absoluteStart: number;
+  length: number;
+}
+export interface SourceRenderItem {
+  absoluteStart: number;
+  length: number;
+
+  source: string;
+  sourceStart: number;
+}
+export type RenderItem = NonSourceRenderItem | SourceRenderItem;
+export function* renderItemsFromDocumentGenerator(gen: DocumentGenerator): Generator<RenderItem> {
+  type Current = {
+    absoluteStart?: number;
+    length: number;
+    source?: string;
+    sourceStart?: number;
+  };
+  let current: Current = {
+    length: 0,
+  };
+  for (const item of gen) {
+    const itemSource = 'source' in item ? item.source : undefined;
+    const itemSourceStart = 'sourceStart' in item ? item.sourceStart : undefined;
+    if (current.absoluteStart === undefined) {
+      current = {
+        absoluteStart: item.absoluteStart,
+        length: item.length,
+        sourceStart: itemSourceStart,
+        source: itemSource,
+      };
+    } else if (
+      current.source == itemSource &&
+      current.sourceStart !== undefined &&
+      roughEq(current.sourceStart + current.length, itemSourceStart)
+    ) {
+      current.length += item.length;
+    } else {
+      yield current as RenderItem;
+      current = {
+        absoluteStart: item.absoluteStart,
+        length: item.length,
+        ...('source' in item ? { source: item.source, sourceStart: item.sourceStart } : {}),
+      };
+    }
+  }
+  if (current.absoluteStart !== undefined) {
+    yield current as RenderItem;
+  }
+}
+
 export function getCurrentItem(
   document: Paragraph[],
   time: number,
@@ -217,43 +324,4 @@ export function getCurrentItem(
 ): DocumentGeneratorItem | void {
   const iter = DocumentGenerator.fromParagraphs(document).skipToTime(time, true, prev);
   return iter.next().value;
-}
-
-export interface RenderItem {
-  start: number;
-  end: number;
-  source: string;
-}
-export function renderItemsFromDocument(document: Document): RenderItem[] {
-  const renderItems = [];
-  let cur_start = 0;
-  let cur_end = 0;
-  let cur_source: string | null = null;
-  document.content.forEach((paragraph) => {
-    paragraph.content.forEach((item) => {
-      if (item.type === 'artificial_silence') {
-        // TODO: Handle properly
-        throw new Error('not implemented');
-      }
-
-      if (cur_source == null) {
-        cur_start = item.sourceStart;
-        cur_end = item.sourceStart + item.length;
-        cur_source = item.source;
-      } else {
-        if (cur_source == item.source && cur_end == item.sourceStart) {
-          cur_end = item.sourceStart + item.length;
-        } else {
-          renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
-          cur_start = item.sourceStart;
-          cur_end = item.sourceStart + item.length;
-          cur_source = item.source;
-        }
-      }
-    });
-  });
-  if (cur_source != null) {
-    renderItems.push({ start: cur_start, end: cur_end, source: cur_source });
-  }
-  return renderItems;
 }

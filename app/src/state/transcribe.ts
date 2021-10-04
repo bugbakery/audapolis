@@ -94,6 +94,7 @@ export const startTranscription = createAsyncThunk<
     if (state == TranscriptionState.DONE) {
       const fileContent = readFileSync(path);
       const fileContents = fileContent.buffer;
+      const objectUrl = URL.createObjectURL(new Blob([fileContents]));
       const hash = createHash('sha256');
       hash.update(fileContent.slice(0));
       const hashValue = hash.digest('hex');
@@ -101,6 +102,7 @@ export const startTranscription = createAsyncThunk<
         [hashValue]: {
           fileName,
           fileContents,
+          objectUrl,
         },
       };
       if (content === undefined) {

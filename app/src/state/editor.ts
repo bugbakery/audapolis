@@ -29,6 +29,7 @@ export interface Editor {
   currentTime: number;
   playing: boolean;
   displaySpeakerNames: boolean;
+  displayVideo: boolean;
 
   selection: Range | null;
   selectionStartItem: TimedParagraphItem | null;
@@ -47,6 +48,7 @@ const editorDefaults = {
   currentTime: 0,
   playing: false,
   displaySpeakerNames: false,
+  displayVideo: false,
 
   selection: null,
   selectionStartItem: null,
@@ -106,7 +108,7 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
     }
     dispatch(setPlay(true));
     const { document, currentTime } = editor;
-    const progressCallback = (time: number) => dispatch(setTime(time));
+    const progressCallback = (time: number) => dispatch(setTimeWithoutUpdate(time));
     await player.play(document.content, currentTime, progressCallback);
     console.log('play ended');
     dispatch(setPlay(false));
@@ -308,6 +310,10 @@ export const importSlice = createSlice({
       assertSome(state);
       state.displaySpeakerNames = !state.displaySpeakerNames;
     },
+    toggleDisplayVideo: (state) => {
+      assertSome(state);
+      state.displayVideo = !state.displayVideo;
+    },
     setPath: (state, args: PayloadAction<string>) => {
       assertSome(state);
       state.path = args.payload;
@@ -320,12 +326,18 @@ export const importSlice = createSlice({
     setTime: (state, args: PayloadAction<number>) => {
       assertSome(state);
       state.currentTime = args.payload;
+      player.setTime(state.document.content, state.currentTime);
+    },
+    setTimeWithoutUpdate: (state, args: PayloadAction<number>) => {
+      assertSome(state);
+      state.currentTime = args.payload;
     },
     goLeft: (state) => {
       assertSome(state);
       const item = getCurrentItem(state.document.content, state.currentTime, true);
       assertSome(item);
       state.currentTime = item.absoluteStart;
+      player.setTime(state.document.content, state.currentTime);
       state.selection = null;
     },
     goRight: (state) => {
@@ -338,6 +350,7 @@ export const importSlice = createSlice({
       const item = iter.next().value;
       assertSome(item);
       state.currentTime = item.absoluteStart;
+      player.setTime(state.document.content, state.currentTime);
       state.selection = null;
     },
 
@@ -606,9 +619,11 @@ export const importSlice = createSlice({
 });
 export const {
   toggleDisplaySpeakerNames,
+  toggleDisplayVideo,
   setPlay,
   setPath,
   setTime,
+  setTimeWithoutUpdate,
 
   goLeft,
   goRight,

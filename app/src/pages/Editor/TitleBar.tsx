@@ -10,7 +10,16 @@ import {
   TitleBarSection,
 } from '../../components/TitleBar';
 import { ActionCreators } from 'redux-undo';
-import { MdHome, MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
+import {
+  MdHome,
+  MdMovie,
+  MdPerson,
+  MdRedo,
+  MdSave,
+  MdShare,
+  MdUndo,
+  MdWatchLater,
+} from 'react-icons/md';
 import {
   exportDocument,
   ExportState,
@@ -18,6 +27,7 @@ import {
   toggleDisplaySpeakerNames,
   play,
   pause,
+  toggleDisplayVideo,
 } from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
 import { openLanding } from '../../state/nav';
@@ -26,6 +36,8 @@ export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+  const displayVideo =
+    useSelector((state: RootState) => state.editor.present?.displayVideo) || false;
   const canUndo = useSelector((state: RootState) => state.editor.past.length > 0);
   const canRedo = useSelector((state: RootState) => state.editor.future.length > 0);
   const canSave = useSelector(
@@ -66,17 +78,25 @@ export function EditorTitleBar(): JSX.Element {
             text={'redo'}
           />
         </TitleBarGroup>
-        <TitleBarButton
-          clicked={displaySpeakerNames}
-          onClick={() => dispatch(toggleDisplaySpeakerNames())}
-          icon={MdPerson}
-          text={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}
-        />
       </TitleBarSection>
 
       <PlayerControls />
 
       <TitleBarSection>
+        <TitleBarGroup>
+          <TitleBarButton
+            clicked={displaySpeakerNames}
+            onClick={() => dispatch(toggleDisplaySpeakerNames())}
+            icon={MdPerson}
+            text={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}
+          />
+          <TitleBarButton
+            clicked={displayVideo}
+            onClick={() => dispatch(toggleDisplayVideo())}
+            icon={MdMovie}
+            text={displayVideo ? 'hide video' : 'display video'}
+          />
+        </TitleBarGroup>
         <TitleBarGroup>
           <TitleBarButton
             onClick={() => dispatch(saveDocument(false))}

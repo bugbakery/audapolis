@@ -3,7 +3,7 @@ import Color from 'color';
 declare module 'styled-components' {
   export interface DefaultTheme {
     bg: Color & string;
-    bgTableAccent: Color & string;
+    bgAccent: Color & string;
     bgSelection: Color & string;
 
     fg: Color & string;

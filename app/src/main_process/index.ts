@@ -56,6 +56,13 @@ export const createWindow = (): void => {
       label: 'Audapolis',
       submenu: [
         {
+          label: 'New Window',
+          accelerator: 'CommandOrControl+N',
+          click: function () {
+            createWindow();
+          },
+        },
+        {
           label: 'Quit',
           accelerator: 'CommandOrControl+Q',
           click: function () {

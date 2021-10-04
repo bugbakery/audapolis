@@ -3,6 +3,7 @@ import { AppContainer, MainCenterColumn } from '../../components/Util';
 import styled from 'styled-components';
 import { EditorTitleBar } from './TitleBar';
 import { Document } from './Document';
+import { Player } from './Player';
 
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
@@ -16,6 +17,8 @@ export function EditorPage(): JSX.Element {
       <MainContainer>
         <Document />
       </MainContainer>
+
+      <Player />
     </AppContainer>
   );
 }

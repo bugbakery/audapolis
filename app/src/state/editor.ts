@@ -9,17 +9,17 @@ import {
   DocumentGenerator,
   DocumentGeneratorItem,
   getCurrentItem,
-  renderItemsFromDocument,
   serializeDocument,
   serializeDocumentToFile,
   TimedParagraphItem,
   Word,
 } from '../core/document';
-import { player } from '../core/webaudio';
 import undoable, { includeAction } from 'redux-undo';
 import { assertSome, EPSILON } from '../util';
 import * as ffmpeg_exporter from '../exporters/ffmpeg';
 import { v4 as uuidv4 } from 'uuid';
+import { player } from '../core/player';
+
 export interface Editor {
   path: string | null;
   document: Document;
@@ -107,7 +107,8 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
     dispatch(setPlay(true));
     const { document, currentTime } = editor;
     const progressCallback = (time: number) => dispatch(setTime(time));
-    await player.play(document, currentTime, progressCallback);
+    await player.play(document.content, currentTime, progressCallback);
+    console.log('play ended');
     dispatch(setPlay(false));
   }
 );
@@ -164,8 +165,8 @@ export const exportDocument = createAsyncThunk<Document, void, { state: RootStat
     if (document === undefined) {
       throw Error('cant export. document is undefined');
     }
+
     console.log('starting export', document.content);
-    const render_items = renderItemsFromDocument(document);
     const path = await ipcRenderer
       .invoke('save-file', {
         properties: ['saveFile'],
@@ -177,7 +178,13 @@ export const exportDocument = createAsyncThunk<Document, void, { state: RootStat
       })
       .then((x) => x.filePath);
     console.log('saving to ', path);
-    await ffmpeg_exporter.exportContent(render_items, document.sources, path);
+
+    const renderItems = DocumentGenerator.fromParagraphs(document.content)
+      .toRenderItems()
+      .collect();
+    console.log(renderItems);
+    await ffmpeg_exporter.exportContent(renderItems, document.sources, path);
+
     return document;
   }
 );
@@ -212,11 +219,9 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
       return;
     }
 
-    const filterFn = (item: DocumentGeneratorItem) =>
-      item.absoluteStart >= selection.start &&
-      item.absoluteStart + item.length <= selection.start + selection.length;
     const documentSlice = DocumentGenerator.fromParagraphs(state.document.content)
-      .filter(filterFn)
+      .exactFrom(selection.start)
+      .exactUntil(selection.start + selection.length)
       .toParagraphs();
 
     const selectionText = documentSlice
@@ -275,8 +280,8 @@ function getSelectionInfo(
     return {
       leftEnd: selection.start,
       rightEnd: selection.start + selection.length,
-      currentEndRight: startDifference < 0.01,
-      currentEndLeft: endDifference < 0.01,
+      currentEndRight: startDifference < EPSILON,
+      currentEndLeft: endDifference < EPSILON,
     };
   } else if (selectionStartItem) {
     const selectionStartItemEnd = selectionStartItem.absoluteStart + selectionStartItem.length;
@@ -554,6 +559,9 @@ export const importSlice = createSlice({
     });
     builder.addCase(openDocumentFromMemory.rejected, (state, action) => {
       console.error('an error occurred while trying to load the doc from memory', action.error);
+    });
+    builder.addCase(play.rejected, (state, action) => {
+      console.error('an error occurred during playback', action.error);
     });
     builder.addCase(pause.fulfilled, (state) => {
       assertSome(state);

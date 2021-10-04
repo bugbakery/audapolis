@@ -36,6 +36,14 @@ repos:
           language: system
           files: app/.*
           pass_filenames: false
+-   repo: local
+    hooks:
+      -   id: npm_test
+          name: npm test
+          entry: npm --prefix app/ run test
+          language: system
+          files: app/.*
+          pass_filenames: false
 # TODO
 # -   repo: https://github.com/pre-commit/mirrors-mypy
 #     rev: 'v0.910'  # Use the sha / tag you want to point at

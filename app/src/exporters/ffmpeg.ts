@@ -63,7 +63,6 @@ export async function exportContent(
     } else {
       const filters = new FilterChain([
         new FilterNode('anullsrc', {
-          sample_rate: 48000,
           duration: part.length,
         } as unknown as Argument[]),
       ]);

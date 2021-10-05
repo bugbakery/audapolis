@@ -59,7 +59,10 @@ export function EditorTitleBar(): JSX.Element {
       <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
-            onClick={() => dispatch(openLanding())}
+            onClick={() => {
+              dispatch(pause());
+              dispatch(openLanding());
+            }}
             icon={MdHome}
             text={'close document'}
           />

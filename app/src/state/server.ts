@@ -32,8 +32,10 @@ function findServer() {
   const possibilities = [
     // In packaged app
     path.join(process.resourcesPath, 'server', 'server'),
+    path.join(process.resourcesPath, 'server', 'server.exe'),
     // In development
     path.join(process.cwd(), 'server', 'server'),
+    path.join(process.cwd(), 'server', 'server.exe'),
   ];
   for (const path of possibilities) {
     if (fs.existsSync(path)) {

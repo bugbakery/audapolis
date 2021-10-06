@@ -45,17 +45,26 @@ export interface DocumentGeneric<S, I> {
 }
 export type Document = DocumentGeneric<Source, ParagraphItem>;
 
-export async function deserializeDocumentFromFile(path: string): Promise<Document> {
+export async function deserializeDocumentFromFile(
+  path: string,
+  onNoSourceLoad?: (noSourceDocument: Document) => void
+): Promise<Document> {
   const zipBinary = readFileSync(path);
-  return await deserializeDocument(zipBinary);
+  return await deserializeDocument(zipBinary, onNoSourceLoad);
 }
-export async function deserializeDocument(zipBinary: Buffer): Promise<Document> {
+export async function deserializeDocument(
+  zipBinary: Buffer,
+  onNoSourceLoad?: (noSourceDocument: Document) => void
+): Promise<Document> {
   const zip = await JSZip.loadAsync(zipBinary);
   const documentFile = zip.file('document.json');
   if (!documentFile) {
     throw Error('document.json missing in audapolis file');
   }
   const content = JSON.parse(await documentFile.async('text')) as ParagraphGeneric<ParagraphItem>[];
+  if (onNoSourceLoad) {
+    onNoSourceLoad({ content, sources: {} });
+  }
   const sourceFiles = zip.file(/^sources\//);
   console.log(sourceFiles);
   const sources = Object.fromEntries(

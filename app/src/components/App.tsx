@@ -6,7 +6,7 @@ import { LandingPage } from '../pages/Landing';
 import { TranscribePage } from '../pages/Transcribe';
 import { EditorPage } from '../pages/Editor';
 import { TranscribingPage } from '../pages/Transcribing';
-import { ManageServerPage } from '../pages/ManageServer';
+import { ModelManagerPage } from '../pages/ModelManager';
 import styled, { ThemeProvider } from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
@@ -48,7 +48,7 @@ function CurrentPage(): JSX.Element {
       return <TranscribingPage />;
     case Page.ServersList:
       return <ServersListPage />;
-    case Page.ManageServer:
-      return <ManageServerPage />;
+    case Page.ModelManager:
+      return <ModelManagerPage />;
   }
 }

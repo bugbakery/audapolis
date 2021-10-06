@@ -8,7 +8,7 @@ import { sleep } from '../util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { Model } from './models';
-import { getAuthHeader, getServerName, ServerConfig } from './server';
+import { getAuthHeader, getServer, getServerName } from './server';
 import { createHash } from 'crypto';
 import { convertToWav } from '../exporters/ffmpeg';
 export interface TranscribeState {
@@ -55,75 +55,75 @@ export const abortTranscription = createAsyncThunk('transcribe/abort', async (_,
   dispatch(openLanding());
 });
 
-export const startTranscription = createAsyncThunk<
-  void,
-  { server: ServerConfig; model: Model },
-  { state: RootState }
->('transcribing/upload', async ({ server, model }, { dispatch, getState }) => {
-  const formData = new FormData();
-  const state = getState();
-  const serverName = getServerName(server);
-  const path = state?.transcribe?.file;
-  if (path === undefined) {
-    throw Error('Failed to start transcription: No file for transcription given.');
-  }
-  const fileName = basename(path);
-  const wavFileContent = await convertToWav(path);
-  const file = new File([wavFileContent], 'input.wav');
-  formData.append('file', file); // TODO: Error handling
-  formData.append('fileName', fileName);
-  dispatch(openTranscribing());
-  const result = (await fetch(
-    `${serverName}/tasks/start_transcription/` +
-      `?lang=${encodeURIComponent(model.lang)}` +
-      `&model=${encodeURIComponent(model.name)}`,
-    {
-      method: 'POST',
-      body: formData,
-      headers: { Authorization: getAuthHeader(server) },
+export const startTranscription = createAsyncThunk<void, { model: Model }, { state: RootState }>(
+  'transcribing/upload',
+  async ({ model }, { dispatch, getState }) => {
+    const formData = new FormData();
+    const state = getState();
+    const server = getServer(state);
+    const serverName = getServerName(server);
+    const path = state?.transcribe?.file;
+    if (path === undefined) {
+      throw Error('Failed to start transcription: No file for transcription given.');
     }
-  ).then((x) => x.json())) as Task;
-  dispatch(setState(result.state));
-  const { uuid } = result;
-  while (true) {
-    const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
-      headers: { Authorization: getAuthHeader(server) },
-    }).then((x) => x.json())) as Task;
-    dispatch(setProgress({ processed, total }));
-    dispatch(setState(state));
-    if (state == TranscriptionState.DONE) {
-      const fileContent = readFileSync(path);
-      const fileContents = fileContent.buffer;
-      const objectUrl = URL.createObjectURL(new Blob([fileContents]));
-      const hash = createHash('sha256');
-      hash.update(fileContent.slice(0));
-      const hashValue = hash.digest('hex');
-      const sources = {
-        [hashValue]: {
-          fileName,
-          fileContents,
-          objectUrl,
-        },
-      };
-      if (content === undefined) {
-        throw Error('Transcription failed: State is done, but no content was produced');
+    const fileName = basename(path);
+    const wavFileContent = await convertToWav(path);
+    const file = new File([wavFileContent], 'input.wav');
+    formData.append('file', file); // TODO: Error handling
+    formData.append('fileName', fileName);
+    dispatch(openTranscribing());
+    const result = (await fetch(
+      `${serverName}/tasks/start_transcription/` +
+        `?lang=${encodeURIComponent(model.lang)}` +
+        `&model=${encodeURIComponent(model.name)}`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: { Authorization: getAuthHeader(server) },
       }
-      // TODO: proper typing
-      const contentWithSource = content.map((paragraph: any) => {
-        paragraph.content = paragraph.content.map((word: any) => {
-          word['source'] = hashValue;
-          return word;
+    ).then((x) => x.json())) as Task;
+    dispatch(setState(result.state));
+    const { uuid } = result;
+    while (true) {
+      const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
+        headers: { Authorization: getAuthHeader(server) },
+      }).then((x) => x.json())) as Task;
+      dispatch(setProgress({ processed, total }));
+      dispatch(setState(state));
+      if (state == TranscriptionState.DONE) {
+        const fileContent = readFileSync(path);
+        const fileContents = fileContent.buffer;
+        const objectUrl = URL.createObjectURL(new Blob([fileContents]));
+        const hash = createHash('sha256');
+        hash.update(fileContent.slice(0));
+        const hashValue = hash.digest('hex');
+        const sources = {
+          [hashValue]: {
+            fileName,
+            fileContents,
+            objectUrl,
+          },
+        };
+        if (content === undefined) {
+          throw Error('Transcription failed: State is done, but no content was produced');
+        }
+        // TODO: proper typing
+        const contentWithSource = content.map((paragraph: any) => {
+          paragraph.content = paragraph.content.map((word: any) => {
+            word['source'] = hashValue;
+            return word;
+          });
+          return paragraph;
         });
-        return paragraph;
-      });
-      dispatch(
-        openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
-      );
-      break;
+        dispatch(
+          openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
+        );
+        break;
+      }
+      await sleep(0.1);
     }
-    await sleep(0.1);
   }
-});
+);
 
 export const importSlice = createSlice({
   name: 'nav',

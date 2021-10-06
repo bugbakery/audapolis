@@ -4,8 +4,8 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-export const createWindow = (): void => {
-  const mainWindow = new BrowserWindow({
+const createWindow = (): void => {
+  const window = new BrowserWindow({
     height: 600,
     width: 800,
     frame: false,
@@ -26,13 +26,13 @@ export const createWindow = (): void => {
         .then((name: string) => console.log(`Added Extension:  ${name}`))
         .catch((err: string) => console.log('An error occurred: ', err))
         .finally(() => {
-          mainWindow.webContents.openDevTools();
+          window.webContents.openDevTools();
         });
-      await mainWindow.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
+      await window.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
     })();
   } else {
     (async () => {
-      await mainWindow.loadURL(
+      await window.loadURL(
         new URL('../build/renderer/index.html', 'file://' + __dirname).toString()
       );
     })();
@@ -49,7 +49,7 @@ export const createWindow = (): void => {
     });
   });
 
-  mainWindow.on('ready-to-show', () => mainWindow.show());
+  window.on('ready-to-show', () => window.show());
 
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -78,14 +78,14 @@ export const createWindow = (): void => {
           label: 'Open Developer Tools',
           accelerator: 'CommandOrControl+Alt+I',
           click: async function () {
-            if (mainWindow.webContents.isDevToolsOpened()) {
-              mainWindow.webContents.closeDevTools();
+            if (window.webContents.isDevToolsOpened()) {
+              window.webContents.closeDevTools();
             } else {
               await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
                 .then((name: string) => console.log(`Added Extension:  ${name}`))
                 .catch((err: string) => console.log('An error occurred: ', err))
                 .finally(() => {
-                  mainWindow.webContents.openDevTools();
+                  window.webContents.openDevTools();
                 });
             }
           },
@@ -107,6 +107,11 @@ export const createWindow = (): void => {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  windowList.push(window);
+  window.on('close', () => {
+    const i = windowList.findIndex((x) => x == window);
+    windowList.splice(i, 1);
+  });
 };
 
 app.on('ready', createWindow);
@@ -128,3 +133,5 @@ app.on('activate', () => {
 });
 
 import './ipc';
+import './server';
+import { windowList } from './windowList';

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { assertSome, sleep } from '../util';
 import { RootState } from './index';
-import { getAuthHeader, getServerName, ServerConfig } from './server';
+import { getAuthHeader, getServer, getServerName } from './server';
 
 export interface Model {
   lang: string;
@@ -36,7 +36,6 @@ export interface ModelsState {
   downloaded: Record<string, Model[]>;
   available: Record<string, Model[]>;
   downloading: DownloadingModel[];
-  server?: ServerConfig;
 }
 
 export const fetchModelState = createAsyncThunk<
@@ -44,7 +43,7 @@ export const fetchModelState = createAsyncThunk<
   void,
   { state: RootState }
 >('models/fetchModelState', async (_, { getState }) => {
-  const server = getState().models.server;
+  const server = getServer(getState());
   assertSome(server);
   const available = await fetch(`${getServerName(server)}/models/available`, {
     headers: { Authorization: getAuthHeader(server) },
@@ -59,7 +58,7 @@ export const fetchModelState = createAsyncThunk<
 export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>(
   'models/downloadModel',
   async (model, { dispatch, getState }) => {
-    const server = getState().models.server;
+    const server = getServer(getState());
     assertSome(server);
     const { uuid } = await fetch(
       `${getServerName(server)}/tasks/download_model/` +
@@ -86,7 +85,7 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
 export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
   'models/downloadModel',
   async (model, { dispatch, getState }) => {
-    const server = getState().models.server;
+    const server = getServer(getState());
     assertSome(server);
     await fetch(
       `${getServerName(server)}/models/delete/` +
@@ -94,14 +93,6 @@ export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
         `&model=${encodeURIComponent(model.name)}`,
       { method: 'POST', headers: { Authorization: getAuthHeader(server) } }
     );
-    dispatch(fetchModelState());
-  }
-);
-
-export const changeServer = createAsyncThunk<void, ServerConfig, { state: RootState }>(
-  'models/changeServer',
-  async (server, { dispatch }) => {
-    await dispatch(setServer(server));
     dispatch(fetchModelState());
   }
 );
@@ -135,9 +126,6 @@ export const modelsSlice = createSlice({
         slice.downloading[idx] = newDownloadingRow;
       }
     },
-    setServer: (slice, payload: PayloadAction<ServerConfig>) => {
-      slice.server = payload.payload;
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchModelState.fulfilled, (state, action) => {
@@ -146,5 +134,5 @@ export const modelsSlice = createSlice({
   },
 });
 
-export const { setProgress, setServer } = modelsSlice.actions;
+export const { setProgress } = modelsSlice.actions;
 export default modelsSlice.reducer;

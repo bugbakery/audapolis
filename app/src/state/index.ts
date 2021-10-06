@@ -3,7 +3,7 @@ import nav from './nav';
 import transcribe from './transcribe';
 import editor from './editor';
 import models from './models';
-import server, { startServer } from './server';
+import server from './server';
 
 export const store = configureStore({
   reducer: {
@@ -19,8 +19,6 @@ export const store = configureStore({
 });
 
 (window as any).store = store;
-
-store.dispatch(startServer());
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

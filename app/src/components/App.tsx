@@ -11,6 +11,8 @@ import styled, { ThemeProvider } from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
 import { ServersListPage } from '../pages/ServersList';
+import { ipcRenderer } from 'electron';
+import { editorMenu, nonEditorMenu } from './menu';
 
 const AppContainer = styled.div`
   font-family: 'Roboto', sans-serif;
@@ -36,6 +38,8 @@ export default function App(): JSX.Element {
 
 function CurrentPage(): JSX.Element {
   const page = useSelector((state: RootState) => state.nav.page);
+
+  ipcRenderer.send('set-menu', page == Page.Editor ? editorMenu : nonEditorMenu);
 
   switch (page) {
     case Page.Landing:

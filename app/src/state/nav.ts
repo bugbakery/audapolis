@@ -1,24 +1,22 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { fetchModelState, setServer } from './models';
+import { fetchModelState } from './models';
 import { RootState } from './index';
-import { ServerConfig } from './server';
 
 export enum Page {
   Landing,
   Transcribe,
   Editor,
   Transcribing,
-  Settings,
+  ServersList,
   ManageServer,
 }
 export interface NavState {
   page: Page;
 }
 
-export const openManageServer = createAsyncThunk<void, ServerConfig, { state: RootState }>(
+export const openManageServer = createAsyncThunk<void, void, { state: RootState }>(
   'nav/openManageServer',
   async (server, { dispatch }) => {
-    await dispatch(setServer(server));
     dispatch(fetchModelState());
   }
 );
@@ -45,8 +43,8 @@ export const navSlice = createSlice({
     openTranscribing: (state) => {
       state.page = Page.Transcribing;
     },
-    openSettings: (state) => {
-      state.page = Page.Settings;
+    openServersList: (state) => {
+      state.page = Page.ServersList;
     },
   },
   extraReducers: (builder) => {
@@ -59,5 +57,5 @@ export const navSlice = createSlice({
   },
 });
 
-export const { openEditor, openLanding, openTranscribing, openSettings } = navSlice.actions;
+export const { openEditor, openLanding, openTranscribing, openServersList } = navSlice.actions;
 export default navSlice.reducer;

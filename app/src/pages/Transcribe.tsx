@@ -6,10 +6,8 @@ import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
-import { openSettings, openManageServer } from '../state/nav';
+import { openServersList, openManageServer } from '../state/nav';
 import { useState } from 'react';
-import { changeServer } from '../state/models';
-import { getServers } from '../state/server';
 
 const Form = styled.div`
   padding: 20px;
@@ -28,18 +26,6 @@ export function TranscribePage(): JSX.Element {
 
   const [selectedModel, setSelectedModel] = useState(0);
 
-  const servers = useSelector(getServers);
-  const selectedServer = useSelector((state: RootState) => state.models.server);
-  let selectedServerIdx = 0;
-  if (selectedServer == undefined) {
-    dispatch(changeServer(servers[0]));
-  } else {
-    selectedServerIdx = Math.max(servers.indexOf(selectedServer), 0);
-  }
-  if (selectedServer != servers[selectedServerIdx]) {
-    dispatch(changeServer(servers[selectedServerIdx]));
-  }
-
   return (
     <AppContainer>
       <TitleBar />
@@ -51,17 +37,7 @@ export function TranscribePage(): JSX.Element {
           </span>
 
           <span style={{ opacity: 0.5 }}>Server</span>
-          <select
-            value={selectedServerIdx}
-            onChange={(e) => changeServer(servers[parseInt(e.target.value)])}
-          >
-            {servers.map((server, i) => (
-              <option key={i} value={i}>
-                {server.name} ({server.hostname}:{server.port})
-              </option>
-            ))}
-          </select>
-          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openSettings())}>
+          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openServersList())}>
             Manage Servers
           </Link>
 
@@ -77,10 +53,7 @@ export function TranscribePage(): JSX.Element {
             ))}
           </select>
 
-          <Link
-            style={{ gridColumn: '2 / 2' }}
-            onClick={() => dispatch(openManageServer(servers[selectedServerIdx]))}
-          >
+          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openManageServer())}>
             Download More Transcription Models
           </Link>
         </Form>
@@ -90,7 +63,6 @@ export function TranscribePage(): JSX.Element {
           onClick={() =>
             dispatch(
               startTranscription({
-                server: servers[selectedServerIdx],
                 model: models[selectedModel],
               })
             )

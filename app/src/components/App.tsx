@@ -7,10 +7,10 @@ import { TranscribePage } from '../pages/Transcribe';
 import { EditorPage } from '../pages/Editor';
 import { TranscribingPage } from '../pages/Transcribing';
 import { ManageServerPage } from '../pages/ManageServer';
-import { SettingsPage } from '../pages/Settings';
 import styled, { ThemeProvider, useTheme } from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
+import { ServersListPage } from '../pages/ServersList';
 
 const AppContainer = styled.div`
   font-family: 'Roboto', sans-serif;
@@ -48,8 +48,8 @@ function CurrentPage(): JSX.Element {
       return <EditorPage />;
     case Page.Transcribing:
       return <TranscribingPage />;
-    case Page.Settings:
-      return <SettingsPage />;
+    case Page.ServersList:
+      return <ServersListPage />;
     case Page.ManageServer:
       return <ManageServerPage />;
   }

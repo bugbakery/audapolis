@@ -5,17 +5,19 @@ import { transcribeFile } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
-import { MdSettings } from 'react-icons/md';
-import { openSettings } from '../state/nav';
+import { MdDns, MdTranslate } from 'react-icons/md';
+import { openManageServer, openServersList } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 
-const SettingsButton = styled(IconButton).attrs({ icon: MdSettings, text: 'settings' })`
+const BottomLeftContainer = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
   margin: 10px;
+  & > * {
+    margin: 5px;
+  }
 `;
-
 export function LandingPage(): JSX.Element {
   const dispatch = useDispatch();
 
@@ -33,7 +35,18 @@ export function LandingPage(): JSX.Element {
           New Blank Document
         </Button>
       </MainCenterColumn>
-      <SettingsButton onClick={() => dispatch(openSettings())} />
+      <BottomLeftContainer>
+        <IconButton
+          icon={MdDns}
+          onClick={() => dispatch(openServersList())}
+          text={'open servers list'}
+        />
+        <IconButton
+          icon={MdTranslate}
+          onClick={() => dispatch(openManageServer())}
+          text={'manage transcription models'}
+        />
+      </BottomLeftContainer>
     </AppContainer>
   );
 }

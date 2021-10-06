@@ -1,22 +1,8 @@
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { computeTimed, Paragraph as ParagraphType } from '../../core/document';
 import * as React from 'react';
-import { KeyboardEventHandler, useEffect, useRef } from 'react';
-import {
-  copy,
-  deleteSomething,
-  goLeft,
-  goRight,
-  insertParagraphBreak,
-  paste,
-  saveDocument,
-  selectLeft,
-  selectRight,
-  togglePlaying,
-  unselect,
-} from '../../state/editor';
-import { ActionCreators } from 'redux-undo';
+import { useRef } from 'react';
 import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
@@ -43,14 +29,9 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   & > * {
     overflow-x: hidden;
   }
-
-  &:focus {
-    outline: none;
-  }
 `;
 
 export function Document(): JSX.Element {
-  const dispatch = useDispatch();
   const contentRaw = useSelector((state: RootState) => state.editor.present?.document?.content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
@@ -58,59 +39,14 @@ export function Document(): JSX.Element {
 
   const content = computeTimed(contentRaw || ([] as ParagraphType[]));
 
-  const handleKeyPress: KeyboardEventHandler = (e) => {
-    const ctrlOrCmdKey = e.ctrlKey || e.metaKey;
-    if (e.key === ' ') {
-      dispatch(togglePlaying());
-      e.preventDefault();
-    } else if (e.key === 'Enter') {
-      dispatch(insertParagraphBreak());
-    } else if (e.key === 'Backspace') {
-      dispatch(deleteSomething());
-    } else if (e.key === 'ArrowRight') {
-      if (e.shiftKey) dispatch(selectRight());
-      else dispatch(goRight());
-    } else if (e.key === 'ArrowLeft') {
-      if (e.shiftKey) dispatch(selectLeft());
-      else dispatch(goLeft());
-    } else if (e.key === 'z' && ctrlOrCmdKey) {
-      dispatch(ActionCreators.undo());
-    } else if (e.key === 'Z' && ctrlOrCmdKey) {
-      dispatch(ActionCreators.redo());
-    } else if (e.key === 'y' && ctrlOrCmdKey) {
-      dispatch(ActionCreators.redo());
-    } else if (e.key === 's' && ctrlOrCmdKey) {
-      dispatch(saveDocument(e.shiftKey));
-    } else if (e.key === 'Escape') {
-      dispatch(unselect());
-    } else if (e.key === 'c' && ctrlOrCmdKey) {
-      console.log('copying');
-      dispatch(copy());
-      e.preventDefault();
-    } else if (e.key === 'v' && ctrlOrCmdKey) {
-      console.log('pasting');
-      dispatch(paste());
-      e.preventDefault();
-    }
-  };
-
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
   const speakerIndices = Object.fromEntries(
     Array.from(new Set(content.map((p) => p.speaker))).map((name, i) => [name, i])
   );
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    ref.current && ref.current.focus();
-  }, []);
-
   return (
-    <DocumentContainer
-      displaySpeakerNames={displaySpeakerNames}
-      tabIndex={0}
-      onKeyDown={handleKeyPress}
-      ref={ref}
-    >
+    <DocumentContainer displaySpeakerNames={displaySpeakerNames} ref={ref}>
       <Cursor />
       <SelectionMenu documentRef={ref} content={content} />
       <FileNameDisplay path={fileName} />

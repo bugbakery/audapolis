@@ -8,7 +8,7 @@ import {
   TimedParagraphItem,
 } from '../../core/document';
 import * as React from 'react';
-import { KeyboardEventHandler, useRef } from 'react';
+import { KeyboardEventHandler, useEffect, useRef } from 'react';
 import {
   deleteSomething,
   goLeft,
@@ -188,6 +188,10 @@ export function Document(): JSX.Element {
       anchorTop = top;
     }
   }
+
+  useEffect(() => {
+    ref.current && ref.current.focus();
+  }, []);
 
   return (
     <DocumentContainer

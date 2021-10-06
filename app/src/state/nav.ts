@@ -8,14 +8,14 @@ export enum Page {
   Editor,
   Transcribing,
   ServersList,
-  ManageServer,
+  ModelManager,
 }
 export interface NavState {
   page: Page;
 }
 
-export const openManageServer = createAsyncThunk<void, void, { state: RootState }>(
-  'nav/openManageServer',
+export const openModelManager = createAsyncThunk<void, void, { state: RootState }>(
+  'nav/openModelManager',
   async (server, { dispatch }) => {
     dispatch(fetchModelState());
   }
@@ -48,8 +48,8 @@ export const navSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(openManageServer.fulfilled, (state) => {
-      state.page = Page.ManageServer;
+    builder.addCase(openModelManager.fulfilled, (state) => {
+      state.page = Page.ModelManager;
     });
     builder.addCase(openTranscribe.pending, (state) => {
       state.page = Page.Transcribe;

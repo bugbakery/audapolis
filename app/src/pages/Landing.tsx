@@ -6,7 +6,7 @@ import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { MdDns, MdTranslate } from 'react-icons/md';
-import { openManageServer, openServersList } from '../state/nav';
+import { openModelManager, openServersList } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 
 const BottomLeftContainer = styled.div`
@@ -43,7 +43,7 @@ export function LandingPage(): JSX.Element {
         />
         <IconButton
           icon={MdTranslate}
-          onClick={() => dispatch(openManageServer())}
+          onClick={() => dispatch(openModelManager())}
           text={'manage transcription models'}
         />
       </BottomLeftContainer>

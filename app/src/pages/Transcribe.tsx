@@ -6,7 +6,7 @@ import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
 import styled from 'styled-components';
-import { openServersList, openManageServer } from '../state/nav';
+import { openServersList, openModelManager } from '../state/nav';
 import { useState } from 'react';
 import { getServer } from '../state/server';
 
@@ -59,7 +59,7 @@ export function TranscribePage(): JSX.Element {
             ))}
           </select>
 
-          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openManageServer())}>
+          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openModelManager())}>
             Download More Transcription Models
           </Link>
         </Form>

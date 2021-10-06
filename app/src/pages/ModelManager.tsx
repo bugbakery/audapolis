@@ -10,7 +10,7 @@ import { IconType } from 'react-icons';
 import { MdCloudDownload, MdDelete } from 'react-icons/md';
 import styled, { css } from 'styled-components';
 
-export function ManageServerPage(): JSX.Element {
+export function ModelManagerPage(): JSX.Element {
   const dispatch = useDispatch();
   const all_available = useSelector((state: RootState) => state.models.available);
   const downloaded = useSelector((state: RootState) => state.models.downloaded);

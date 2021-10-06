@@ -5,7 +5,7 @@ import { AppContainer, MainCenterColumn, StyledTable, Title } from '../component
 import { Button } from '../components/Controls';
 import { openLanding } from '../state/nav';
 import { RootState } from '../state';
-import { ServerConfig, ServerState } from '../state/server';
+import { ServerState } from '../state/server';
 
 export function ServersListPage(): JSX.Element {
   const dispatch = useDispatch();
@@ -28,28 +28,33 @@ export function ServersListPage(): JSX.Element {
         <StyledTable style={{ width: '70%' }}>
           <ServerTable server_state={server_state} />
         </StyledTable>
-        <Button onClick={() => dispatch(openLanding())}>Back</Button>
+        <Button onClick={() => dispatch(openLanding())}>Home</Button>
       </MainCenterColumn>
     </AppContainer>
   );
 }
 
-function ServerTableRow({ server }: { server: ServerConfig }): JSX.Element {
-  return (
-    <tr>
-      <td>{server.name}</td>
-      <td>
-        {server.hostname}:{server.port}
-      </td>
-    </tr>
-  );
-}
 function ServerTable({ server_state }: { server_state: ServerState }): JSX.Element {
   return (
-    <tbody>
-      {server_state.servers.map((server, i) => (
-        <ServerTableRow key={i} server={server} />
-      ))}
-    </tbody>
+    <>
+      <thead>
+        <tr>
+          <th>Server Name</th>
+          <th>Server Address</th>
+          <th>Server State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {server_state.servers.map((server, i) => (
+          <tr key={i}>
+            <td>{server.name}</td>
+            <td>
+              {server.hostname}:{server.port}
+            </td>
+            <td>{server.state || ''}</td>
+          </tr>
+        ))}
+      </tbody>
+    </>
   );
 }

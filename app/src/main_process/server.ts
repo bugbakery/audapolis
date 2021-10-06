@@ -58,19 +58,10 @@ interface ServerStartedMessage {
   token: string;
 }
 
-export enum LocalServerStatus {
-  NotStarted,
-  Stopped,
-  Starting,
-  Running,
-  Stopping,
-  Error,
-}
-
 let serverInfo = {
   port: null as null | number,
   token: null as null | string,
-  state: LocalServerStatus.NotStarted,
+  state: 'not started',
 };
 
 let serverProcess = null;
@@ -84,9 +75,9 @@ function startServer() {
     try {
       const parsed_data: ServerStartingMessage | ServerStartedMessage = JSON.parse(data.toString());
       if (parsed_data.msg == 'server_starting') {
-        publishServerInfo({ state: LocalServerStatus.Starting, port: parsed_data.port });
+        publishServerInfo({ state: 'starting', port: parsed_data.port });
       } else if (parsed_data.msg == 'server_started') {
-        publishServerInfo({ state: LocalServerStatus.Running, token: parsed_data.token });
+        publishServerInfo({ state: 'running', token: parsed_data.token });
       }
     } catch (e) {
       console.log('error decoding stdout json', e);
@@ -100,9 +91,9 @@ function startServer() {
 
   serverProcess.on('close', (code: number | null) => {
     if (code == 0) {
-      publishServerInfo({ state: LocalServerStatus.Stopped });
+      publishServerInfo({ state: 'stopped' });
     } else {
-      publishServerInfo({ state: LocalServerStatus.Error });
+      publishServerInfo({ state: `exited - error code ${code}` });
     }
     serverProcess = null;
     console.log(`child process exited with code ${code}`);

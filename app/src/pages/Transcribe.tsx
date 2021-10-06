@@ -8,6 +8,7 @@ import { RootState } from '../state';
 import styled from 'styled-components';
 import { openServersList, openManageServer } from '../state/nav';
 import { useState } from 'react';
+import { getServer } from '../state/server';
 
 const Form = styled.div`
   padding: 20px;
@@ -20,6 +21,7 @@ const Form = styled.div`
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
   const file = useSelector((state: RootState) => state.transcribe.file) || '';
+  const serverName = useSelector((state: RootState) => getServer(state).name) || 'no server';
   const models = useSelector((state: RootState) =>
     Object.values(state.models.downloaded).flatMap((x) => x)
   );
@@ -31,15 +33,19 @@ export function TranscribePage(): JSX.Element {
       <TitleBar />
       <MainCenterColumn>
         <Form>
-          <span style={{ opacity: 0.5 }}>opened</span>
+          <span style={{ opacity: 0.5 }}>Opened File</span>
           <span style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
             {file.split('/').pop()}
           </span>
 
-          <span style={{ opacity: 0.5 }}>Server</span>
-          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openServersList())}>
-            Manage Servers
-          </Link>
+          <span style={{ opacity: 0.5 }}>Transcription Server</span>
+          <span>
+            {serverName}
+            {' - '}
+            <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openServersList())}>
+              Manage Servers
+            </Link>
+          </span>
 
           <span style={{ opacity: 0.5 }}>Transcription Model</span>
           <select

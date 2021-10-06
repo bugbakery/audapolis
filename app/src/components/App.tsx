@@ -7,7 +7,7 @@ import { TranscribePage } from '../pages/Transcribe';
 import { EditorPage } from '../pages/Editor';
 import { TranscribingPage } from '../pages/Transcribing';
 import { ManageServerPage } from '../pages/ManageServer';
-import styled, { ThemeProvider, useTheme } from 'styled-components';
+import styled, { ThemeProvider } from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
 import { ServersListPage } from '../pages/ServersList';
@@ -36,8 +36,6 @@ export default function App(): JSX.Element {
 
 function CurrentPage(): JSX.Element {
   const page = useSelector((state: RootState) => state.nav.page);
-  const theme = useTheme();
-  console.log(theme);
 
   switch (page) {
     case Page.Landing:

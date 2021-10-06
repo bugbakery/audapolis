@@ -41,7 +41,7 @@ export const Title = styled.h1`
 `;
 
 export const StyledTable = styled.table`
-  & tr:nth-child(odd) {
+  & tbody > tr:nth-child(odd) {
     background-color: ${({ theme }) => theme.bgAccent};
   }
 

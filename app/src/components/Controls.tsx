@@ -17,6 +17,8 @@ export const Button = styled.button<{ primary?: boolean }>`
   width: 265px;
   height: 40px;
 
+  cursor: pointer;
+
   ${(props) =>
     props.primary &&
     css`
@@ -34,6 +36,7 @@ export const SmallButton = styled.button<{ primary?: boolean }>`
   background: transparent;
   border: 1px solid ${({ theme }) => theme.fg};
   color: ${({ theme }) => theme.fg};
+  cursor: pointer;
   ${(props) =>
     props.primary &&
     css`
@@ -50,6 +53,8 @@ const IconButtonContainer = styled.button<{ clicked?: boolean; active?: boolean 
 
   border: none;
   background: none;
+
+  cursor: pointer;
 
   ${(props) =>
     props.clicked &&

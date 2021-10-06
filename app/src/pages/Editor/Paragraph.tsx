@@ -169,9 +169,11 @@ const SpeakerLabel = styled.div`
   overflow: hidden;
   white-space: nowrap;
 `;
-function Speaker(
-  props: HTMLAttributes<HTMLDivElement> & { name: string; paragraphIdx: number }
-): JSX.Element {
+function Speaker({
+  name,
+  paragraphIdx,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { name: string; paragraphIdx: number }): JSX.Element {
   const [editing, setEditing] = useState(null as SpeakerEditing);
   const dispatch = useDispatch();
 
@@ -179,20 +181,18 @@ function Speaker(
     return (
       <div {...props}>
         <Popup
-          trigger={() => <SpeakerLabel>{props.name}</SpeakerLabel>}
+          trigger={() => <SpeakerLabel>{name}</SpeakerLabel>}
           position={['right center', 'bottom center', 'top center']}
           on={['click']}
         >
           <SpeakerPopupButton
-            onClick={() =>
-              setEditing({ isNew: true, type: EditingType.Rename, currentText: props.name })
-            }
+            onClick={() => setEditing({ isNew: true, type: EditingType.Rename, currentText: name })}
           >
             Rename Speaker
           </SpeakerPopupButton>
           <SpeakerPopupButton
             onClick={() =>
-              setEditing({ isNew: true, type: EditingType.Reassign, currentText: props.name })
+              setEditing({ isNew: true, type: EditingType.Reassign, currentText: name })
             }
           >
             Reassign Speaker
@@ -218,12 +218,12 @@ function Speaker(
               if (editing.type == EditingType.Reassign) {
                 dispatch(
                   reassignParagraph({
-                    paragraphIdx: props.paragraphIdx,
+                    paragraphIdx: paragraphIdx,
                     newSpeaker: editing.currentText,
                   })
                 );
               } else if (editing.type == EditingType.Rename) {
-                dispatch(renameSpeaker({ oldName: props.name, newName: editing.currentText }));
+                dispatch(renameSpeaker({ oldName: name, newName: editing.currentText }));
               }
               setEditing(null);
             } else if (e.key == 'Escape') {

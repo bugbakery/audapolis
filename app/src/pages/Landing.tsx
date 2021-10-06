@@ -5,11 +5,11 @@ import { transcribeFile } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
-import { MdDns, MdTranslate } from 'react-icons/md';
-import { openModelManager, openServersList } from '../state/nav';
+import { MdSettings } from 'react-icons/md';
+import { openModelManager } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 
-const BottomLeftContainer = styled.div`
+const BottomRightContainer = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
@@ -35,18 +35,13 @@ export function LandingPage(): JSX.Element {
           New Blank Document
         </Button>
       </MainCenterColumn>
-      <BottomLeftContainer>
+      <BottomRightContainer>
         <IconButton
-          icon={MdDns}
-          onClick={() => dispatch(openServersList())}
-          text={'open servers list'}
-        />
-        <IconButton
-          icon={MdTranslate}
+          icon={MdSettings}
           onClick={() => dispatch(openModelManager())}
           text={'manage transcription models'}
         />
-      </BottomLeftContainer>
+      </BottomRightContainer>
     </AppContainer>
   );
 }

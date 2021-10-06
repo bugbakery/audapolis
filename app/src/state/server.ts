@@ -36,8 +36,13 @@ export const serverSlice = createSlice({
     },
     setLocalServer: (state, args: PayloadAction<Omit<ServerConfig, 'name'>>) => {
       const localServerName = 'local server';
-      const otherServers = state.servers.filter((server) => server.name != localServerName);
-      state.servers = [{ name: localServerName, ...args.payload }, ...otherServers];
+      const serverIdx = state.servers.findIndex((server) => server.name == localServerName);
+      const server = { name: localServerName, ...args.payload };
+      if (serverIdx != -1) {
+        state.servers[serverIdx] = server;
+      } else {
+        state.servers.push(server);
+      }
     },
     removeServer: (state, args: PayloadAction<string>) => {
       state.servers = state.servers.filter((config) => config.hostname != args.payload);

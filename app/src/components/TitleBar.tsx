@@ -1,7 +1,9 @@
 import styled from 'styled-components';
-import { MdClose } from 'react-icons/md';
+import { MdClose, MdMenu } from 'react-icons/md';
 import * as React from 'react';
 import { IconButton } from './Controls';
+import { platform } from 'os';
+import { ipcRenderer } from 'electron';
 
 function getWindowControlsRect(): DOMRect {
   const windowControlsOverlay = (window.navigator as any).windowControlsOverlay;
@@ -27,7 +29,29 @@ function FallbackCloseButton() {
       <CloseIcon
         onClick={() => {
           window.close();
-          console.log('lol');
+        }}
+        style={{ width: rect.x, height: rect.height }}
+      />
+    );
+  }
+}
+
+const MenuIcon = styled(MdMenu)`
+  padding: 17px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-app-region: no-drag;
+`;
+function FallbackWindowMenu() {
+  if (platform() == 'darwin') {
+    return <></>;
+  } else {
+    const rect = getWindowControlsRect();
+    return (
+      <MenuIcon
+        onClick={() => {
+          ipcRenderer.send('show-menu');
         }}
         style={{ width: rect.x, height: rect.height }}
       />
@@ -62,6 +86,7 @@ export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Elem
   return (
     <TitleBarContainer>
       <FallbackCloseButton />
+      <FallbackWindowMenu />
       {children}
     </TitleBarContainer>
   );

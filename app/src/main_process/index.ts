@@ -1,10 +1,10 @@
-import { app, BrowserWindow, session, Menu, shell } from 'electron';
+import { app, BrowserWindow, Menu, session } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-const createWindow = (): void => {
+export const createWindow = (): void => {
   const window = new BrowserWindow({
     height: 600,
     width: 800,
@@ -49,69 +49,18 @@ const createWindow = (): void => {
     });
   });
 
-  window.on('ready-to-show', () => window.show());
-
-  const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: 'Audapolis',
-      submenu: [
-        {
-          label: 'New Window',
-          accelerator: 'CommandOrControl+N',
-          click: function () {
-            createWindow();
-          },
-        },
-        {
-          label: 'Quit',
-          accelerator: 'CommandOrControl+Q',
-          click: function () {
-            app.quit();
-          },
-        },
-      ],
-    },
-    {
-      label: 'View',
-      submenu: [
-        {
-          label: 'Open Developer Tools',
-          accelerator: 'CommandOrControl+Alt+I',
-          click: async function () {
-            if (window.webContents.isDevToolsOpened()) {
-              window.webContents.closeDevTools();
-            } else {
-              await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
-                .then((name: string) => console.log(`Added Extension:  ${name}`))
-                .catch((err: string) => console.log('An error occurred: ', err))
-                .finally(() => {
-                  window.webContents.openDevTools();
-                });
-            }
-          },
-        },
-      ],
-    },
-    {
-      role: 'help',
-      label: 'Help',
-      submenu: [
-        {
-          label: 'Learn More',
-          click: async () => {
-            await shell.openExternal('https://github.com/audapolis/audapolis');
-          },
-        },
-      ],
-    },
-  ];
-
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   windowList.push(window);
   window.on('close', () => {
     const i = windowList.findIndex((x) => x == window);
     windowList.splice(i, 1);
   });
+
+  setMenu(window, []);
+  window.on('show', () => {
+    Menu.setApplicationMenu(menuMap[window.id]);
+  });
+
+  window.on('ready-to-show', () => window.show());
 };
 
 app.on('ready', createWindow);
@@ -132,6 +81,8 @@ app.on('activate', () => {
   }
 });
 
+(global as any).window = {};
 import './ipc';
 import './server';
 import { windowList } from './windowList';
+import { menuMap, setMenu } from './menu';

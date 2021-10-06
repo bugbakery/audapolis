@@ -287,6 +287,14 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
   }
 );
 
+export const cut = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/copy',
+  async (arg, { dispatch }) => {
+    await dispatch(copy());
+    await dispatch(deleteSelection());
+  }
+);
+
 export const paste = createAsyncThunk<Document, void, { state: RootState }>(
   'editor/paste',
   async (arg, { getState }) => {

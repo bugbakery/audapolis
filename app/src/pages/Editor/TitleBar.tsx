@@ -10,16 +10,7 @@ import {
   TitleBarSection,
 } from '../../components/TitleBar';
 import { ActionCreators } from 'redux-undo';
-import {
-  MdHome,
-  MdMovie,
-  MdPerson,
-  MdRedo,
-  MdSave,
-  MdShare,
-  MdUndo,
-  MdWatchLater,
-} from 'react-icons/md';
+import { MdMovie, MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
 import {
   exportDocument,
   ExportState,
@@ -30,7 +21,6 @@ import {
   toggleDisplayVideo,
 } from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
-import { openLanding } from '../../state/nav';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -59,16 +49,6 @@ export function EditorTitleBar(): JSX.Element {
       <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
-            onClick={() => {
-              dispatch(pause());
-              dispatch(openLanding());
-            }}
-            icon={MdHome}
-            text={'close document'}
-          />
-        </TitleBarGroup>
-        <TitleBarGroup>
-          <TitleBarButton
             onClick={() => dispatch(ActionCreators.undo())}
             active={canUndo}
             icon={MdUndo}
@@ -81,11 +61,6 @@ export function EditorTitleBar(): JSX.Element {
             text={'redo'}
           />
         </TitleBarGroup>
-      </TitleBarSection>
-
-      <PlayerControls />
-
-      <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
             clicked={displaySpeakerNames}
@@ -100,6 +75,11 @@ export function EditorTitleBar(): JSX.Element {
             text={displayVideo ? 'hide video' : 'display video'}
           />
         </TitleBarGroup>
+      </TitleBarSection>
+
+      <PlayerControls />
+
+      <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
             onClick={() => dispatch(saveDocument(false))}

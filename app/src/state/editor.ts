@@ -225,6 +225,14 @@ export const exportDocument = createAsyncThunk<Document, void, { state: RootStat
   }
 );
 
+export const closeDocument = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/delete',
+  async (arg, { dispatch }) => {
+    dispatch(pause());
+    dispatch(openLanding());
+  }
+);
+
 export const deleteSomething = createAsyncThunk<void, void, { state: RootState }>(
   'editor/delete',
   async (arg, { getState, dispatch }) => {

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer, clipboard } from 'electron';
 import { RootState } from './index';
-import { openEditor } from './nav';
+import { openEditor, openLanding } from './nav';
 import {
   deserializeDocument,
   deserializeDocumentFromFile,
@@ -62,7 +62,7 @@ export interface Range {
 
 export const openDocumentFromDisk = createAsyncThunk(
   'editor/openDocumentFromDisk',
-  async (_, { dispatch }): Promise<Editor> => {
+  async (_, { dispatch }): Promise<void> => {
     const path = await ipcRenderer
       .invoke('open-file', {
         properties: ['openFile'],
@@ -74,27 +74,44 @@ export const openDocumentFromDisk = createAsyncThunk(
         ],
       })
       .then((x) => x.filePaths[0]);
-    const document = await deserializeDocumentFromFile(path);
-
     dispatch(openEditor());
-    return {
-      path,
-      document,
-      ...editorDefaults,
-      lastSavedDocument: document,
-    };
+    try {
+      const document = await deserializeDocumentFromFile(path, (noSourceDocument) => {
+        dispatch(
+          setState({
+            path,
+            document: noSourceDocument,
+            ...editorDefaults,
+            lastSavedDocument: noSourceDocument,
+          })
+        );
+      });
+      await dispatch(
+        setState({
+          path,
+          document,
+          ...editorDefaults,
+          lastSavedDocument: document,
+        })
+      );
+    } catch (e) {
+      dispatch(openLanding());
+      throw e;
+    }
   }
 );
 
-export const openDocumentFromMemory = createAsyncThunk<Editor, Document>(
+export const openDocumentFromMemory = createAsyncThunk<void, Document>(
   'editor/openDocumentFromMemory',
-  async (document, { dispatch }): Promise<Editor> => {
-    dispatch(openEditor());
-    return {
-      path: null,
-      document,
-      ...editorDefaults,
-    };
+  async (document, { dispatch }) => {
+    await dispatch(openEditor());
+    await dispatch(
+      setState({
+        path: null,
+        document,
+        ...editorDefaults,
+      })
+    );
   }
 );
 
@@ -335,6 +352,10 @@ export const importSlice = createSlice({
   name: 'editor',
   initialState: null as Editor | null,
   reducers: {
+    setState(state, arg: PayloadAction<Editor>) {
+      return arg.payload;
+    },
+
     setPlay: (state, args: PayloadAction<boolean>) => {
       assertSome(state);
       state.playing = args.payload;
@@ -594,14 +615,8 @@ export const importSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(openDocumentFromDisk.fulfilled, (state, action) => {
-      return action.payload;
-    });
     builder.addCase(openDocumentFromDisk.rejected, (state, action) => {
       console.error('an error occurred while trying to load the file', action.error);
-    });
-    builder.addCase(openDocumentFromMemory.fulfilled, (state, action) => {
-      return action.payload;
     });
     builder.addCase(openDocumentFromMemory.rejected, (state, action) => {
       console.error('an error occurred while trying to load the doc from memory', action.error);
@@ -679,6 +694,7 @@ export const {
   reassignParagraph,
   renameSpeaker,
 } = importSlice.actions;
+const { setState } = importSlice.actions;
 export default undoable(importSlice.reducer, {
   filter: includeAction([
     insertParagraphBreak.type,

@@ -18,7 +18,6 @@ export function ServersListPage(): JSX.Element {
         <Title
           style={{
             textAlign: 'left',
-            // backgroundColor: '#ff0000',
             gridColumn: '1 / 1',
           }}
         >

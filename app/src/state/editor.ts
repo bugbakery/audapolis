@@ -60,20 +60,30 @@ export interface Range {
   length: number;
 }
 
+class NoFileSelectedError extends Error {
+  constructor() {
+    super();
+    this.name = 'NoFileSelectedError';
+  }
+}
+
 export const openDocumentFromDisk = createAsyncThunk(
   'editor/openDocumentFromDisk',
   async (_, { dispatch }): Promise<void> => {
-    const path = await ipcRenderer
-      .invoke('open-file', {
-        properties: ['openFile'],
-        promptToCreate: true,
-        createDirectory: true,
-        filters: [
-          { name: 'Audapolis Project Files', extensions: ['audapolis'] },
-          { name: 'All Files', extensions: ['*'] },
-        ],
-      })
-      .then((x) => x.filePaths[0]);
+    const file = await ipcRenderer.invoke('open-file', {
+      properties: ['openFile'],
+      promptToCreate: true,
+      createDirectory: true,
+      filters: [
+        { name: 'Audapolis Project Files', extensions: ['audapolis'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+    if (file.canceled) {
+      throw new NoFileSelectedError();
+    }
+    const path = file.filePaths[0];
+
     dispatch(openEditor());
     try {
       const document = await deserializeDocumentFromFile(path, (noSourceDocument) => {
@@ -616,10 +626,16 @@ export const importSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(openDocumentFromDisk.rejected, (state, action) => {
-      console.error('an error occurred while trying to load the file', action.error);
+      if (action.error.name == 'NoFileSelectedError') return;
+      console.error(`an error occurred while trying to open the file`, action.error);
+      alert(`an error occurred while trying to open the file:\n${action.error.message}`);
     });
     builder.addCase(openDocumentFromMemory.rejected, (state, action) => {
-      console.error('an error occurred while trying to load the doc from memory', action.error);
+      console.error(
+        'an error occurred while trying to load the document from memory',
+        action.error
+      );
+      alert(`an error occurred while trying to open the file:\n${action.error.message}`);
     });
     builder.addCase(play.rejected, (state, action) => {
       console.error('an error occurred during playback', action.error);
@@ -644,7 +660,7 @@ export const importSlice = createSlice({
       assertSome(state);
       state.exportState = ExportState.NotRunning;
       console.error('an error occurred while trying to export the file', action.error);
-      alert('Failed to Export');
+      alert(`Failed to Export:\n${action.error.name}: ${action.error.message}`);
     });
     builder.addCase(paste.rejected, (state, action) => {
       console.error('paste rejected:', action.payload);

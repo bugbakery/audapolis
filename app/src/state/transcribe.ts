@@ -37,9 +37,9 @@ export interface Task {
 export const transcribeFile = createAsyncThunk<string, void, { state: RootState }>(
   'transcribe/transcribeFile',
   async (_, { dispatch, getState }) => {
-    await dispatch(fetchModelState());
+    await dispatch(fetchModelState()).unwrap();
     if (Object.keys(getState().models.downloaded).length == 0) {
-      await dispatch(openModelManager());
+      await dispatch(openModelManager()).unwrap();
       alert('Please download a transcription model first!');
       return;
     }
@@ -52,6 +52,9 @@ export const transcribeFile = createAsyncThunk<string, void, { state: RootState 
         { name: 'All Files', extensions: ['*'] },
       ],
     });
+    if (file.canceled) {
+      return;
+    }
     dispatch(openTranscribe());
     return file.filePaths[0];
   }

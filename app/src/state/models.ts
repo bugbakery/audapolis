@@ -131,6 +131,12 @@ export const modelsSlice = createSlice({
     builder.addCase(fetchModelState.fulfilled, (state, action) => {
       return { ...state, ...action.payload };
     });
+    builder.addCase(fetchModelState.rejected, (state, action) => {
+      console.error('something went wrong while fetching the model state', action.error);
+      alert(
+        `something went wrong while comunicating with the transcription server:\n${action.error.message}`
+      );
+    });
   },
 });
 

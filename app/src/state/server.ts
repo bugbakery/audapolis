@@ -13,6 +13,7 @@ export interface ServerConfig {
   port: number;
   token: string | null;
   name: string;
+  state?: string;
 }
 
 export const changeServer = createAsyncThunk<void, number, { state: RootState }>(
@@ -74,6 +75,7 @@ ipcRenderer.on('local-server-info', (event, arg) => {
       hostname: 'http://localhost',
       port: arg.port,
       token: arg.token,
+      state: arg.state,
     })
   );
 });

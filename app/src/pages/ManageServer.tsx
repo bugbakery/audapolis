@@ -39,7 +39,7 @@ export function ManageServerPage(): JSX.Element {
         <StyledTable>
           {Object.keys(downloaded).length ? (
             <>
-              <Title>Downloaded Transcription Models</Title>
+              <TableTitle>Downloaded Transcription Models</TableTitle>
               <ModelsTable
                 models={downloaded}
                 actionIcon={MdDelete}
@@ -50,7 +50,7 @@ export function ManageServerPage(): JSX.Element {
             <></>
           )}
 
-          <Title>Available Transcription Models</Title>
+          <TableTitle>Available Transcription Models</TableTitle>
           <ModelsTable
             models={available}
             actionIcon={MdCloudDownload}
@@ -58,9 +58,21 @@ export function ManageServerPage(): JSX.Element {
           />
         </StyledTable>
 
-        <Button onClick={() => dispatch(openLanding())}>Back</Button>
+        <Button onClick={() => dispatch(openLanding())}>Home</Button>
       </MainMaxWidthContainer>
     </AppContainer>
+  );
+}
+
+function TableTitle({ children }: { children: string }): JSX.Element {
+  return (
+    <thead>
+      <tr>
+        <th colSpan={1000}>
+          <Title>{children}</Title>
+        </th>
+      </tr>
+    </thead>
   );
 }
 

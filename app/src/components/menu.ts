@@ -7,21 +7,22 @@ import {
   openDocumentFromDisk,
   paste,
   saveDocument,
+  toggleDisplaySpeakerNames,
+  toggleDisplayVideo,
 } from '../state/editor';
 import { transcribeFile } from '../state/transcribe';
 import { ActionCreators } from 'redux-undo';
 import { v4 as uuidv4 } from 'uuid';
 
-function dispatchMenuItem(
+function menuItem(
   label: string,
-  action: Parameters<typeof store.dispatch>[0],
+  fn: (dispatch: typeof store.dispatch) => void,
   accelerator?: string
 ) {
   const uuid = `menu/${uuidv4()}`;
 
   ipcRenderer.on(uuid, () => {
-    console.log(action);
-    store.dispatch(action);
+    fn(store.dispatch);
   });
 
   return {
@@ -35,24 +36,35 @@ export const editorMenu = [
   {
     label: 'File',
     submenu: [
-      dispatchMenuItem('Open', openDocumentFromDisk(), 'CommandOrControl+O'),
-      dispatchMenuItem('Import & Transcribe', transcribeFile()),
+      menuItem('Open', (dispatch) => dispatch(openDocumentFromDisk()), 'CommandOrControl+O'),
+      menuItem('Import & Transcribe', (dispatch) => dispatch(transcribeFile())),
       { type: 'separator' },
-      dispatchMenuItem('Save', saveDocument(false), 'CommandOrControl+S'),
-      dispatchMenuItem('Save As', saveDocument(true), 'CommandOrControl+Shift+S'),
+      menuItem('Save', (dispatch) => dispatch(saveDocument(false)), 'CommandOrControl+S'),
+      menuItem('Save As', (dispatch) => dispatch(saveDocument(true)), 'CommandOrControl+Shift+S'),
       { type: 'separator' },
-      dispatchMenuItem('Close Document', closeDocument(), 'CommandOrControl+Shift+W'),
+      menuItem('Close Document', (dispatch) => dispatch(closeDocument()), 'CommandOrControl+Shift+W'),
     ],
   },
   {
     label: 'Edit',
     submenu: [
-      dispatchMenuItem('Undo', ActionCreators.undo, 'CommandOrControl+Z'),
-      dispatchMenuItem('Redo', ActionCreators.redo, 'CommandOrControl+Shift+Z, CommandOrControl+Y'),
+      menuItem('Undo', (dispatch) => dispatch(ActionCreators.undo()), 'CommandOrControl+Z'),
+      menuItem(
+        'Redo',
+        (dispatch) => dispatch(ActionCreators.redo()),
+        'CommandOrControl+Shift+Z, CommandOrControl+Y'
+      ),
       { type: 'separator' },
-      dispatchMenuItem('Cut', cut(), 'CommandOrControl+X'),
-      dispatchMenuItem('Copy', copy(), 'CommandOrControl+C'),
-      dispatchMenuItem('Paste', paste(), 'CommandOrControl+V'),
+      menuItem('Cut', (dispatch) => dispatch(cut()), 'CommandOrControl+X'),
+      menuItem('Copy', (dispatch) => dispatch(copy()), 'CommandOrControl+C'),
+      menuItem('Paste', (dispatch) => dispatch(paste()), 'CommandOrControl+V'),
+    ],
+  },
+  {
+    label: 'View',
+    submenu: [
+      menuItem('Toggle Speaker Names', (dispatch) => dispatch(toggleDisplaySpeakerNames())),
+      menuItem('Toggle Video', (dispatch) => dispatch(toggleDisplayVideo())),
     ],
   },
 ];
@@ -61,8 +73,8 @@ export const nonEditorMenu = [
   {
     label: 'File',
     submenu: [
-      dispatchMenuItem('Open', openDocumentFromDisk(), 'CommandOrControl+O'),
-      dispatchMenuItem('Import & Transcribe', transcribeFile()),
+      menuItem('Open', (dispatch) => dispatch(openDocumentFromDisk()), 'CommandOrControl+O'),
+      menuItem('Import & Transcribe', (dispatch) => dispatch(transcribeFile())),
     ],
   },
 ];

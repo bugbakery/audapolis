@@ -56,7 +56,7 @@ export const createWindow = (): void => {
   });
 
   setMenu(window, []);
-  window.on('show', () => {
+  window.on('focus', () => {
     Menu.setApplicationMenu(menuMap[window.id]);
   });
 

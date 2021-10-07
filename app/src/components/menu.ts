@@ -1,4 +1,4 @@
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, MenuItemConstructorOptions } from 'electron';
 import { store } from '../state';
 import {
   closeDocument,
@@ -13,68 +13,103 @@ import {
 import { transcribeFile } from '../state/transcribe';
 import { ActionCreators } from 'redux-undo';
 import { v4 as uuidv4 } from 'uuid';
+import { MenuItemConstructorOptionsIpc } from '../main_process/menu';
 
-function menuItem(
-  label: string,
-  fn: (dispatch: typeof store.dispatch) => void,
-  accelerator?: string
-) {
-  const uuid = `menu/${uuidv4()}`;
-
-  ipcRenderer.on(uuid, () => {
-    fn(store.dispatch);
-  });
-
-  return {
-    label: label,
-    accelerator: accelerator,
-    click: uuid,
+export function setMenu(menu: MenuItemConstructorOptions[]): void {
+  const listeners: Record<string, () => void> = {};
+  const transformMenuTemplate = (
+    x: MenuItemConstructorOptions[]
+  ): MenuItemConstructorOptionsIpc[] => {
+    const transformClick = (click: (...args: any) => void): string | undefined => {
+      const uuid = uuidv4();
+      listeners[uuid] = click;
+      return uuid;
+    };
+    return x.map(
+      (x) =>
+        ({
+          ...x,
+          click: x.click && transformClick(x.click),
+          submenu: x.submenu && transformMenuTemplate(x.submenu as MenuItemConstructorOptions[]),
+        } as MenuItemConstructorOptionsIpc)
+    );
   };
+  const transformed = transformMenuTemplate(menu);
+
+  ipcRenderer.removeAllListeners('menu-click');
+  ipcRenderer.on('menu-click', (e, payload) => {
+    listeners[payload]();
+  });
+  ipcRenderer.send('set-menu', transformed);
 }
 
-export const editorMenu = [
+export const editorMenu: MenuItemConstructorOptions[] = [
   {
     label: 'File',
     submenu: [
-      menuItem('Open', (dispatch) => dispatch(openDocumentFromDisk()), 'CommandOrControl+O'),
-      menuItem('Import & Transcribe', (dispatch) => dispatch(transcribeFile())),
+      {
+        label: 'Open',
+        click: () => store.dispatch(openDocumentFromDisk()),
+        accelerator: 'CommandOrControl+O',
+      },
+      { label: 'Import & Transcribe', click: () => store.dispatch(transcribeFile()) },
       { type: 'separator' },
-      menuItem('Save', (dispatch) => dispatch(saveDocument(false)), 'CommandOrControl+S'),
-      menuItem('Save As', (dispatch) => dispatch(saveDocument(true)), 'CommandOrControl+Shift+S'),
+      {
+        label: 'Save',
+        click: () => store.dispatch(saveDocument(false)),
+        accelerator: 'CommandOrControl+S',
+      },
+      {
+        label: 'Save As',
+        click: () => store.dispatch(saveDocument(true)),
+        accelerator: 'CommandOrControl+Shift+S',
+      },
       { type: 'separator' },
-      menuItem('Close Document', (dispatch) => dispatch(closeDocument()), 'CommandOrControl+Shift+W'),
+      {
+        label: 'Close Document',
+        click: () => store.dispatch(closeDocument()),
+        accelerator: 'CommandOrControl+Shift+W',
+      },
     ],
   },
   {
     label: 'Edit',
     submenu: [
-      menuItem('Undo', (dispatch) => dispatch(ActionCreators.undo()), 'CommandOrControl+Z'),
-      menuItem(
-        'Redo',
-        (dispatch) => dispatch(ActionCreators.redo()),
-        'CommandOrControl+Shift+Z, CommandOrControl+Y'
-      ),
+      {
+        label: 'Undo',
+        click: () => store.dispatch(ActionCreators.undo()),
+        accelerator: 'CommandOrControl+Z',
+      },
+      {
+        label: 'Redo',
+        click: () => store.dispatch(ActionCreators.redo()),
+        accelerator: 'CommandOrControl+Shift+Z, CommandOrControl+Y',
+      },
       { type: 'separator' },
-      menuItem('Cut', (dispatch) => dispatch(cut()), 'CommandOrControl+X'),
-      menuItem('Copy', (dispatch) => dispatch(copy()), 'CommandOrControl+C'),
-      menuItem('Paste', (dispatch) => dispatch(paste()), 'CommandOrControl+V'),
+      { label: 'Cut', click: () => store.dispatch(cut()), accelerator: 'CommandOrControl+X' },
+      { label: 'Copy', click: () => store.dispatch(copy()), accelerator: 'CommandOrControl+C' },
+      { label: 'Paste', click: () => store.dispatch(paste()), accelerator: 'CommandOrControl+V' },
     ],
   },
   {
     label: 'View',
     submenu: [
-      menuItem('Toggle Speaker Names', (dispatch) => dispatch(toggleDisplaySpeakerNames())),
-      menuItem('Toggle Video', (dispatch) => dispatch(toggleDisplayVideo())),
+      { label: 'Toggle Speaker Names', click: () => store.dispatch(toggleDisplaySpeakerNames()) },
+      { label: 'Toggle Video', click: () => store.dispatch(toggleDisplayVideo()) },
     ],
   },
 ];
 
-export const nonEditorMenu = [
+export const nonEditorMenu: MenuItemConstructorOptions[] = [
   {
     label: 'File',
     submenu: [
-      menuItem('Open', (dispatch) => dispatch(openDocumentFromDisk()), 'CommandOrControl+O'),
-      menuItem('Import & Transcribe', (dispatch) => dispatch(transcribeFile())),
+      {
+        label: 'Open',
+        click: () => store.dispatch(openDocumentFromDisk()),
+        accelerator: 'CommandOrControl+O',
+      },
+      { label: 'Import & Transcribe', click: () => store.dispatch(transcribeFile()) },
     ],
   },
 ];

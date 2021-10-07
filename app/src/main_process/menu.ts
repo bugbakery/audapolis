@@ -11,15 +11,18 @@ function onMac(
   return process.platform === 'darwin' ? mac : otherPlatforms;
 }
 
-type PatchType = { click?: string; submenu?: InputType[] };
-type InputType = Exclude<MenuItemConstructorOptions, PatchType> & PatchType;
+type PatchType = { click?: string; submenu?: MenuItemConstructorOptionsIpc[] };
+export type MenuItemConstructorOptionsIpc = Exclude<MenuItemConstructorOptions, PatchType> &
+  PatchType;
 
-export function setMenu(window: BrowserWindow, args: InputType[]): void {
-  const transformMenuTemplate = (x: PatchType[]): MenuItemConstructorOptions[] => {
+export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsIpc[]): void {
+  const transformMenuTemplate = (
+    x: MenuItemConstructorOptionsIpc[]
+  ): MenuItemConstructorOptions[] => {
     return x.map((x) => ({
       ...x,
       click: () => {
-        x.click && window.webContents.send(x.click);
+        x.click && window.webContents.send('menu-click', x.click);
       },
       submenu: x.submenu && transformMenuTemplate(x.submenu),
     }));

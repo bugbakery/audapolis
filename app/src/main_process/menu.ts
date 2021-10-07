@@ -48,7 +48,7 @@ export function setMenu(window: BrowserWindow, args: InputType[]): void {
         },
         { role: 'togglefullscreen' },
         ...onMac(
-          [{ type: 'separator' }, { role: 'front' }, { type: 'separator' }, { role: 'window' }],
+          [{ type: 'separator' }, { role: 'front' }, { type: 'separator' }],
           [{ role: 'close' }]
         ),
         { role: 'toggleDevTools', accelerator: 'CommandOrControl+Alt+I' },
@@ -75,16 +75,20 @@ export function setMenu(window: BrowserWindow, args: InputType[]): void {
   ] as MenuItemConstructorOptions[];
 
   menuMap[window.id] = Menu.buildFromTemplate(template);
+  const focusedWindow = BrowserWindow.getFocusedWindow();
+  if (focusedWindow) {
+    Menu.setApplicationMenu(menuMap[focusedWindow.id]);
+  }
 }
 
 ipcMain.on('set-menu', (event, args) => {
-  const win = BrowserWindow.fromId(event.frameId);
+  const win = BrowserWindow.fromWebContents(event.sender);
   assertSome(win);
   setMenu(win, args);
 });
 
 ipcMain.on('show-menu', (event) => {
-  const win = BrowserWindow.fromId(event.frameId);
+  const win = BrowserWindow.fromWebContents(event.sender);
   assertSome(win);
   menuMap[win.id].popup({
     x: 0,

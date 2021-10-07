@@ -41,7 +41,7 @@ export const editorMenu = [
       dispatchMenuItem('Save', saveDocument(false), 'CommandOrControl+S'),
       dispatchMenuItem('Save As', saveDocument(true), 'CommandOrControl+Shift+S'),
       { type: 'separator' },
-      dispatchMenuItem('Close Document', closeDocument(), 'CommandOrControl+H'),
+      dispatchMenuItem('Close Document', closeDocument(), 'CommandOrControl+Shift+W'),
     ],
   },
   {

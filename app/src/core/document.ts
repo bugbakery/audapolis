@@ -45,6 +45,18 @@ export interface DocumentGeneric<S, I> {
 }
 export type Document = DocumentGeneric<Source, ParagraphItem>;
 
+/**
+ * The file versions of audapolis are not the same as the actual release versions of the app.
+ * They should be changed any time a breaking update to the file structure happens but it is not necessary to bump them
+ * when a new audapolis version is released.
+ */
+type DocumentPreV1Json = ParagraphGeneric<ParagraphItem>[];
+interface DocumentV1Json {
+  version: 1;
+  content: ParagraphGeneric<ParagraphItem>[];
+}
+type DocumentJson = DocumentV1Json | DocumentPreV1Json;
+
 export async function deserializeDocumentFromFile(
   path: string,
   onNoSourceLoad?: (noSourceDocument: Document) => void
@@ -61,7 +73,20 @@ export async function deserializeDocument(
   if (!documentFile) {
     throw Error('document.json missing in audapolis file');
   }
-  const content = JSON.parse(await documentFile.async('text')) as ParagraphGeneric<ParagraphItem>[];
+  const parsed = JSON.parse(await documentFile.async('text')) as DocumentJson;
+  let content;
+  if (!('version' in parsed)) {
+    throw new Error(
+      'Unversioned audapolis files are not supported anymore.\nProbably your audapolis file is corrupt.'
+    );
+  } else if (parsed.version == 1) {
+    content = parsed.content;
+  } else {
+    throw new Error(
+      `Cant open document with version ${parsed.version} with current audapolis version.\nMaybe try updating audapolis?`
+    );
+  }
+
   if (onNoSourceLoad) {
     onNoSourceLoad({ content, sources: {} });
   }
@@ -79,7 +104,13 @@ export async function deserializeDocument(
     )
   );
 
-  // TODO: check that all sources referenced in items are found in zip file
+  for (const v of DocumentGenerator.fromParagraphs(content)) {
+    if ('source' in v && sources[v.source] === undefined) {
+      throw new Error(
+        `Source ${v.source} is referenced in audapolis file but not present. Your Audapolis file is corrupt :(`
+      );
+    }
+  }
 
   return { content, sources };
 }
@@ -101,7 +132,7 @@ export function serializeDocument(document: Document): JSZip {
       zip.file(`sources/${k}`, source.fileContents);
     });
 
-  const encodedDocument: ParagraphGeneric<ParagraphItem>[] = document.content;
+  const encodedDocument: DocumentV1Json = { version: 1, content: document.content };
   zip.file('document.json', JSON.stringify(encodedDocument));
   return zip;
 }

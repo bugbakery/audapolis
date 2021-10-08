@@ -48,11 +48,18 @@ function LongSilence(
   );
 }
 
-function ShortSilence(props: { selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
+function ShortSilence({
+  selected,
+  preserve,
+  ...props
+}: { preserve: boolean; selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
     <span
       className={'item'}
-      style={props.selected ? { backgroundColor: 'lightblue' } : {}}
+      style={{
+        ...(selected && { backgroundColor: 'lightblue' }),
+        ...(preserve && { whiteSpace: 'pre' }),
+      }}
       {...props}
     >
       {' '}
@@ -307,21 +314,21 @@ export function Paragraph({
               dispatch(setWord({ text, absoluteStart: item.absoluteStart }));
             },
           };
-          switch (item.type) {
-            case 'word':
-              return <Word {...commonProps} word={item.word} />;
-            case 'silence':
-              if (item.length > 0.4) {
-                return <LongSilence {...commonProps} color={color} selected={isSelected(item)} />;
-              } else {
-                return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
-              }
-            case 'artificial_silence':
-              if (item.length > 0.4) {
-                return <LongSilence {...commonProps} color={color} selected={isSelected(item)} />;
-              } else {
-                return <ShortSilence key={i} onClick={onClick} selected={isSelected(item)} />;
-              }
+          if (item.type == 'word') {
+            return <Word {...commonProps} word={item.word} />;
+          } else if (item.type == 'silence' || item.type == 'artificial_silence') {
+            if (item.length > 0.4) {
+              return <LongSilence {...commonProps} color={color} selected={isSelected(item)} />;
+            } else {
+              return (
+                <ShortSilence
+                  preserve={i == 0 || i == content.length - 1}
+                  key={i}
+                  onClick={onClick}
+                  selected={isSelected(item)}
+                />
+              );
+            }
           }
         })}
       </ParagraphContainer>

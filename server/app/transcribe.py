@@ -65,12 +65,12 @@ def process_audio(
         task.processed = block_end
     task.state = TranscriptionState.POST_PROCESSING
     vosk_result = json.loads(rec.FinalResult())
-    content = transform_vosk_result(fileName, vosk_result)
+    content = transform_vosk_result(fileName, vosk_result, audio.duration_seconds)
     task.content = [content]
     task.state = TranscriptionState.DONE
 
 
-def transform_vosk_result(name: str, result: dict) -> dict:
+def transform_vosk_result(name: str, result: dict, length: float) -> dict:
     content = []
     current_time = 0
     for word in result["result"]:
@@ -93,5 +93,13 @@ def transform_vosk_result(name: str, result: dict) -> dict:
             }
         )
         current_time = word["end"]
+    if current_time < length:
+        content.append(
+            {
+                "sourceStart": current_time,
+                "length": length - current_time,
+                "type": "silence",
+            }
+        )
 
     return {"speaker": name, "content": content}

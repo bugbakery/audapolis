@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import styled from 'styled-components';
 import { player } from '../../core/player';
-import { getCurrentItem } from '../../core/document';
+import { DocumentGenerator } from '../../core/document';
 import { MdVideocamOff } from 'react-icons/md';
 
 const PlayerContainer = styled.div<{ visible: boolean }>`
@@ -40,7 +40,9 @@ export function Player(): JSX.Element {
   const currentSource = useSelector((state: RootState) => {
     const currentItem =
       state.editor.present &&
-      getCurrentItem(state.editor.present.document.content, state.editor.present.currentTime);
+      DocumentGenerator.fromParagraphs(state.editor.present.document.content).getItemsAtTime(
+        state.editor.present.currentTime
+      )[0];
     return currentItem && 'source' in currentItem ? currentItem.source : null;
   });
   const displayVideo =

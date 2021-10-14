@@ -62,7 +62,7 @@ class Player {
       .exactFrom(time)
       .toRenderItems()
       .next().value;
-    if ('source' in renderItem) {
+    if (renderItem && 'source' in renderItem) {
       const source = this.sources[renderItem.source];
       source.currentTime = renderItem.sourceStart;
     }

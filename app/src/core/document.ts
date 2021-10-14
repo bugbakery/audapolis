@@ -3,8 +3,7 @@ import { readFileSync, createWriteStream } from 'fs';
 import { basename } from 'path';
 import { GeneratorBox, map } from '../util/itertools';
 import { v4 as uuidv4 } from 'uuid';
-import { roughEq } from '../util';
-
+import { EPSILON, roughEq } from '../util';
 export interface Word {
   type: 'word';
   word: string;
@@ -181,10 +180,6 @@ export class DocumentGenerator<
     return new DocumentGenerator(rawDocumentIterator(content));
   }
 
-  skipToTime(targetTime: number, alwaysLast?: boolean, before?: boolean): DocumentGenerator<T> {
-    return new DocumentGenerator(rawSkipToTime(this, targetTime, alwaysLast, before));
-  }
-
   exactFrom(time: number): this {
     const C = Object.getPrototypeOf(this);
     return new C.constructor(rawExactFrom(this, time));
@@ -223,6 +218,10 @@ export class DocumentGenerator<
   toRenderItems(): GeneratorBox<RenderItem> {
     return new GeneratorBox(renderItemsFromDocumentGenerator(this));
   }
+
+  getItemsAtTime(time: number): DocumentGeneratorItem[] {
+    return getItemsAtTime(this, time);
+  }
 }
 
 function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGeneratorItem> {
@@ -241,30 +240,6 @@ function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGenerator
       };
       accumulatedTime += item.length;
     }
-  }
-}
-
-export function* rawSkipToTime<I extends DocumentGeneratorItem>(
-  iterator: DocumentGenerator<I>,
-  targetTime: number,
-  alwaysLast?: boolean,
-  before?: boolean
-): Generator<I> {
-  let last: I | null = null;
-  for (const item of iterator) {
-    if (item.absoluteStart + item.length <= targetTime) {
-      last = item;
-    } else {
-      if (before && last) {
-        yield last;
-      }
-      yield item;
-      last = null;
-    }
-  }
-
-  if (alwaysLast && last) {
-    yield last;
   }
 }
 
@@ -358,11 +333,11 @@ export function* renderItemsFromDocumentGenerator(gen: DocumentGenerator): Gener
   }
 }
 
-export function getCurrentItem(
-  document: Paragraph[],
-  time: number,
-  prev?: boolean
-): DocumentGeneratorItem | void {
-  const iter = DocumentGenerator.fromParagraphs(document).skipToTime(time, true, prev);
-  return iter.next().value;
+export function getItemsAtTime<T extends DocumentGeneratorItem = DocumentGeneratorItem>(
+  generator: GeneratorBox<T>,
+  time: number
+): T[] {
+  return generator
+    .filter((x) => x.absoluteStart - EPSILON < time && x.absoluteStart + x.length + EPSILON > time)
+    .collect();
 }

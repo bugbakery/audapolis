@@ -1,6 +1,11 @@
 import { DocumentGenerator, Paragraph } from './document';
 import { sleep } from '../util';
 
+export interface MaybeRange {
+  start: number;
+  length?: number;
+}
+
 class Player {
   sources: Record<string, HTMLVideoElement> = {};
   playing = false;
@@ -14,12 +19,13 @@ class Player {
 
   async play(
     paragraphs: Paragraph[],
-    time: number,
+    range: MaybeRange,
     progressCallback: (time: number) => void
   ): Promise<void> {
     this.playing = true;
     const renderItems = DocumentGenerator.fromParagraphs(paragraphs)
-      .exactFrom(time)
+      .exactFrom(range.start)
+      .exactUntil(range.length ? range.start + range.length : Number.MAX_VALUE)
       .toRenderItems();
     for (const renderItem of renderItems) {
       if (!this.playing) {

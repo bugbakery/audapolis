@@ -231,6 +231,9 @@ function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGenerator
     const paragraphUuid = uuidv4();
     for (let i = 0; i < paragraph.content.length; i++) {
       const item = paragraph.content[i];
+      if (item.length < EPSILON) {
+        console.warn('really short item: ', item);
+      }
       yield {
         ...item,
         absoluteStart: accumulatedTime,
@@ -253,7 +256,7 @@ export function* rawExactFrom<I extends DocumentGeneratorItem>(
   for (const item of iterator) {
     const itemStartOffset = time - item.absoluteStart;
     const length = item.length - itemStartOffset;
-    if (first && length >= 0) {
+    if (first && length > 0) {
       const modified = {
         ...item,
         ...('sourceStart' in item ? { sourceStart: item.sourceStart + itemStartOffset } : {}),
@@ -262,7 +265,7 @@ export function* rawExactFrom<I extends DocumentGeneratorItem>(
       };
       yield modified;
       first = false;
-    } else if (length >= 0) {
+    } else if (!first && length > 0) {
       yield item;
     }
   }

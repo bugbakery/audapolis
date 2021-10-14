@@ -8,7 +8,7 @@ import {
   Document,
   DocumentGenerator,
   DocumentGeneratorItem,
-  getCurrentItem,
+  getItemsAtTime,
   serializeDocument,
   serializeDocumentToFile,
   TimedParagraphItem,
@@ -242,8 +242,10 @@ export const deleteSomething = createAsyncThunk<void, void, { state: RootState }
     if (state.selection !== null) {
       dispatch(deleteSelection());
     } else {
-      const item = getCurrentItem(state.document.content, state.currentTime);
-      if (item?.itemIdx == 0) {
+      const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(
+        state.currentTime
+      );
+      if (items.some((item) => item?.itemIdx == 0)) {
         dispatch(deleteParagraphBreak());
       } else {
         dispatch(selectLeft());
@@ -422,7 +424,10 @@ export const importSlice = createSlice({
     },
     goLeft: (state) => {
       assertSome(state);
-      const item = getCurrentItem(state.document.content, state.currentTime, true);
+      const item = getItemsAtTime(
+        DocumentGenerator.fromParagraphs(state.document.content),
+        state.currentTime
+      )[0];
       assertSome(item);
       state.currentTime = item.absoluteStart;
       player.setTime(state.document.content, state.currentTime);
@@ -430,14 +435,12 @@ export const importSlice = createSlice({
     },
     goRight: (state) => {
       assertSome(state);
-      const iter = DocumentGenerator.fromParagraphs(state.document.content).skipToTime(
-        state.currentTime,
-        true
+      const items = getItemsAtTime(
+        DocumentGenerator.fromParagraphs(state.document.content),
+        state.currentTime
       );
-      iter.next();
-      const item = iter.next().value;
-      assertSome(item);
-      state.currentTime = item.absoluteStart;
+      const item = items[items.length - 1];
+      state.currentTime = item.absoluteStart + item.length;
       player.setTime(state.document.content, state.currentTime);
       state.selection = null;
     },
@@ -451,20 +454,22 @@ export const importSlice = createSlice({
     selectLeft: (state) => {
       assertSome(state);
       const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
+      const getItemLeft = (time: number) =>
+        DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time)[0];
       if (!selectionInfo || !state.selection) {
-        const item = getCurrentItem(state.document.content, state.currentTime, true);
+        const item = getItemLeft(state.currentTime);
         assertSome(item);
         state.selection = { start: item.absoluteStart, length: item.length };
         state.selectionStartItem = item;
       } else {
         const { leftEnd, rightEnd, currentEndLeft } = selectionInfo;
         if (currentEndLeft) {
-          const item = getCurrentItem(state.document.content, leftEnd, true);
+          const item = getItemLeft(leftEnd);
           assertSome(item);
           state.selection.length = rightEnd - item.absoluteStart;
           state.selection.start = item.absoluteStart;
         } else {
-          const item = getCurrentItem(state.document.content, rightEnd, true);
+          const item = getItemLeft(rightEnd);
           assertSome(item);
           state.selection.length = item.absoluteStart - leftEnd;
         }
@@ -473,21 +478,22 @@ export const importSlice = createSlice({
     selectRight: (state) => {
       assertSome(state);
       const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
+      const getItemRight = (time: number) => {
+        const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time);
+        return items[items.length - 1];
+      };
       if (!selectionInfo || !state.selection) {
-        const item = getCurrentItem(state.document.content, state.currentTime, false);
-        assertSome(item);
+        const item = getItemRight(state.currentTime);
         state.selection = { start: item.absoluteStart, length: item.length };
         state.selectionStartItem = item;
       } else {
         const { leftEnd, rightEnd, currentEndRight } = selectionInfo;
         if (currentEndRight) {
-          const item = getCurrentItem(state.document.content, rightEnd);
-          assertSome(item);
+          const item = getItemRight(rightEnd);
           const itemEnd = item.absoluteStart + item.length;
           state.selection.length = itemEnd - leftEnd;
         } else {
-          const item = getCurrentItem(state.document.content, leftEnd);
-          assertSome(item);
+          const item = getItemRight(leftEnd);
           const itemEnd = item.absoluteStart + item.length;
           state.selection.length = rightEnd - itemEnd;
           state.selection.start = itemEnd;

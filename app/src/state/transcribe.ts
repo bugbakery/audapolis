@@ -44,6 +44,7 @@ export const transcribeFile = createAsyncThunk<string, void, { state: RootState 
       return;
     }
     const file = await ipcRenderer.invoke('open-file', {
+      title: 'Import media file...',
       properties: ['openFile'],
       promptToCreate: true,
       createDirectory: true,

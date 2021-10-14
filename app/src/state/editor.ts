@@ -71,6 +71,7 @@ export const openDocumentFromDisk = createAsyncThunk(
   'editor/openDocumentFromDisk',
   async (_, { dispatch }): Promise<void> => {
     const file = await ipcRenderer.invoke('open-file', {
+      title: 'Open audapolis document...',
       properties: ['openFile'],
       promptToCreate: true,
       createDirectory: true,
@@ -176,6 +177,7 @@ export const saveDocument = createAsyncThunk<Document, boolean, { state: RootSta
       console.log('opening save dialog');
       const path = await ipcRenderer
         .invoke('save-file', {
+          title: 'Save file as...',
           properties: ['saveFile'],
           filters: [
             { name: 'Audapolis Project Files', extensions: ['audapolis'] },
@@ -202,6 +204,7 @@ export const exportDocument = createAsyncThunk<Document, void, { state: RootStat
     console.log('starting export', document.content);
     const path = await ipcRenderer
       .invoke('save-file', {
+        title: 'Export file',
         properties: ['saveFile'],
         filters: [
           { name: 'mp3 Files', extensions: ['mp3'] },
@@ -322,6 +325,7 @@ export const exportSelection = createAsyncThunk<void, void, { state: RootState }
 
     const path = await ipcRenderer
       .invoke('save-file', {
+        title: 'Export selection',
         properties: ['saveFile'],
         filters: [
           { name: 'mp3 Files', extensions: ['mp3'] },

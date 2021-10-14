@@ -1,8 +1,16 @@
-import { BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions, shell } from 'electron';
+import {
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  MenuItemConstructorOptions,
+  shell,
+} from 'electron';
 import { assertSome } from '../util';
 import { createWindow } from './index';
 
-export const menuMap: Record<number, Menu> = {};
+type ShortcutMap = Record<string, string>;
+export const menuMap: Record<number, { menu: Menu; accelerators: ShortcutMap }> = {};
 
 function onMac(
   mac: MenuItemConstructorOptions[],
@@ -18,23 +26,39 @@ export type MenuItemConstructorOptionsIpc = Exclude<MenuItemConstructorOptions, 
 export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsIpc[]): void {
   const transformMenuTemplate = (
     x: MenuItemConstructorOptionsIpc[]
-  ): MenuItemConstructorOptions[] => {
-    return x.map((x) => ({
-      ...x,
-      click: () => {
-        x.click && window.webContents.send('menu-click', x.click);
-      },
-      submenu: x.submenu && transformMenuTemplate(x.submenu),
-    }));
+  ): [MenuItemConstructorOptions[], ShortcutMap] => {
+    const accelerators: ShortcutMap = {};
+
+    const transformMenuTemplateInner = (
+      x: MenuItemConstructorOptionsIpc[]
+    ): MenuItemConstructorOptions[] => {
+      return x.map((x) => {
+        if (x.accelerator && x.click) {
+          accelerators[x.accelerator.toString()] = x.click.toString();
+        }
+        return {
+          ...x,
+          click: () => {
+            x.click && window.webContents.send('menu-click', x.click);
+          },
+          registerAccelerator: false,
+          submenu: x.submenu && transformMenuTemplateInner(x.submenu),
+        };
+      });
+    };
+
+    const template = transformMenuTemplateInner(x);
+    return [template, accelerators];
   };
 
+  const [templateInner, accelerators] = transformMenuTemplate(args);
   const template = [
     ...onMac([
       {
         role: 'appMenu',
       },
     ]),
-    ...transformMenuTemplate(args),
+    ...templateInner,
     {
       label: 'Window',
       submenu: [
@@ -77,11 +101,29 @@ export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsI
     },
   ] as MenuItemConstructorOptions[];
 
-  menuMap[window.id] = Menu.buildFromTemplate(template);
+  menuMap[window.id] = {
+    menu: Menu.buildFromTemplate(template),
+    accelerators,
+  };
+  applyMenu(window);
+}
+
+export function applyMenu(window: BrowserWindow): void {
   const focusedWindow = BrowserWindow.getFocusedWindow();
-  if (focusedWindow) {
-    Menu.setApplicationMenu(menuMap[focusedWindow.id]);
+  if (focusedWindow?.id == window.id) {
+    const menu = menuMap[focusedWindow.id];
+    Menu.setApplicationMenu(menu.menu);
+    unregisterAccelerators();
+    Object.entries(menu.accelerators).forEach(([accelerator, uuid]) => {
+      globalShortcut.register(accelerator, () => {
+        window.webContents.send('menu-click', uuid);
+      });
+    });
   }
+}
+
+export function unregisterAccelerators(): void {
+  globalShortcut.unregisterAll();
 }
 
 ipcMain.on('set-menu', (event, args) => {
@@ -93,7 +135,7 @@ ipcMain.on('set-menu', (event, args) => {
 ipcMain.on('show-menu', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   assertSome(win);
-  menuMap[win.id].popup({
+  menuMap[win.id].menu.popup({
     x: 0,
     y: 55,
   });

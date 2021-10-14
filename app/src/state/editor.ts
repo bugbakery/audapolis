@@ -245,7 +245,7 @@ export const deleteSomething = createAsyncThunk<void, void, { state: RootState }
       const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(
         state.currentTime
       );
-      if (items.some((item) => item?.itemIdx == 0)) {
+      if (items[items.length - 1].itemIdx == 0) {
         dispatch(deleteParagraphBreak());
       } else {
         dispatch(selectLeft());

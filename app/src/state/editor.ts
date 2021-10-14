@@ -136,7 +136,11 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
     dispatch(setPlay(true));
     const { document, currentTime } = editor;
     const progressCallback = (time: number) => dispatch(setTimeWithoutUpdate(time));
-    await player.play(document.content, currentTime, progressCallback);
+    await player.play(
+      document.content,
+      editor.selection || { start: currentTime },
+      progressCallback
+    );
     console.log('play ended');
     dispatch(setPlay(false));
   }

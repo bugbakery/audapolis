@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, session } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
@@ -57,7 +57,10 @@ export const createWindow = (): void => {
 
   setMenu(window, []);
   window.on('focus', () => {
-    Menu.setApplicationMenu(menuMap[window.id]);
+    applyMenu(window);
+  });
+  window.on('blur', () => {
+    unregisterAccelerators();
   });
 
   window.on('ready-to-show', () => window.show());
@@ -85,4 +88,4 @@ app.on('activate', () => {
 import './ipc';
 import './server';
 import { windowList } from './windowList';
-import { menuMap, setMenu } from './menu';
+import { applyMenu, setMenu, unregisterAccelerators } from './menu';

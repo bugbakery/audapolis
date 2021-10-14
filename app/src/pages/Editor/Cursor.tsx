@@ -68,7 +68,8 @@ function computeCursorPosition(
   ref: HTMLDivElement,
   time: number
 ): { x: number; y: number } {
-  const item = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time)[0] || {
+  const items = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time);
+  const item = items[items.length - 1] || {
     globalIdx: 0,
     absoluteStart: time,
     length: 1,

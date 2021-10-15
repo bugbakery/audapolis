@@ -86,9 +86,9 @@ export const editorMenu: MenuItemConstructorOptions[] = [
         accelerator: 'CommandOrControl+Shift+Z, CommandOrControl+Y',
       },
       { type: 'separator' },
-      { label: 'Cut', click: () => store.dispatch(cut()), accelerator: 'Control+X' },
-      { label: 'Copy', click: () => store.dispatch(copy()), accelerator: 'Control+C' },
-      { label: 'Paste', click: () => store.dispatch(paste()), accelerator: 'Control+V' },
+      { label: 'Cut', click: () => store.dispatch(cut()), accelerator: 'CommandOrControl+X' },
+      { label: 'Copy', click: () => store.dispatch(copy()), accelerator: 'CommandOrControl+C' },
+      { label: 'Paste', click: () => store.dispatch(paste()), accelerator: 'CommandOrControl+V' },
     ],
   },
   {

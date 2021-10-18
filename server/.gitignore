@@ -140,3 +140,5 @@ cython_debug/
 # IDE
 .idea/
 .vscode/
+requirements.txt
+licenses.md

@@ -212,6 +212,7 @@ def make_exe():
         config=python_config,
     )
 
+
     # Install tcl/tk support files to a specified directory so the `tkinter` Python
     # module works.
     # exe.tcl_files_path = "lib"
@@ -260,6 +261,7 @@ def make_exe():
             resource.add_include = True
         exe.add_python_resource(resource)
     exe.add_python_resources(exe.read_package_root(CWD, ["run","app"]))
+    exe.write_aggregate_license_text("licenses.md", "Audapolis would not be possible without other open source software. It contains software subject to licenses as described below.")
 
     # Read Python files from a local directory and add them to our embedded
     # context, taking just the resources belonging to the `foo` and `bar`
@@ -291,7 +293,6 @@ def make_install(exe):
 
     # Add the generated executable to our install layout in the root directory.
     files.add_python_resource(".", exe)
-    print(files)
     return files
 
 # Tell PyOxidizer about the build targets defined above.

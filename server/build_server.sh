@@ -13,7 +13,7 @@ cd $GIT_ROOT
 rm -rf app/server
 mkdir -p app/server
 cd server
-poetry install
 poetry export -f requirements.txt > requirements.txt
-poetry run pyoxidizer build --release
+pyoxidizer build --release
 cp -r build/*/release/install/* ../app/server/
+cp licenses.md ../app/server/licenses.md

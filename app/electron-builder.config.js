@@ -27,9 +27,7 @@ const config = {
     target: 'AppImage',
     category: 'Audio',
   },
-  extraResources: [
-    "./server/**"
-  ]
+  extraResources: ['./server/**', './generated/**'],
 };
 
 module.exports = config;

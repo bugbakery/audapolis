@@ -12,6 +12,7 @@ import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
 import { ServersListPage } from '../pages/ServersList';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
+import { AboutPage } from '../pages/About';
 
 const AppContainer = styled.div`
   font-family: 'Roboto', sans-serif;
@@ -53,5 +54,7 @@ function CurrentPage(): JSX.Element {
       return <ServersListPage />;
     case Page.ModelManager:
       return <ModelManagerPage />;
+    case Page.About:
+      return <AboutPage />;
   }
 }

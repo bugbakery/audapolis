@@ -15,6 +15,7 @@
   },
   "main": "build/main/start.cjs.js",
   "scripts": {
+    "prebuild": "node scripts/generate_licenses.mjs generated/licenses.zip server/licenses.md",
     "build": "node scripts/build.js",
     "predist": "cross-env MODE=production npm run build",
     "dist": "electron-builder build --config electron-builder.config.js --dir --config.asar=false",
@@ -69,6 +70,7 @@
     "ffmpeg-static": "^4.4.0",
     "immer": "^9.0.6",
     "jszip": "^3.7.1",
+    "nlf": "^2.1.1",
     "rc-progress": "^3.1.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",

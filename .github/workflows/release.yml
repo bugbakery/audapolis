@@ -94,6 +94,7 @@ jobs:
           body: a pre-release of audapolis
 
   upload_artifacts:
+    name: Build version
     needs: [ get_version ]
 
     strategy:
@@ -110,6 +111,24 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Cache cargo
+        uses: actions/cache@v1
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-plugins
+
+      - uses: actions-rs/toolchain@v1
+        name: Install rust
+        with:
+          toolchain: stable
+
+      - name: Install pyoxidizer fork
+        run: cargo install --git https://github.com/audapolis/PyOxidizer.git --rev 3f3980d81e67928db83df20b9c1aefa3c8235866 pyoxidizer
 
       - name: Install Poetry
         uses: snok/install-poetry@v1

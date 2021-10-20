@@ -6,7 +6,7 @@ import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { MdSettings } from 'react-icons/md';
-import { openAbout, openModelManager } from '../state/nav';
+import { openModelManager } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 
 const BottomRightContainer = styled.div`
@@ -33,9 +33,6 @@ export function LandingPage(): JSX.Element {
         </Button>
         <Button onClick={() => dispatch(openDocumentFromMemory({ sources: {}, content: [] }))}>
           New Blank Document
-        </Button>
-        <Button primary onClick={() => dispatch(openAbout())}>
-          About
         </Button>
       </MainCenterColumn>
       <BottomRightContainer>

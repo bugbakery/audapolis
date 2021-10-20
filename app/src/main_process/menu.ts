@@ -92,6 +92,10 @@ export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsI
       role: 'help',
       submenu: [
         {
+          label: 'About',
+          click: () => window.webContents.send('open-about'),
+        },
+        {
           label: 'Learn More',
           click: async () => {
             await shell.openExternal('https://github.com/audapolis/audapolis');

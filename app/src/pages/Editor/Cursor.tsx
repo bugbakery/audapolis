@@ -12,7 +12,9 @@ const CursorContainer = styled.div`
   justify-content: stretch;
   height: calc(1em + 8px);
   position: absolute;
-  transform: translate(-3px, -6px);
+  transform: translate(calc(-50% + 1px), -6px);
+  user-select: none;
+  pointer-events: none;
 `;
 const CursorPoint = styled.div`
   width: 8px;

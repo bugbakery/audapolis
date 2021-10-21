@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction, Reducer } from '@reduxjs/toolkit';
 import { ipcRenderer, clipboard } from 'electron';
 import { RootState } from './index';
 import { openEditor, openLanding } from './nav';
@@ -14,7 +14,7 @@ import {
   TimedParagraphItem,
   Word,
 } from '../core/document';
-import undoable, { includeAction } from 'redux-undo';
+import undoable, { includeAction, StateWithHistory } from 'redux-undo';
 import { assertSome, EPSILON } from '../util';
 import * as ffmpeg_exporter from '../exporters/ffmpeg';
 import { v4 as uuidv4 } from 'uuid';
@@ -715,13 +715,18 @@ export const {
   renameSpeaker,
 } = importSlice.actions;
 const { setState } = importSlice.actions;
-export default undoable(importSlice.reducer, {
+
+const stateSlice: Reducer<StateWithHistory<Editor | null>> = undoable(importSlice.reducer, {
   filter: includeAction([
     insertParagraphBreak.type,
     deleteParagraphBreak.type,
     deleteSelection.type,
     reassignParagraph.type,
     renameSpeaker.type,
+    paste.fulfilled.type,
   ]),
   ignoreInitialState: false,
+  syncFilter: true,
 });
+
+export default stateSlice;

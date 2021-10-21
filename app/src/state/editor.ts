@@ -676,6 +676,7 @@ export const importSlice = createSlice({
     });
     builder.addCase(paste.fulfilled, (state, action) => {
       assertSome(state);
+      state.selection = null;
       state.document.sources = { ...state.document.sources, ...action.payload.sources };
       const beforeSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
         (item) => item.absoluteStart + item.length <= state.currentTime

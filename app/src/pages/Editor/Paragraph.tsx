@@ -1,6 +1,4 @@
-import styled, { css } from 'styled-components';
-// eslint-disable-next-line import/no-unresolved
-import quarterRest from '../../resources/quarter_rest.svg?raw';
+import styled from 'styled-components';
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, MouseEventHandler, useRef, useState } from 'react';
 import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
@@ -22,28 +20,18 @@ import {
 import { Button, Popup } from '../../components/Controls';
 import { assertSome } from '../../util';
 
-const ParagraphContainer = styled.div`
-  user-select: none;
-`;
-const LongSilenceSpan = styled.span<{ selected: boolean; icon: string }>`
-  padding: 0 8px;
-  color: transparent;
-  background: center / auto 80% no-repeat url(${(props) => props.icon});
-  ${(props) =>
-    props.selected &&
-    css`
-      background-color: lightblue;
-    `}
+const ParagraphContainer = styled.div``;
+const LongSilenceSpan = styled.span`
+  font-family: 'quarter_rest';
 `;
 
-function LongSilence(
-  props: { selected: boolean; color: string } & HTMLAttributes<HTMLSpanElement>
-): JSX.Element {
-  const dataUri =
-    'data:image/svg+xml;base64,' + btoa(quarterRest.replaceAll('#000000', props.color));
+function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
-    <LongSilenceSpan className={'item'} icon={dataUri} {...props}>
-      {' '}
+    <LongSilenceSpan
+      className={'item'}
+      {...props}
+    >
+      {' _'}
     </LongSilenceSpan>
   );
 }

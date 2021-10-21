@@ -12,6 +12,13 @@ body,
 }
 
 @font-face {
+  font-family: 'quarter_rest';
+  src: url('resources/fonts/quarter_rest.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
   font-family: 'Roboto';
   src: url('resources/fonts/roboto/Roboto-Black.ttf') format('truetype');
   font-weight: 900;

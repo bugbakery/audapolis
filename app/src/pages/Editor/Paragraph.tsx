@@ -27,10 +27,7 @@ const LongSilenceSpan = styled.span`
 
 function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
-    <LongSilenceSpan
-      className={'item'}
-      {...props}
-    >
+    <LongSilenceSpan className={'item'} {...props}>
       {' _'}
     </LongSilenceSpan>
   );
@@ -57,12 +54,10 @@ function ShortSilence({
 
 export function Word({
   word,
-  selected,
   changehandler,
   ...props
 }: DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> & {
   word: string;
-  selected: boolean;
   changehandler: (x: string) => void;
 }): JSX.Element {
   const [editing, setEditing] = useState(false);
@@ -116,23 +111,17 @@ export function Word({
     : {};
 
   return (
-    <SelectableSpan selected={selected}>
-      {' '}
-      <span {...props} {...editableProps} ref={ref} onContextMenu={handleContextMenu}>
-        {word}
-      </span>
-    </SelectableSpan>
+    <span
+      {...props}
+      {...editableProps}
+      ref={ref}
+      onContextMenu={handleContextMenu}
+      className={'item'}
+    >
+      {' ' + word}
+    </span>
   );
 }
-
-const SelectableSpan = styled.span<{ selected: boolean }>`
-  ${(props) =>
-    props.selected &&
-    css`
-      background-color: lightblue;
-      color: black;
-    `}
-`;
 
 const SpeakerPopupButton = styled(Button)`
   border: none;
@@ -306,7 +295,7 @@ export function Paragraph({
             return <Word {...commonProps} word={item.word} />;
           } else if (item.type == 'silence' || item.type == 'artificial_silence') {
             if (item.length > 0.4) {
-              return <LongSilence {...commonProps} color={color} selected={isSelected(item)} />;
+              return <LongSilence {...commonProps} />;
             } else {
               return (
                 <ShortSilence

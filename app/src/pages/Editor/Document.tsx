@@ -48,7 +48,7 @@ export function Document(): JSX.Element {
   return (
     <DocumentContainer displaySpeakerNames={displaySpeakerNames} ref={ref}>
       <Cursor />
-      <SelectionMenu documentRef={ref} content={content} />
+      <SelectionMenu documentRef={ref} />
       <FileNameDisplay path={fileName} />
 
       {content.length > 0 ? (

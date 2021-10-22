@@ -1,22 +1,9 @@
 import styled from 'styled-components';
 import * as React from 'react';
-import { DetailedHTMLProps, HTMLAttributes, MouseEventHandler, useRef, useState } from 'react';
+import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { setWord, reassignParagraph, renameSpeaker } from '../../state/editor';
 import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../state';
-import {
-  mouseSelectionEnd,
-  mouseSelectionOver,
-  mouseSelectionStart,
-  setTime,
-  play,
-  pause,
-  selectItem,
-  selectParagraph,
-  setWord,
-  reassignParagraph,
-  renameSpeaker,
-} from '../../state/editor';
 import { Button, Popup } from '../../components/Controls';
 import { assertSome } from '../../util';
 
@@ -34,15 +21,13 @@ function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
 }
 
 function ShortSilence({
-  selected,
   preserve,
   ...props
-}: { preserve: boolean; selected: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
+}: { preserve: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
     <span
       className={'item'}
       style={{
-        ...(selected && { backgroundColor: 'lightblue' }),
         ...(preserve && { whiteSpace: 'pre' }),
       }}
       {...props}
@@ -152,6 +137,7 @@ const SpeakerLabel = styled.div`
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+  user-select: none;
 `;
 function Speaker({
   name,
@@ -232,79 +218,33 @@ export function Paragraph({
   paragraphIdx,
   color,
 }: ParagraphType<TimedParagraphItem> & { paragraphIdx: number; color: string }): JSX.Element {
-  const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
-  const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const dispatch = useDispatch();
-  const isSelected = (item: TimedParagraphItem) => {
-    if (!selection) {
-      return false;
-    } else {
-      return (
-        item.absoluteStart >= selection.start &&
-        item.absoluteStart + item.length <= selection.start + selection.length
-      );
-    }
-  };
 
   return (
     <>
       <Speaker name={speaker} paragraphIdx={paragraphIdx} style={{ color: color }} />
       <ParagraphContainer style={{ color: color }}>
         {content.map((item, i) => {
-          const onClick = async () => {
-            await dispatch(pause());
-            await dispatch(setTime(item.absoluteStart));
-            if (playing) {
-              dispatch(play());
-            }
-          };
-          const onMouseDown: MouseEventHandler = (e) => {
-            if (e.button !== 0) {
-              // we only want to handle left clicks
-              return;
-            }
-            dispatch(mouseSelectionStart(item));
-            const listener = (e: MouseEvent) => {
-              dispatch(mouseSelectionEnd());
-              e.target?.removeEventListener('click', listener);
-              document.removeEventListener('click', listener);
-              if (e.detail == 2) {
-                dispatch(selectItem(item));
-              } else if (e.detail == 3) {
-                dispatch(selectParagraph(item));
-              }
-            };
-            e.target.addEventListener('click', listener, { once: true });
-            document.addEventListener('click', listener, { once: true });
-          };
-          const onMouseMove: MouseEventHandler = () => {
-            dispatch(mouseSelectionOver(item));
-          };
           const commonProps = {
-            onClick,
-            onMouseDown,
-            onMouseMove,
-            selected: isSelected(item),
-            className: 'item',
             key: i,
-            changehandler: (text: string) => {
-              dispatch(setWord({ text, absoluteStart: item.absoluteStart }));
-            },
+            'data-item': `${paragraphIdx}-${i}`,
           };
+
           if (item.type == 'word') {
-            return <Word {...commonProps} word={item.word} />;
+            return (
+              <Word
+                word={item.word}
+                changehandler={(text: string) => {
+                  dispatch(setWord({ text, absoluteStart: item.absoluteStart }));
+                }}
+                {...commonProps}
+              />
+            );
           } else if (item.type == 'silence' || item.type == 'artificial_silence') {
             if (item.length > 0.4) {
               return <LongSilence {...commonProps} />;
             } else {
-              return (
-                <ShortSilence
-                  preserve={i == 0 || i == content.length - 1}
-                  key={i}
-                  onClick={onClick}
-                  selected={isSelected(item)}
-                />
-              );
+              return <ShortSilence preserve={i == 0 || i == content.length - 1} {...commonProps} />;
             }
           }
         })}

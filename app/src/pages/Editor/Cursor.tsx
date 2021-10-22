@@ -45,7 +45,10 @@ export function Cursor(): JSX.Element {
   let left = -100;
   let top = -100;
   if (ref?.parentElement && content != null && time != null) {
-    const { x, y } = computeCursorPosition(content, ref.parentElement as HTMLDivElement, time);
+    const { x, y } = computeCursorPosition(content, ref.parentElement as HTMLDivElement, time) || {
+      x: -100,
+      y: -100,
+    };
     left = x;
     top = y;
   }
@@ -69,19 +72,16 @@ function computeCursorPosition(
   content: Paragraph[],
   ref: HTMLDivElement,
   time: number
-): { x: number; y: number } {
+): { x: number; y: number } | null {
   const items = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time);
-  const item = items[items.length - 1] || {
-    globalIdx: 0,
-    absoluteStart: time,
-    length: 1,
-  };
+  const item = items[items.length - 1];
+  if (!item) return null;
   const itemElement = ref
     .getElementsByClassName('item')
     .item(item.globalIdx) as HTMLDivElement | null;
 
   if (!itemElement) {
-    return { x: -100, y: -100 };
+    return null;
   }
 
   const y = itemElement.offsetTop;

@@ -15,7 +15,7 @@ import {
   Word,
 } from '../core/document';
 import undoable, { includeAction } from 'redux-undo';
-import { assertSome, EPSILON } from '../util';
+import { assertSome } from '../util';
 import * as ffmpeg_exporter from '../exporters/ffmpeg';
 import { v4 as uuidv4 } from 'uuid';
 import { player } from '../core/player';
@@ -32,8 +32,6 @@ export interface Editor {
   displayVideo: boolean;
 
   selection: Range | null;
-  selectionStartItem: TimedParagraphItem | null;
-  mouseSelection: boolean;
 }
 
 export enum ExportState {
@@ -51,13 +49,12 @@ const editorDefaults = {
   displayVideo: false,
 
   selection: null,
-  selectionStartItem: null,
-  mouseSelection: false,
 };
 
 export interface Range {
   start: number;
   length: number;
+  ltr?: boolean;
 }
 
 class NoFileSelectedError extends Error {
@@ -148,8 +145,8 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
 );
 export const pause = createAsyncThunk<void, void, { state: RootState }>(
   'editor/pause',
-  async (): Promise<void> => {
-    player.pause();
+  async () => {
+    return player.pause();
   }
 );
 export const togglePlaying = createAsyncThunk<void, void, { state: RootState }>(
@@ -226,31 +223,10 @@ export const exportDocument = createAsyncThunk<Document, void, { state: RootStat
 );
 
 export const closeDocument = createAsyncThunk<void, void, { state: RootState }>(
-  'editor/delete',
+  'editor/close',
   async (arg, { dispatch }) => {
     dispatch(pause());
     dispatch(openLanding());
-  }
-);
-
-export const deleteSomething = createAsyncThunk<void, void, { state: RootState }>(
-  'editor/delete',
-  async (arg, { getState, dispatch }) => {
-    const state = getState().editor.present;
-    assertSome(state);
-
-    if (state.selection !== null) {
-      dispatch(deleteSelection());
-    } else {
-      const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(
-        state.currentTime
-      );
-      if (items[items.length - 1].itemIdx == 0) {
-        dispatch(deleteParagraphBreak());
-      } else {
-        dispatch(selectLeft());
-      }
-    }
   }
 );
 
@@ -356,33 +332,6 @@ export const exportSelection = createAsyncThunk<void, void, { state: RootState }
     await ffmpeg_exporter.exportContent(render_items, state.document.sources, path);
   }
 );
-function getSelectionInfo(
-  selection: Range | null,
-  selectionStartItem: TimedParagraphItem | null
-): { currentEndRight: boolean; currentEndLeft: boolean; leftEnd: number; rightEnd: number } | null {
-  if (selection && selectionStartItem) {
-    const startDifference = Math.abs(selectionStartItem.absoluteStart - selection.start);
-    const selectionStartItemEnd = selectionStartItem.absoluteStart + selectionStartItem.length;
-    const selectionEnd = selection.start + selection.length;
-    const endDifference = Math.abs(selectionStartItemEnd - selectionEnd);
-    return {
-      leftEnd: selection.start,
-      rightEnd: selection.start + selection.length,
-      currentEndRight: startDifference < EPSILON,
-      currentEndLeft: endDifference < EPSILON,
-    };
-  } else if (selectionStartItem) {
-    const selectionStartItemEnd = selectionStartItem.absoluteStart + selectionStartItem.length;
-    return {
-      leftEnd: selectionStartItem.absoluteStart,
-      rightEnd: selectionStartItemEnd,
-      currentEndRight: false,
-      currentEndLeft: false,
-    };
-  } else {
-    return null;
-  }
-}
 
 export const importSlice = createSlice({
   name: 'editor',
@@ -422,142 +371,53 @@ export const importSlice = createSlice({
       assertSome(state);
       state.currentTime = args.payload;
     },
-    goLeft: (state) => {
+
+    setSelection: (state, arg: PayloadAction<Range | null>) => {
       assertSome(state);
-      const item = getItemsAtTime(
-        DocumentGenerator.fromParagraphs(state.document.content),
-        state.currentTime
-      )[0];
-      assertSome(item);
-      state.currentTime = item.absoluteStart;
-      player.setTime(state.document.content, state.currentTime);
-      state.selection = null;
-    },
-    goRight: (state) => {
-      assertSome(state);
-      const items = getItemsAtTime(
-        DocumentGenerator.fromParagraphs(state.document.content),
-        state.currentTime
-      );
-      const item = items[items.length - 1];
-      state.currentTime = item.absoluteStart + item.length;
-      player.setTime(state.document.content, state.currentTime);
-      state.selection = null;
+      state.selection = arg.payload;
     },
 
-    unselect: (state) => {
+    selectionIncludeFully: (state, arg: PayloadAction<Range>) => {
       assertSome(state);
-      state.selection = null;
-      state.selectionStartItem = null;
-      state.mouseSelection = false;
-    },
-    selectLeft: (state) => {
-      assertSome(state);
-      const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
-      const getItemLeft = (time: number) =>
-        DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time)[0];
-      if (!selectionInfo || !state.selection) {
-        const item = getItemLeft(state.currentTime);
-        assertSome(item);
-        state.selection = { start: item.absoluteStart, length: item.length };
-        state.selectionStartItem = item;
-      } else {
-        const { leftEnd, rightEnd, currentEndLeft } = selectionInfo;
-        if (currentEndLeft) {
-          const item = getItemLeft(leftEnd);
-          assertSome(item);
-          state.selection.length = rightEnd - item.absoluteStart;
-          state.selection.start = item.absoluteStart;
-        } else {
-          const item = getItemLeft(rightEnd);
-          assertSome(item);
-          state.selection.length = item.absoluteStart - leftEnd;
-        }
-      }
-    },
-    selectRight: (state) => {
-      assertSome(state);
-      const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
-      const getItemRight = (time: number) => {
-        const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time);
-        return items[items.length - 1];
+      const getItem = (time: number, first = false) => {
+        const items = getItemsAtTime(
+          DocumentGenerator.fromParagraphs(state.document.content),
+          time
+        );
+        return items[first ? 0 : items.length - 1];
       };
-      if (!selectionInfo || !state.selection) {
-        const item = getItemRight(state.currentTime);
-        state.selection = { start: item.absoluteStart, length: item.length };
-        state.selectionStartItem = item;
+      if (state.selection == null) {
+        state.selection = { ltr: true, ...arg.payload };
       } else {
-        const { leftEnd, rightEnd, currentEndRight } = selectionInfo;
-        if (currentEndRight) {
-          const item = getItemRight(rightEnd);
-          const itemEnd = item.absoluteStart + item.length;
-          state.selection.length = itemEnd - leftEnd;
-        } else {
-          const item = getItemRight(leftEnd);
-          const itemEnd = item.absoluteStart + item.length;
-          state.selection.length = rightEnd - itemEnd;
-          state.selection.start = itemEnd;
-        }
-      }
-    },
-    selectItem: (state, arg: PayloadAction<TimedParagraphItem>) => {
-      assertSome(state);
-      const item = arg.payload;
-      state.selection = { start: item.absoluteStart, length: item.length };
-    },
-    selectParagraph: (state, arg: PayloadAction<TimedParagraphItem>) => {
-      assertSome(state);
-      const item = arg.payload;
-      const findParagraph = (
-        [found, paraUuid, pStart, pLength]: [boolean, string | null, number, number],
-        x: DocumentGeneratorItem
-      ): [boolean, string | null, number, number] => {
-        if (found) {
-          if (paraUuid == x.paragraphUuid) {
-            pLength = pLength + x.length;
-          }
-        } else {
-          if (paraUuid != x.paragraphUuid) {
-            pStart = x.absoluteStart;
-            pLength = x.length;
-            paraUuid = x.paragraphUuid;
+        if (state.selection?.ltr) {
+          if (arg.payload.start >= state.selection.start) {
+            state.selection.length = arg.payload.start + arg.payload.length - state.selection.start;
           } else {
-            pLength += x.length;
+            const baseElement = getItem(state.selection.start);
+            state.selection = {
+              ltr: false,
+              start: arg.payload.start,
+              length: baseElement.absoluteStart + baseElement.length - arg.payload.start,
+            };
           }
-          if (x.absoluteStart >= item.absoluteStart) {
-            found = true;
+        } else {
+          if (
+            arg.payload.start + arg.payload.length <=
+            state.selection.start + state.selection.length
+          ) {
+            state.selection.length =
+              state.selection.start + state.selection.length - arg.payload.start;
+            state.selection.start = arg.payload.start;
+          } else {
+            const baseElement = getItem(state.selection.start + state.selection.length, true);
+            state.selection = {
+              ltr: true,
+              start: baseElement.absoluteStart,
+              length: arg.payload.start + arg.payload.length - baseElement.absoluteStart,
+            };
           }
         }
-        return [found, paraUuid, pStart, pLength];
-      };
-      const [found, _p, paraStart, paraLength] = DocumentGenerator.fromParagraphs(
-        state.document.content
-      ).reduce(findParagraph, [false, null, 0, 0]);
-      if (found) {
-        state.selection = { start: paraStart, length: paraLength + EPSILON };
       }
-    },
-    mouseSelectionStart: (state, arg: PayloadAction<TimedParagraphItem>) => {
-      assertSome(state);
-      state.mouseSelection = true;
-      state.selectionStartItem = arg.payload;
-      state.selection = null;
-    },
-    mouseSelectionOver: (state, arg: PayloadAction<TimedParagraphItem>) => {
-      assertSome(state);
-      if (!state.selectionStartItem || !state.mouseSelection) return;
-
-      const list = [state.selectionStartItem, arg.payload];
-      list.sort((a, b) => a.absoluteStart - b.absoluteStart);
-      const [first, second] = list;
-      state.selection = {
-        start: first.absoluteStart,
-        length: second.absoluteStart + second.length - first.absoluteStart,
-      };
-    },
-    mouseSelectionEnd: (state) => {
-      assertSome(state);
-      state.mouseSelection = false;
     },
 
     insertParagraphBreak: (state) => {
@@ -719,18 +579,8 @@ export const {
   setTime,
   setTimeWithoutUpdate,
 
-  goLeft,
-  goRight,
-
-  unselect,
-  selectLeft,
-  selectRight,
-  mouseSelectionStart,
-  mouseSelectionOver,
-  mouseSelectionEnd,
-
-  selectItem,
-  selectParagraph,
+  setSelection,
+  selectionIncludeFully,
 
   insertParagraphBreak,
   deleteParagraphBreak,

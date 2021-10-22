@@ -48,7 +48,6 @@ export function SelectionMenu({
   if (selection && documentBoundingRect) {
     return (
       <SelectionMenuContainer
-        contentEditable={false}
         style={{
           top: selection.top - documentBoundingRect.top,
           left: (selection.left + selection.right) / 2,

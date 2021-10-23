@@ -106,33 +106,37 @@ export function Document(): JSX.Element {
     return itemIdx == content[paragraphIdx]?.content.length - 1;
   };
 
-  const setBrowserRangeToStateRange = (range: globalThis.Range) => {
-    if (range.collapsed) {
+  const setBrowserRangeToStateRange = (selectionRange: globalThis.Range) => {
+    if (selectionRange.collapsed) {
       dispatch(setSelection(null));
-      const node = range && getChild(range.startContainer, range.startOffset);
+      const node =
+        selectionRange && getChild(selectionRange.startContainer, selectionRange.startOffset);
       const element = node?.parentElement;
       const nodeLength = element?.textContent?.length;
       const item = getItem(element);
       if (item && nodeLength !== undefined) {
         // two epsilon is the theoretical minimum here but four epsilon seems to be more robust
-        const timeSubtract = isLastItemInParagraph(range.startContainer, range.startOffset)
+        const timeSubtract = isLastItemInParagraph(
+          selectionRange.startContainer,
+          selectionRange.startOffset
+        )
           ? 4 * EPSILON
           : 0;
-        const timeAdd = range.startOffset == nodeLength ? item.length : 0;
+        const timeAdd = selectionRange.startOffset == nodeLength ? item.length : 0;
         dispatch(setTime(item.absoluteStart + timeAdd - timeSubtract));
       }
     } else {
-      const startItem = itemFromNode(range.startContainer, range.startOffset);
-      const endItem = itemFromNode(range.endContainer, range.endOffset);
+      const startItem = itemFromNode(selectionRange.startContainer, selectionRange.startOffset);
+      const endItem = itemFromNode(selectionRange.endContainer, selectionRange.endOffset);
       if (!startItem || !endItem) return;
-      const selection = {
+      const range = {
         start: startItem.absoluteStart,
         length:
           endItem.absoluteStart +
-          (range.endOffset == 0 ? 0 : endItem.length) -
+          (selectionRange.endOffset == 0 ? 0 : endItem.length) -
           startItem.absoluteStart,
       };
-      dispatch(setSelection({ selection, selectionStartItem: startItem }));
+      dispatch(setSelection({ range, startItem }));
     }
   };
 
@@ -205,8 +209,8 @@ export function Document(): JSX.Element {
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const ltr =
-    useSelector((state: RootState) => state.editor.present?.selectionStartItem?.absoluteStart) ==
-    selection?.start;
+    useSelector((state: RootState) => state.editor.present?.selection?.startItem.absoluteStart) ==
+    selection?.range.start;
   const content = useSelector((state: RootState) => state.editor.present?.document.content) || [];
   useEffect(() => {
     const nodeFromTime = (time: number, last: boolean): { node: Node; offset: number } | null => {
@@ -227,8 +231,8 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     };
 
     if (selection) {
-      const start = nodeFromTime(selection.start, true);
-      const end = nodeFromTime(selection.start + selection.length, true);
+      const start = nodeFromTime(selection.range.start, true);
+      const end = nodeFromTime(selection.range.start + selection.range.length, true);
       if (start && end) {
         if (ltr) {
           window.getSelection()?.setBaseAndExtent(start.node, start.offset, end.node, end.offset);
@@ -239,7 +243,7 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     } else {
       window.getSelection()?.removeAllRanges();
     }
-  }, [selection?.start, selection?.length, ltr, documentRef.current]);
+  }, [selection?.range.start, selection?.range.length, ltr, documentRef.current]);
   return <></>;
 }
 

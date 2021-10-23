@@ -31,8 +31,7 @@ export interface Editor {
   displaySpeakerNames: boolean;
   displayVideo: boolean;
 
-  selection: Range | null;
-  selectionStartItem: TimedParagraphItem | null;
+  selection: Selection | null;
 }
 
 export enum ExportState {
@@ -56,6 +55,11 @@ const editorDefaults = {
 export interface Range {
   start: number;
   length: number;
+}
+
+export interface Selection {
+  range: Range;
+  startItem: TimedParagraphItem;
 }
 
 class NoFileSelectedError extends Error {
@@ -137,7 +141,7 @@ export const play = createAsyncThunk<void, void, { state: RootState }>(
     const progressCallback = (time: number) => dispatch(setTimeWithoutUpdate(time));
     await player.play(
       document.content,
-      editor.selection || { start: currentTime },
+      editor.selection?.range || { start: currentTime },
       progressCallback
     );
     console.log('play ended');
@@ -264,8 +268,8 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
     }
 
     const documentSlice = DocumentGenerator.fromParagraphs(state.document.content)
-      .exactFrom(selection.start)
-      .exactUntil(selection.start + selection.length)
+      .exactFrom(selection.range.start)
+      .exactUntil(selection.range.start + selection.range.length)
       .toParagraphs();
 
     const selectionText = documentSlice
@@ -332,8 +336,8 @@ export const exportSelection = createAsyncThunk<void, void, { state: RootState }
     }
 
     const filterFn = (item: DocumentGeneratorItem) =>
-      item.absoluteStart >= selection.start &&
-      item.absoluteStart + item.length <= selection.start + selection.length;
+      item.absoluteStart >= selection.range.start &&
+      item.absoluteStart + item.length <= selection.range.start + selection.range.length;
     const render_items = DocumentGenerator.fromParagraphs(state.document.content)
       .filter(filterFn)
       .toRenderItems()
@@ -355,27 +359,18 @@ export const exportSelection = createAsyncThunk<void, void, { state: RootState }
   }
 );
 function getSelectionInfo(
-  selection: Range | null,
-  selectionStartItem: TimedParagraphItem | null
+  selection: Selection | null
 ): { currentEndRight: boolean; currentEndLeft: boolean; leftEnd: number; rightEnd: number } | null {
-  if (selection && selectionStartItem) {
-    const startDifference = Math.abs(selectionStartItem.absoluteStart - selection.start);
-    const selectionStartItemEnd = selectionStartItem.absoluteStart + selectionStartItem.length;
-    const selectionEnd = selection.start + selection.length;
+  if (selection) {
+    const startDifference = Math.abs(selection.startItem.absoluteStart - selection.range.start);
+    const selectionStartItemEnd = selection.startItem.absoluteStart + selection.startItem.length;
+    const selectionEnd = selection.range.start + selection.range.length;
     const endDifference = Math.abs(selectionStartItemEnd - selectionEnd);
     return {
-      leftEnd: selection.start,
-      rightEnd: selection.start + selection.length,
+      leftEnd: selection.range.start,
+      rightEnd: selection.range.start + selection.range.length,
       currentEndRight: startDifference < EPSILON,
       currentEndLeft: endDifference < EPSILON,
-    };
-  } else if (selectionStartItem) {
-    const selectionStartItemEnd = selectionStartItem.absoluteStart + selectionStartItem.length;
-    return {
-      leftEnd: selectionStartItem.absoluteStart,
-      rightEnd: selectionStartItemEnd,
-      currentEndRight: false,
-      currentEndLeft: false,
     };
   } else {
     return null;
@@ -443,102 +438,101 @@ export const importSlice = createSlice({
       state.selection = null;
     },
 
-    setSelection: (
-      state,
-      args: PayloadAction<{ selection: Range; selectionStartItem: TimedParagraphItem } | null>
-    ) => {
+    setSelection: (state, arg: PayloadAction<Selection | null>) => {
       assertSome(state);
-      if (args.payload) {
-        state.selection = args.payload.selection;
-        state.selectionStartItem = args.payload.selectionStartItem;
-      } else {
-        state.selection = null;
-        state.selectionStartItem = null;
-      }
+      state.selection = arg.payload;
     },
     selectLeft: (state) => {
       assertSome(state);
-      const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
+      const selectionInfo = getSelectionInfo(state.selection);
       const getItemLeft = (time: number) =>
         DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time)[0];
       if (!selectionInfo || !state.selection) {
         const item = getItemLeft(state.currentTime);
         assertSome(item);
-        state.selection = { start: item.absoluteStart, length: item.length };
-        state.selectionStartItem = item;
+        state.selection = {
+          range: { start: item.absoluteStart, length: item.length },
+          startItem: item,
+        };
       } else {
         const { leftEnd, rightEnd, currentEndLeft } = selectionInfo;
         if (currentEndLeft) {
           const item = getItemLeft(leftEnd);
           assertSome(item);
-          state.selection.length = rightEnd - item.absoluteStart;
-          state.selection.start = item.absoluteStart;
+          state.selection.range.length = rightEnd - item.absoluteStart;
+          state.selection.range.start = item.absoluteStart;
         } else {
           const item = getItemLeft(rightEnd);
           assertSome(item);
-          state.selection.length = item.absoluteStart - leftEnd;
+          state.selection.range.length = item.absoluteStart - leftEnd;
         }
       }
     },
     selectRight: (state) => {
       assertSome(state);
-      const selectionInfo = getSelectionInfo(state.selection, state.selectionStartItem);
+      const selectionInfo = getSelectionInfo(state.selection);
       const getItemRight = (time: number) => {
         const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time);
         return items[items.length - 1];
       };
       if (!selectionInfo || !state.selection) {
         const item = getItemRight(state.currentTime);
-        state.selection = { start: item.absoluteStart, length: item.length };
-        state.selectionStartItem = item;
+        state.selection = {
+          range: { start: item.absoluteStart, length: item.length },
+          startItem: item,
+        };
       } else {
         const { leftEnd, rightEnd, currentEndRight } = selectionInfo;
         if (currentEndRight) {
           const item = getItemRight(rightEnd);
           const itemEnd = item.absoluteStart + item.length;
-          state.selection.length = itemEnd - leftEnd;
+          state.selection.range.length = itemEnd - leftEnd;
         } else {
           const item = getItemRight(leftEnd);
           const itemEnd = item.absoluteStart + item.length;
-          state.selection.length = rightEnd - itemEnd;
-          state.selection.start = itemEnd;
+          state.selection.range.length = rightEnd - itemEnd;
+          state.selection.range.start = itemEnd;
         }
       }
     },
     selectionIncludeFully: (state, arg: PayloadAction<TimedParagraphItem>) => {
       assertSome(state);
-      if (state.selection == null || state.selectionStartItem == null) {
-        state.selection = { start: arg.payload.absoluteStart, length: arg.payload.length };
-        state.selectionStartItem = arg.payload;
+      if (!state.selection) {
+        state.selection = {
+          range: { start: arg.payload.absoluteStart, length: arg.payload.length },
+          startItem: arg.payload,
+        };
       } else {
-        if (state.selection.start == state.selectionStartItem?.absoluteStart) {
-          if (arg.payload.absoluteStart >= state.selection.start) {
-            state.selection.length =
-              arg.payload.absoluteStart + arg.payload.length - state.selection.start;
+        if (state.selection.range.start == state.selection.startItem.absoluteStart) {
+          if (arg.payload.absoluteStart >= state.selection.range.start) {
+            state.selection.range.length =
+              arg.payload.absoluteStart + arg.payload.length - state.selection.range.start;
           } else {
-            state.selection = {
+            state.selection.range = {
               start: arg.payload.absoluteStart,
               length:
-                state.selectionStartItem.absoluteStart +
-                state.selectionStartItem.length -
+                state.selection.startItem.absoluteStart +
+                state.selection.startItem.length -
                 arg.payload.absoluteStart,
             };
           }
         } else {
           if (
             arg.payload.absoluteStart + arg.payload.length <=
-            state.selection.start + state.selection.length
+            state.selection.range.start + state.selection.range.length
           ) {
-            state.selection.length =
-              state.selection.start + state.selection.length - arg.payload.absoluteStart;
-            state.selection.start = arg.payload.absoluteStart;
+            state.selection.range.length =
+              state.selection.range.start +
+              state.selection.range.length -
+              arg.payload.absoluteStart;
+            state.selection.range.start = arg.payload.absoluteStart;
           } else {
-            state.selection = {
-              start: state.selectionStartItem.absoluteStart,
+            state.selection.range = {
+              start: state.selection.startItem.absoluteStart,
               length:
                 arg.payload.absoluteStart +
                 arg.payload.length -
-                state.selectionStartItem.absoluteStart,
+                state.selection.startItem.absoluteStart,
             };
           }
         }
@@ -589,14 +583,14 @@ export const importSlice = createSlice({
       }
       const isNotSelected = (item: TimedParagraphItem) => {
         return !(
-          item.absoluteStart >= selection.start &&
-          item.absoluteStart + item.length <= selection.start + selection.length
+          item.absoluteStart >= selection.range.start &&
+          item.absoluteStart + item.length <= selection.range.start + selection.range.length
         );
       };
       state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
         .filter(isNotSelected)
         .toParagraphs();
-      state.currentTime = selection.start;
+      state.currentTime = selection.range.start;
       state.selection = null;
     },
 

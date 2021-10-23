@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { SmallButton } from '../../components/Controls';
 import { exportSelection } from '../../state/editor';
 import * as React from 'react';
-import { DocumentGenerator, ParagraphGeneric, TimedParagraphItem } from '../../core/document';
+import { DocumentGenerator, Paragraph, TimedParagraphItem } from '../../core/document';
 import { RootState } from '../../state';
 import { RefObject, useEffect, useState } from 'react';
 import styled from 'styled-components';
@@ -18,7 +18,7 @@ export function SelectionMenu({
   content,
 }: {
   documentRef: RefObject<HTMLDivElement>;
-  content: ParagraphGeneric<TimedParagraphItem>[];
+  content: Paragraph<TimedParagraphItem>[];
 }): JSX.Element {
   // we do this to re-render the cursor when the window resizes
   const [_, setWindowSize] = useState(null as null | { height: number; width: number });
@@ -56,7 +56,7 @@ export function SelectionMenu({
 }
 
 export function computeWordBbox(
-  content: ParagraphGeneric<TimedParagraphItem>[],
+  content: Paragraph<TimedParagraphItem>[],
   ref: HTMLDivElement,
   start: number,
   length: number

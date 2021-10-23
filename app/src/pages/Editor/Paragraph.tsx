@@ -3,7 +3,7 @@ import styled, { css } from 'styled-components';
 import quarterRest from '../../resources/quarter_rest.svg?raw';
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, MouseEventHandler, useRef, useState } from 'react';
-import { ParagraphGeneric, TimedParagraphItem } from '../../core/document';
+import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import {
@@ -254,7 +254,7 @@ export function Paragraph({
   content,
   paragraphIdx,
   color,
-}: ParagraphGeneric<TimedParagraphItem> & { paragraphIdx: number; color: string }): JSX.Element {
+}: ParagraphType<TimedParagraphItem> & { paragraphIdx: number; color: string }): JSX.Element {
   const playing = useSelector((state: RootState) => state.editor.present?.playing) || false;
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   const dispatch = useDispatch();

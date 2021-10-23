@@ -4,6 +4,7 @@ import { basename } from 'path';
 import { GeneratorBox, map } from '../util/itertools';
 import { v4 as uuidv4 } from 'uuid';
 import { roughEq } from '../util';
+
 export interface Word {
   type: 'word';
   word: string;
@@ -29,31 +30,29 @@ export interface ArtificialSilence {
 
 export type ParagraphItem = Word | Silence | ArtificialSilence;
 
-export interface ParagraphGeneric<I> {
+export interface Paragraph<I = ParagraphItem> {
   speaker: string;
   content: I[];
 }
-export type Paragraph = ParagraphGeneric<ParagraphItem>;
 
 export interface Source {
   fileContents: ArrayBuffer;
   objectUrl: string;
 }
-export interface DocumentGeneric<S, I> {
+export interface Document<S = Source, I = ParagraphItem> {
   sources: Record<string, S>;
-  content: ParagraphGeneric<I>[];
+  content: Paragraph<I>[];
 }
-export type Document = DocumentGeneric<Source, ParagraphItem>;
 
 /**
  * The file versions of audapolis are not the same as the actual release versions of the app.
  * They should be changed any time a breaking update to the file structure happens but it is not necessary to bump them
  * when a new audapolis version is released.
  */
-type DocumentPreV1Json = ParagraphGeneric<ParagraphItem>[];
+type DocumentPreV1Json = Paragraph[];
 interface DocumentV1Json {
   version: 1;
-  content: ParagraphGeneric<ParagraphItem>[];
+  content: Paragraph[];
 }
 type DocumentJson = DocumentV1Json | DocumentPreV1Json;
 
@@ -151,7 +150,7 @@ export async function serializeDocumentToFile(document: Document, path: string):
 }
 
 export type TimedParagraphItem = ParagraphItem & { absoluteStart: number };
-export function computeTimed(content: Paragraph[]): ParagraphGeneric<TimedParagraphItem>[] {
+export function computeTimed(content: Paragraph[]): Paragraph<TimedParagraphItem>[] {
   let accumulatedTime = 0;
   return content.map((paragraph) => {
     return {

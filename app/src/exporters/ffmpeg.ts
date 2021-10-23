@@ -2,37 +2,71 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { Source, RenderItem } from '../core/document';
-import { Argument } from '@tedconf/fessonia/types/lib/filter_node';
 import Fessonia from '@tedconf/fessonia';
 import ffmpegPath from 'ffmpeg-static';
+import { player } from '../core/player';
 
-const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterChain, FilterNode } = Fessonia({
+const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fessonia({
   ffmpeg_bin: ffmpegPath,
 });
 
-async function combineParts(parts: Fessonia.FFmpegInput[], output: string): Promise<void> {
+async function combineParts(
+  parts: { v: Fessonia.FFmpegInput; a: Fessonia.FFmpegInput }[],
+  output: string
+): Promise<unknown> {
+  console.debug('combineParts');
   const cmd = new FFmpegCommand({ y: undefined });
-  const filters = new FilterChain([
-    new FilterNode(
-      'concat',
-      // the typings for the FilterNode constructor are horribly wrong :(
-      // TODO: fix upstream
-      { n: parts.length.toString(), v: '0', a: '1' } as unknown as Argument[]
-    ),
+  const partSpecifiers = parts.map((p) => {
+    const scale2ref = new FilterChain([new FilterNode('scale2ref')]);
+    cmd.addInput(p.v);
+    if (p.v != p.a) {
+      cmd.addInput(p.a);
+    }
+    scale2ref.addInput(p.v.streamSpecifier('v'));
+    scale2ref.addInput(parts[0].v.streamSpecifier('v'));
+    cmd.addFilterChain(scale2ref);
+
+    const setsar = new FilterChain([new FilterNode('setsar', { sar: '1/1' })]);
+    setsar.addInput(scale2ref.streamSpecifier());
+    cmd.addFilterChain(setsar);
+
+    const nullsink = new FilterChain([new FilterNode('nullsink')]);
+    nullsink.addInput(scale2ref.streamSpecifier());
+    cmd.addFilterChain(nullsink);
+
+    return { v: setsar.streamSpecifier(), a: p.a.streamSpecifier('a') };
+  });
+  const concat = new FilterChain([
+    new FilterNode('concat', { n: parts.length.toString(), v: '1', a: '1' }),
   ]);
-  for (const part of parts) {
-    cmd.addInput(part);
-    filters.addInput(part.streamSpecifier('a'));
+  for (const part of partSpecifiers) {
+    concat.addInput(part.v);
+    concat.addInput(part.a);
   }
-  cmd.addFilterChain(filters);
+  cmd.addFilterChain(concat);
   const outputObj = new FFmpegOutput(output);
-  outputObj.addStreams(filters.streamSpecifiers);
+  outputObj.addStream(concat.streamSpecifier());
+  outputObj.addStream(concat.streamSpecifier());
+  outputObj.addOptions({ vsync: 'vfr' });
   cmd.addOutput(outputObj);
   console.debug(
     'ffmpeg commandline: ',
-    cmd.toCommand().command + ' ' + cmd.toCommand().args.join(' ')
+    cmd.toCommand().command +
+      ' ' +
+      cmd
+        .toCommand()
+        .args.map((x) => `'${x}'`)
+        .join(' ')
   );
-  console.debug(await cmd.execute());
+  cmd.on('update', (data) => {
+    console.debug(`Received update on ffmpeg process:`, data);
+  });
+  const promise = new Promise((resolve, reject) => {
+    cmd.on('success', resolve);
+    cmd.on('error', reject);
+  });
+  cmd.spawn(true);
+  return promise;
 }
 
 function getTempDir(): Promise<string> {
@@ -43,6 +77,12 @@ function getTempDir(): Promise<string> {
     });
   });
 }
+function filterSource(filter: string, options: Record<string, string | number>) {
+  const filters = new FilterChain([new FilterNode(filter, options)]);
+  return new FFmpegInput(filters, {
+    f: 'lavfi',
+  });
+}
 export async function exportContent(
   content: RenderItem[],
   sources: Record<string, Source>,
@@ -50,25 +90,32 @@ export async function exportContent(
 ): Promise<void> {
   console.log('exporting render items:', content);
   const tempdir = await getTempDir();
+  console.log('tempdir:', tempdir);
 
   const files = content.map((part, i) => {
+    const blackSource = filterSource('color', {
+      color: 'black',
+      rate: 1,
+      duration: part.length,
+    });
     if ('source' in part) {
       const source = sources[part.source];
       const source_path = path.join(tempdir, `part${i}-source`);
       fs.writeFileSync(source_path, new Buffer(source.fileContents));
-      return new FFmpegInput(source_path, {
+      const input = new FFmpegInput(source_path, {
         ss: part.sourceStart.toString(),
         t: part.length.toString(),
       });
+      if (player.hasVideo(part.source)) {
+        return { v: input, a: input };
+      } else {
+        return { v: blackSource, a: input };
+      }
     } else {
-      const filters = new FilterChain([
-        new FilterNode('anullsrc', {
-          duration: part.length,
-        } as unknown as Argument[]),
-      ]);
-      return new FFmpegInput(filters, {
-        f: 'lavfi',
+      const silenceSource = filterSource('anullsrc', {
+        duration: part.length,
       });
+      return { v: blackSource, a: silenceSource };
     }
   });
 

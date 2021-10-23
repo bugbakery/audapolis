@@ -67,6 +67,12 @@ class Player {
       source.currentTime = renderItem.sourceStart;
     }
   }
+
+  hasVideo(uuid: string): boolean | undefined {
+    const ref = this.sources[uuid];
+    if (!ref) return;
+    return !!(ref.videoHeight && ref.videoWidth);
+  }
 }
 
 export const player = new Player();

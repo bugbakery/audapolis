@@ -25,6 +25,6 @@
   },
   "include": [
     "src/**/*",
-    "src/*.d.ts"
+    "src/types/*.d.ts"
   ]
 }

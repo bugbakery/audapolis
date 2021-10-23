@@ -4,7 +4,11 @@
     "es6": true,
     "node": true
   },
-  "plugins": ["prettier", "react", "unused-imports"],
+  "plugins": [
+    "prettier",
+    "react",
+    "unused-imports"
+  ],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -19,12 +23,28 @@
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/explicit-module-boundary-types": [
+      "warn",
+      {
+        "allowArgumentsExplicitlyTypedAsAny": true
+      }
+    ],
     "unused-imports/no-unused-imports": "error",
     "unused-imports/no-unused-vars": [
       "warn",
-      { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
+      {
+        "vars": "all",
+        "varsIgnorePattern": "^_",
+        "args": "after-used",
+        "argsIgnorePattern": "^_"
+      }
     ],
-    "no-constant-condition": ["error", { "checkLoops": false }]
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": false
+      }
+    ]
   },
   "settings": {
     "react": {

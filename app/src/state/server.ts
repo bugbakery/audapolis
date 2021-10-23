@@ -52,7 +52,7 @@ export const serverSlice = createSlice({
     },
   },
 });
-const { setLocalServer, selectServer, addServer, removeServer } = serverSlice.actions;
+const { setLocalServer, selectServer } = serverSlice.actions;
 export default serverSlice.reducer;
 
 export const getServerName = (server: ServerConfig): string => {

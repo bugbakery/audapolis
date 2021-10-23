@@ -14,12 +14,20 @@ on:
     branches:
       - main
     paths-ignore:
-      - '**.md'
-      - '**.spec.js'
-      - '.idea'
-      - '.gitignore'
-      - '.github/**'
+      - '*'
       - '!.github/workflows/release.yml'
+      - '!app/package.json'
+      - '!app/package-lock.json'
+      - '!app/electron-builder.config.js'
+      - '!app/src/vite_main.config.js'
+      - '!app/src/vite_renderer.config.js'
+      - '!app/src/scripts/*'
+      - '!server/build_server.sh'
+      - '!server/poetry.lock'
+      - '!server/pyoxidizer.bzl'
+      - '!server/pyproject.toml'
+      - '!server/requirements.txt'
+
 
 concurrency:
   group: release-${{ github.ref }}

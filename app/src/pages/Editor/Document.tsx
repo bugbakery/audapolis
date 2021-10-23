@@ -1,4 +1,4 @@
-import { useDispatch, useSelector, useStore } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import {
   computeTimed,
@@ -15,15 +15,17 @@ import { basename, extname } from 'path';
 import { Title } from '../../components/Util';
 import styled, { useTheme } from 'styled-components';
 import { SelectionMenu } from './SelectionMenu';
-import { assertSome, EPSILON } from '../../util';
+import { EPSILON } from '../../util';
 import {
-  deleteParagraphBreak,
-  deleteSelection,
+  deleteSomething,
+  goLeft,
+  goRight,
   selectionIncludeFully,
+  selectLeft,
+  selectRight,
   setSelection,
   setTime,
 } from '../../state/editor';
-import { getChild, isSelectionLeftToRight, nodeLength } from './selectionUtil';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -51,7 +53,6 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
 
 export function Document(): JSX.Element {
   const dispatch = useDispatch();
-  const store = useStore();
   const contentRaw = useSelector((state: RootState) => state.editor.present?.document?.content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
@@ -94,7 +95,7 @@ export function Document(): JSX.Element {
     if (!range) return;
     const item = itemFromNode(range.startContainer, range.startOffset);
     if (!item) return;
-    dispatch(selectionIncludeFully({ start: item.absoluteStart, length: item.length }));
+    dispatch(selectionIncludeFully(item));
   };
 
   const isLastItemInParagraph = (element: Node, offset: number): boolean => {
@@ -105,15 +106,7 @@ export function Document(): JSX.Element {
     return itemIdx == content[paragraphIdx]?.content.length - 1;
   };
 
-  const isFirstItemInParagraph = (element: Node, offset: number): boolean => {
-    const node = getChild(element, offset);
-    const parent = node?.parentElement;
-    const [paragraphIdx, itemIdx] = getParagraphItemIdx(parent);
-    if (paragraphIdx == 0) return false;
-    return itemIdx == 0;
-  };
-
-  const setBrowserRangeToStateRange = (range: globalThis.Range, ltr = true) => {
+  const setBrowserRangeToStateRange = (range: globalThis.Range) => {
     if (range.collapsed) {
       dispatch(setSelection(null));
       const node = range && getChild(range.startContainer, range.startOffset);
@@ -132,16 +125,14 @@ export function Document(): JSX.Element {
       const startItem = itemFromNode(range.startContainer, range.startOffset);
       const endItem = itemFromNode(range.endContainer, range.endOffset);
       if (!startItem || !endItem) return;
-      dispatch(
-        setSelection({
-          ltr,
-          start: startItem.absoluteStart,
-          length:
-            endItem.absoluteStart +
-            (range.endOffset == 0 ? 0 : endItem.length) -
-            startItem.absoluteStart,
-        })
-      );
+      const selection = {
+        start: startItem.absoluteStart,
+        length:
+          endItem.absoluteStart +
+          (range.endOffset == 0 ? 0 : endItem.length) -
+          startItem.absoluteStart,
+      };
+      dispatch(setSelection({ selection, selectionStartItem: startItem }));
     }
   };
 
@@ -156,96 +147,17 @@ export function Document(): JSX.Element {
     }
   };
 
-  const setCaretToCurrentTime = () => {
-    const currentTime = (store.getState() as RootState).editor.present?.currentTime;
-    if (currentTime) {
-      const items = getItemsAtTime(
-        DocumentGenerator.fromParagraphs(content).enumerate(),
-        currentTime
-      );
-      const item = items[items.length - 1];
-      const node = ref.current?.getElementsByClassName('item').item(item.globalIdx);
-      console.log(node);
-      if (node) {
-        const child = getChild(node);
-        window
-          .getSelection()
-          ?.setPosition(
-            child,
-            (nodeLength(child) * (currentTime - item.absoluteStart)) / item.length
-          );
-      }
-    }
-  };
-
   const keyDownHandler: KeyboardEventHandler = (e) => {
-    const documentSelection = (store.getState() as RootState).editor.present?.selection;
-    const currentTime = (store.getState() as RootState).editor.present?.currentTime;
-
-    let selectLeft = false;
     if (e.key === 'Backspace') {
-      if (documentSelection) {
-        dispatch(deleteSelection());
-      } else {
-        setCaretToCurrentTime();
-        const range = window.getSelection()?.getRangeAt(0);
-        if (
-          currentTime &&
-          range &&
-          isLastItemInParagraph(range.startContainer, range.startOffset)
-        ) {
-          dispatch(deleteParagraphBreak());
-        } else {
-          selectLeft = true;
-        }
-      }
-    }
-
-    if (e.key.includes('Arrow') || selectLeft) {
-      e.preventDefault();
-      if (e.key == 'ArrowLeft' || e.key == 'ArrowRight' || selectLeft) {
-        if (!documentSelection) setCaretToCurrentTime();
-
-        const selection = window.getSelection();
-        if (!selection || !selection.focusNode) return;
-
-        // this is a fix to allow crossing paragraphs (otherwise the speaker names are in the way)
-        let delta = null;
-        if (
-          isLastItemInParagraph(selection.focusNode, selection.focusOffset) &&
-          selection.focusOffset != 0 &&
-          e.key == 'ArrowRight'
-        ) {
-          delta = +4 * EPSILON;
-        } else if (
-          isFirstItemInParagraph(selection.focusNode, selection.focusOffset) &&
-          e.key != 'ArrowRight'
-        ) {
-          delta = -4 * EPSILON;
-        }
-
-        if (delta) {
-          assertSome(currentTime);
-          if (documentSelection == null) {
-            dispatch(setTime(currentTime + delta));
-          } else if (documentSelection.ltr) {
-            dispatch(
-              setSelection({ ...documentSelection, length: documentSelection.length + delta })
-            );
-          } else {
-            dispatch(
-              setSelection({ ...documentSelection, start: documentSelection.start + delta })
-            );
-          }
-        } else {
-          selection.modify(
-            e.shiftKey || selectLeft ? 'extend' : 'move',
-            e.key == 'ArrowRight' ? 'right' : 'left',
-            'word'
-          );
-          setBrowserRangeToStateRange(selection.getRangeAt(0), !isSelectionLeftToRight(selection));
-        }
-      }
+      dispatch(deleteSomething());
+    } else if (e.key == 'ArrowLeft' && e.shiftKey) {
+      dispatch(selectLeft());
+    } else if (e.key == 'ArrowRight' && e.shiftKey) {
+      dispatch(selectRight());
+    } else if (e.key == 'ArrowLeft') {
+      dispatch(goLeft());
+    } else if (e.key == 'ArrowRight') {
+      dispatch(goRight());
     }
   };
 
@@ -258,7 +170,6 @@ export function Document(): JSX.Element {
       onClick={clickHandler}
       tabIndex={-1}
       onKeyDown={keyDownHandler}
-      id={'document-container'}
     >
       <Cursor />
       <SelectionMenu documentRef={ref} />
@@ -293,6 +204,9 @@ export function Document(): JSX.Element {
 
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
+  const ltr =
+    useSelector((state: RootState) => state.editor.present?.selectionStartItem?.absoluteStart) ==
+    selection?.start;
   const content = useSelector((state: RootState) => state.editor.present?.document.content) || [];
   useEffect(() => {
     const nodeFromTime = (time: number, last: boolean): { node: Node; offset: number } | null => {
@@ -305,9 +219,10 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
       const node = documentRef.current?.getElementsByClassName('item').item(item.globalIdx);
       if (!node) return null;
       const child = getChild(node);
+      const childLenght = child.childNodes.length || child.textContent?.length || 0;
       return {
         node: child,
-        offset: ((time - item.absoluteStart) / item.length) * nodeLength(child),
+        offset: ((time - item.absoluteStart) / item.length) * childLenght,
       };
     };
 
@@ -315,7 +230,7 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
       const start = nodeFromTime(selection.start, true);
       const end = nodeFromTime(selection.start + selection.length, true);
       if (start && end) {
-        if (selection.ltr) {
+        if (ltr) {
           window.getSelection()?.setBaseAndExtent(start.node, start.offset, end.node, end.offset);
         } else {
           window.getSelection()?.setBaseAndExtent(end.node, end.offset, start.node, start.offset);
@@ -324,8 +239,12 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     } else {
       window.getSelection()?.removeAllRanges();
     }
-  }, [selection?.start, selection?.length, selection?.ltr, documentRef.current]);
+  }, [selection?.start, selection?.length, ltr, documentRef.current]);
   return <></>;
+}
+
+function getChild(element: Node, n = 0): Node {
+  return element?.childNodes.item(n) ? getChild(element?.childNodes.item(n)) : element;
 }
 
 function FileNameDisplay({ path }: { path: string }) {

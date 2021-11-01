@@ -98,6 +98,11 @@ async def get_task(task_uuid: str, auth: str = Depends(token_auth)):
     return tasks.get(task_uuid)
 
 
+@app.delete("/tasks/{task_uuid}/")
+async def remove_task(task_uuid: str, auth: str = Depends(token_auth)):
+    return tasks.delete(task_uuid)
+
+
 @app.get("/models/available")
 async def get_all_models(auth: str = Depends(token_auth)):
     return models.available

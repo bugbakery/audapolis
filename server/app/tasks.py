@@ -25,6 +25,12 @@ class Tasks:
     def list(self):
         return self.tasks.values()
 
+    def delete(self, uuid: str):
+        try:
+            self.tasks.pop(uuid)
+        except KeyError:
+            raise TaskNotFoundError()
+
 
 class TaskNotFoundError(Exception):
     pass

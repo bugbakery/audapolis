@@ -76,12 +76,12 @@ export const startTranscription = createAsyncThunk<void, { model: Model }, { sta
     if (path === undefined) {
       throw Error('Failed to start transcription: No file for transcription given.');
     }
+    dispatch(openTranscribing());
     const fileName = basename(path);
     const wavFileContent = await convertToWav(path);
     const file = new File([wavFileContent], 'input.wav');
     formData.append('file', file); // TODO: Error handling
     formData.append('fileName', fileName);
-    dispatch(openTranscribing());
     const result = (await fetch(
       `${serverName}/tasks/start_transcription/` +
         `?lang=${encodeURIComponent(model.lang)}` +

@@ -128,6 +128,11 @@ export const startTranscription = createAsyncThunk<void, { model: Model }, { sta
         dispatch(
           openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
         );
+        // Once the task is finished, try to delete it but ignore any errors
+        fetch(`${serverName}/tasks/${uuid}/`, {
+          headers: { Authorization: getAuthHeader(server) },
+          method: 'DELETE',
+        });
         break;
       }
       await sleep(0.1);

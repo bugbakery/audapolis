@@ -9,6 +9,7 @@ import styled from 'styled-components';
 import { openServersList, openModelManager } from '../state/nav';
 import { useState } from 'react';
 import { getServer } from '../state/server';
+import { Joyride } from '../components/Joyride';
 
 const Form = styled.div`
   padding: 20px;
@@ -28,8 +29,21 @@ export function TranscribePage(): JSX.Element {
 
   const [selectedModel, setSelectedModel] = useState(0);
 
+  const steps = [
+    {
+      target: '#lang',
+      content: <p>Here you should select the model you just downloaded...</p>,
+    },
+    {
+      target: '#start',
+      content: <p>... and now start the transcription. This might take a moment.</p>,
+    },
+  ];
+
   return (
     <AppContainer>
+      <Joyride steps={steps} page={'model-manager-second'} />
+
       <TitleBar />
       <MainCenterColumn>
         <Form>
@@ -49,6 +63,7 @@ export function TranscribePage(): JSX.Element {
 
           <span style={{ opacity: 0.5 }}>Transcription Model</span>
           <select
+            id={'lang'}
             value={selectedModel}
             onChange={(e) => setSelectedModel(parseInt(e.target.value))}
           >
@@ -65,6 +80,7 @@ export function TranscribePage(): JSX.Element {
         </Form>
 
         <Button
+          id={'start'}
           primary
           onClick={() =>
             dispatch(

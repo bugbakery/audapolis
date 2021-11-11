@@ -122,7 +122,6 @@ export const Popup = styled(RawPopup).attrs({
   keepTooltipInside: '#root',
 })`
   &-content {
-    font-family: 'Roboto', sans-serif;
     background-color: ${({ theme }) => theme.bg};
     color: ${({ theme }) => theme.fg};
     margin: auto;

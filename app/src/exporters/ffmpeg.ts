@@ -12,29 +12,32 @@ const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fe
 
 async function combineParts(
   parts: { v: Fessonia.FFmpegInput; a: Fessonia.FFmpegInput }[],
+  targetResolution: { x: number; y: number },
   output: string
 ): Promise<unknown> {
   console.debug('combineParts');
   const cmd = new FFmpegCommand({ y: undefined });
   const partSpecifiers = parts.map((p) => {
-    const scale2ref = new FilterChain([new FilterNode('scale2ref')]);
+    const scale = new FilterChain([
+      new FilterNode('scale', {
+        width: `min(iw*${targetResolution.y}/ih\\,${targetResolution.x})`,
+        height: `min(${targetResolution.y}\\,ih*${targetResolution.x}/iw)`,
+      }),
+      new FilterNode('pad', {
+        width: targetResolution.x,
+        height: targetResolution.y,
+        x: `(${targetResolution.x}-iw)/2`,
+        y: `(${targetResolution.y}-ih)/2`,
+      }),
+    ]);
     cmd.addInput(p.v);
     if (p.v != p.a) {
       cmd.addInput(p.a);
     }
-    scale2ref.addInput(p.v.streamSpecifier('v'));
-    scale2ref.addInput(parts[0].v.streamSpecifier('v'));
-    cmd.addFilterChain(scale2ref);
+    scale.addInput(p.v.streamSpecifier('v'));
+    cmd.addFilterChain(scale);
 
-    const setsar = new FilterChain([new FilterNode('setsar', { sar: '1/1' })]);
-    setsar.addInput(scale2ref.streamSpecifier());
-    cmd.addFilterChain(setsar);
-
-    const nullsink = new FilterChain([new FilterNode('nullsink')]);
-    nullsink.addInput(scale2ref.streamSpecifier());
-    cmd.addFilterChain(nullsink);
-
-    return { v: setsar.streamSpecifier(), a: p.a.streamSpecifier('a') };
+    return { v: scale.streamSpecifier(), a: p.a.streamSpecifier('a') };
   });
   const concat = new FilterChain([
     new FilterNode('concat', { n: parts.length.toString(), v: '1', a: '1' }),
@@ -89,17 +92,20 @@ function filterSource(filter: string, options: Record<string, string | number>) 
 export async function exportContent(
   content: RenderItem[],
   sources: Record<string, Source>,
-  output_path: string
+  outputPath: string
 ): Promise<void> {
   console.log('exporting render items:', content);
   const tempdir = await getTempDir();
   console.log('tempdir:', tempdir);
+
+  const targetResolution = player.getTargetResolution();
 
   const files = content.map((part, i) => {
     const blackSource = filterSource('color', {
       color: 'black',
       rate: 1,
       duration: part.length,
+      size: `${targetResolution.x}x${targetResolution.y}`,
     });
     if ('source' in part) {
       const source = sources[part.source];
@@ -109,7 +115,7 @@ export async function exportContent(
         ss: part.sourceStart.toString(),
         t: part.length.toString(),
       });
-      if (player.hasVideo(part.source)) {
+      if (player.getResolution(part.source)) {
         return { v: input, a: input };
       } else {
         return { v: blackSource, a: input };
@@ -122,7 +128,7 @@ export async function exportContent(
     }
   });
 
-  await combineParts(files, output_path);
+  await combineParts(files, targetResolution, outputPath);
   fs.rmdirSync(tempdir, { recursive: true });
 }
 

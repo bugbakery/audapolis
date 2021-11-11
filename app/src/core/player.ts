@@ -68,10 +68,35 @@ class Player {
     }
   }
 
-  hasVideo(uuid: string): boolean | undefined {
+  getResolution(uuid: string): { x: number; y: number } | undefined {
     const ref = this.sources[uuid];
     if (!ref) return;
-    return !!(ref.videoHeight && ref.videoWidth);
+    if (!ref.videoHeight || !ref.videoWidth) {
+      return undefined;
+    } else {
+      return {
+        x: ref.videoWidth,
+        y: ref.videoHeight,
+      };
+    }
+  }
+
+  /**
+   * Return the export resolution of all videos. This is just a heuristic to provide sane defaults.
+   */
+  getTargetResolution(): { x: number; y: number } {
+    const resolutions = Object.keys(this.sources).map((uuid) => this.getResolution(uuid));
+    if (resolutions.every((x) => x == undefined)) {
+      return {
+        x: 1280,
+        y: 720,
+      };
+    } else {
+      return {
+        x: resolutions.reduce((acc, x) => Math.max(acc, x?.x || 0), 0),
+        y: resolutions.reduce((acc, x) => Math.max(acc, x?.y || 0), 0),
+      };
+    }
   }
 }
 

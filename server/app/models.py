@@ -11,7 +11,7 @@ import requests
 import yaml
 from vosk import Model
 
-from .config import DATA_DIR
+from .config import CACHE_DIR, DATA_DIR
 from .tasks import Task, tasks
 
 
@@ -92,7 +92,7 @@ class Models:
     def download(self, lang: str, name: str, task_uuid: str):
         task: DownloadModelTask = tasks.get(task_uuid)
         model = self.model_description_from_lang_and_name(lang, name)
-        with tempfile.TemporaryFile() as f:
+        with tempfile.TemporaryFile(dir=CACHE_DIR) as f:
             response = requests.get(model.url, stream=True)
             task.total = int(response.headers.get("content-length"))
             task.state = DownloadModelState.DOWNLOADING

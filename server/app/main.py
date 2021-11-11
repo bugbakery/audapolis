@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-from pathlib import Path
 
 from fastapi import (
     BackgroundTasks,
@@ -51,12 +50,6 @@ def token_auth(request: Request):
 @app.on_event("startup")
 def startup_event():
     print(json.dumps({"msg": "server_started", "token": AUTH_TOKEN}), flush=True)
-
-
-def get_data_dir():
-    if "AUDAPOLIS_DATA_DIR" in os.environ:
-        return Path(os.environ.get("AUDAPOLIS_DATA_DIR"))
-    return Path(__file__).absolute().parent.parent.parent / "data"
 
 
 @app.post("/tasks/start_transcription/")

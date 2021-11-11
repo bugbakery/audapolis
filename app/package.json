@@ -64,6 +64,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.1",
     "@tedconf/fessonia": "^2.2.1",
+    "appdirectory": "^0.1.0",
     "color": "^4.0.1",
     "electron-devtools-installer": "^3.2.0",
     "electron-squirrel-startup": "^1.0.0",

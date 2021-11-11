@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { Source, RenderItem } from '../core/document';
 import Fessonia from '@tedconf/fessonia';
 import ffmpegPath from 'ffmpeg-static';
 import { player } from '../core/player';
+import AppDirectory from 'appdirectory';
 
 const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fessonia({
   ffmpeg_bin: ffmpegPath,
@@ -71,7 +71,10 @@ async function combineParts(
 
 function getTempDir(): Promise<string> {
   return new Promise(function (resolve, reject) {
-    fs.mkdtemp(path.join(os.tmpdir(), 'audapolis-'), (err, directory) => {
+    const cacheDir = new AppDirectory({
+      appName: 'audapolis',
+    }).userCache();
+    fs.mkdtemp(cacheDir, (err, directory) => {
       if (err) reject(err);
       else resolve(directory);
     });

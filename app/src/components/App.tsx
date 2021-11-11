@@ -17,24 +17,23 @@ import { ipcRenderer } from 'electron';
 import { useEffect } from 'react';
 
 const AppContainer = styled.div`
-  font-family: 'Roboto', sans-serif;
-  background-color: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.fg};
   width: 100%;
   height: 100%;
+  background-color: ${({ theme }) => theme.bg};
+  color: ${({ theme }) => theme.fg};
 `;
 export default function App(): JSX.Element {
   const isDark = useMediaPredicate('(prefers-color-scheme: dark)');
   const theme = isDark ? darkTheme : lightTheme;
 
   return (
-    <Provider store={store}>
-      <ThemeProvider theme={theme}>
+    <ThemeProvider theme={theme}>
+      <Provider store={store}>
         <AppContainer>
           <CurrentPage />
         </AppContainer>
-      </ThemeProvider>
-    </Provider>
+      </Provider>
+    </ThemeProvider>
   );
 }
 

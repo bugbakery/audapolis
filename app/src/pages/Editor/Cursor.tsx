@@ -55,6 +55,7 @@ export function Cursor(): JSX.Element {
 
   return (
     <CursorContainer
+      id={'cursor'}
       style={{ left, top }}
       ref={(newRef) => {
         if (ref != newRef) {

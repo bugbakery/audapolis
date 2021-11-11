@@ -167,6 +167,7 @@ export function Document(): JSX.Element {
 
   return (
     <DocumentContainer
+      id={'document'}
       ref={ref}
       displaySpeakerNames={displaySpeakerNames}
       onMouseDown={mouseDownHandler}

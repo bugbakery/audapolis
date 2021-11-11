@@ -77,7 +77,7 @@ export function EditorTitleBar(): JSX.Element {
         </TitleBarGroup>
       </TitleBarSection>
 
-      <PlayerControls />
+      <PlayerControls id={'player-controls'} />
 
       <TitleBarSection>
         <TitleBarGroup>
@@ -88,6 +88,7 @@ export function EditorTitleBar(): JSX.Element {
             text={'save document'}
           />
           <TitleBarButton
+            id={'export'}
             onClick={() => dispatch(exportDocument())}
             active={!exportRunning && canExport}
             icon={exportRunning ? MdWatchLater : MdShare}

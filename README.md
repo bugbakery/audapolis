@@ -18,6 +18,6 @@ For end users, the latest Windows and macOS and linux builds [are available as g
 
 
 
-## Acknoledgements
+## Acknowledgements
 
 * Funded from September 2021 until February 2022 by ![logos of the "Bundesministerium für Bildung und Forschung", Prodotype Fund and OKFN-Deutschland](doc/pf_funding_logos.svg)

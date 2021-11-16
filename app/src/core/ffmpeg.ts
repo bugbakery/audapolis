@@ -1,21 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import { Source, RenderItem } from '../core/document';
+import { Source, RenderItem } from './document';
 import Fessonia from '@tedconf/fessonia';
 import ffmpegPath from 'ffmpeg-static';
-import { player } from '../core/player';
 import AppDirectory from 'appdirectory';
+import { player } from './player';
 
 const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fessonia({
   ffmpeg_bin: ffmpegPath,
 });
 
-async function combineParts(
+async function combineVideoParts(
   parts: { v: Fessonia.FFmpegInput; a: Fessonia.FFmpegInput }[],
   targetResolution: { x: number; y: number },
   output: string
 ): Promise<unknown> {
-  console.debug('combineParts');
   const cmd = new FFmpegCommand({ y: undefined });
   const partSpecifiers = parts.map((p) => {
     const scale = new FilterChain([
@@ -52,15 +51,7 @@ async function combineParts(
   outputObj.addStream(concat.streamSpecifier());
   outputObj.addOptions({ vsync: 'vfr' });
   cmd.addOutput(outputObj);
-  console.debug(
-    'ffmpeg commandline: ',
-    cmd.toCommand().command +
-      ' ' +
-      cmd
-        .toCommand()
-        .args.map((x) => `'${x}'`)
-        .join(' ')
-  );
+  console.debug('ffmpeg commandline: ', getFfmpegComandLine(cmd));
   cmd.on('update', (data) => {
     console.debug(`Received update on ffmpeg process:`, data);
   });
@@ -71,34 +62,19 @@ async function combineParts(
   cmd.spawn(true);
   return promise;
 }
-
-function getTempDir(): Promise<string> {
-  return new Promise(function (resolve, reject) {
-    const cacheDir = new AppDirectory({
-      appName: 'audapolis',
-    }).userCache();
-    fs.mkdtemp(cacheDir, (err, directory) => {
-      if (err) reject(err);
-      else resolve(directory);
-    });
-  });
-}
 function filterSource(filter: string, options: Record<string, string | number>) {
   const filters = new FilterChain([new FilterNode(filter, options)]);
   return new FFmpegInput(filters, {
     f: 'lavfi',
   });
 }
-export async function exportContent(
+export async function exportVideo(
   content: RenderItem[],
   sources: Record<string, Source>,
-  outputPath: string
+  outputPath: string,
+  targetResolution: { x: number; y: number }
 ): Promise<void> {
-  console.log('exporting render items:', content);
   const tempdir = await getTempDir();
-  console.log('tempdir:', tempdir);
-
-  const targetResolution = player.getTargetResolution();
 
   const files = content.map((part, i) => {
     const blackSource = filterSource('color', {
@@ -128,7 +104,59 @@ export async function exportContent(
     }
   });
 
-  await combineParts(files, targetResolution, outputPath);
+  await combineVideoParts(files, targetResolution, outputPath);
+  fs.rmdirSync(tempdir, { recursive: true });
+}
+
+async function combineAudioParts(parts: Fessonia.FFmpegInput[], output: string): Promise<unknown> {
+  const cmd = new FFmpegCommand({ y: undefined });
+  const concat = new FilterChain([
+    new FilterNode('concat', { n: parts.length.toString(), v: '0', a: '1' }),
+  ]);
+  for (const part of parts) {
+    cmd.addInput(part);
+    concat.addInput(part.streamSpecifier('a'));
+  }
+  cmd.addFilterChain(concat);
+  const outputObj = new FFmpegOutput(output);
+  outputObj.addStream(concat.streamSpecifier());
+  cmd.addOutput(outputObj);
+  console.debug('ffmpeg commandline: ', getFfmpegComandLine(cmd));
+  cmd.on('update', (data) => {
+    console.debug(`Received update on ffmpeg process:`, data);
+  });
+  const promise = new Promise((resolve, reject) => {
+    cmd.on('success', resolve);
+    cmd.on('error', reject);
+  });
+  cmd.spawn(true);
+  return promise;
+}
+
+export async function exportAudio(
+  content: RenderItem[],
+  sources: Record<string, Source>,
+  outputPath: string
+): Promise<void> {
+  const tempdir = await getTempDir();
+
+  const files = content.map((part, i) => {
+    if ('source' in part) {
+      const source = sources[part.source];
+      const source_path = path.join(tempdir, `part${i}-source`);
+      fs.writeFileSync(source_path, new Buffer(source.fileContents));
+      return new FFmpegInput(source_path, {
+        ss: part.sourceStart.toString(),
+        t: part.length.toString(),
+      });
+    } else {
+      return filterSource('anullsrc', {
+        duration: part.length,
+      });
+    }
+  });
+
+  await combineAudioParts(files, outputPath);
   fs.rmdirSync(tempdir, { recursive: true });
 }
 
@@ -146,4 +174,27 @@ export async function convertToWav(input_path: string): Promise<Buffer> {
   const fileData = fs.readFileSync(outputFile);
   fs.rmdirSync(tempdir, { recursive: true });
   return fileData;
+}
+
+function getFfmpegComandLine(cmd: Fessonia.FFmpegCommand) {
+  return (
+    cmd.toCommand().command +
+    ' ' +
+    cmd
+      .toCommand()
+      .args.map((x) => `'${x}'`)
+      .join(' ')
+  );
+}
+
+function getTempDir(): Promise<string> {
+  return new Promise(function (resolve, reject) {
+    const cacheDir = new AppDirectory({
+      appName: 'audapolis',
+    }).userCache();
+    fs.mkdtemp(cacheDir, (err, directory) => {
+      if (err) reject(err);
+      else resolve(directory);
+    });
+  });
 }

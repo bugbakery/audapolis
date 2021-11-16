@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+from typing import List
 
 from fastapi import (
     BackgroundTasks,
@@ -23,6 +24,7 @@ from .models import (
     ModelNotDownloaded,
     models,
 )
+from .otio import Segment, convert_otio
 from .tasks import TaskNotFoundError, tasks
 from .transcribe import TranscriptionState, TranscriptionTask, process_audio
 
@@ -110,6 +112,17 @@ async def delete_model(lang: str, model: str, auth: str = Depends(token_auth)):
 @app.get("/models/downloaded")
 async def get_downloaded_models(auth: str = Depends(token_auth)):
     return models.downloaded
+
+
+@app.post("/util/otio/convert")
+async def convert_otio_http(
+    name: str,
+    adapter: str,
+    timeline: List[Segment],
+    auth: str = Depends(token_auth),
+):
+    converted = convert_otio(timeline, name, adapter)
+    return PlainTextResponse(converted)
 
 
 @app.exception_handler(TaskNotFoundError)

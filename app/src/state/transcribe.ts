@@ -10,7 +10,7 @@ import { Paragraph } from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getAuthHeader, getServer, getServerName } from './server';
 import { createHash } from 'crypto';
-import { convertToWav } from '../exporters/ffmpeg';
+import { convertToWav } from '../core/ffmpeg';
 export interface TranscribeState {
   file?: string;
   processed: number;

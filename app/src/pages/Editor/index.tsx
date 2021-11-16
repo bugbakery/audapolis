@@ -6,8 +6,10 @@ import { Document } from './Document';
 import { Player } from './Player';
 import { KeyboardEventHandler } from 'react';
 import { insertParagraphBreak, togglePlaying } from '../../state/editor';
-import { useDispatch } from 'react-redux';
 import { Joyride } from '../../components/Joyride';
+import { useDispatch, useSelector } from 'react-redux';
+import { ExportDocumentPopup } from './ExportDocumentPopup';
+import { RootState } from '../../state';
 
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
@@ -19,6 +21,7 @@ const MainContainer = styled(MainCenterColumn)`
 `;
 export function EditorPage(): JSX.Element {
   const dispatch = useDispatch();
+  const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
 
   const handleKeyPress: KeyboardEventHandler = (e) => {
     if (e.key === ' ') {
@@ -89,6 +92,7 @@ export function EditorPage(): JSX.Element {
     <AppContainer tabIndex={-1} onKeyDown={handleKeyPress} ref={(ref) => ref?.focus()}>
       <Joyride steps={steps} page={'editor'} />
       <EditorTitleBar />
+      {popupState ? <ExportDocumentPopup /> : <></>}
 
       <MainContainer>
         <Document />

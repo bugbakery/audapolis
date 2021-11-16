@@ -81,6 +81,12 @@ class Player {
     }
   }
 
+  getDuration(uuid: string): number | undefined {
+    const ref = this.sources[uuid];
+    if (!ref) return;
+    return ref.duration;
+  }
+
   /**
    * Return the export resolution of all videos. This is just a heuristic to provide sane defaults.
    */

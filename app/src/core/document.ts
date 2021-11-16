@@ -294,6 +294,7 @@ export interface SourceRenderItem {
 
   source: string;
   sourceStart: number;
+  speaker: string;
 }
 export type RenderItem = NonSourceRenderItem | SourceRenderItem;
 export function* renderItemsFromDocumentGenerator(gen: DocumentGenerator): Generator<RenderItem> {
@@ -302,6 +303,7 @@ export function* renderItemsFromDocumentGenerator(gen: DocumentGenerator): Gener
     length: number;
     source?: string;
     sourceStart?: number;
+    speaker?: string;
   };
   let current: Current = {
     length: 0,
@@ -315,24 +317,30 @@ export function* renderItemsFromDocumentGenerator(gen: DocumentGenerator): Gener
         length: item.length,
         sourceStart: itemSourceStart,
         source: itemSource,
+        speaker: item.speaker,
       };
     } else if (
       current.source == itemSource &&
       current.sourceStart !== undefined &&
+      current.speaker == item.speaker &&
       roughEq(current.sourceStart + current.length, itemSourceStart)
     ) {
       current.length += item.length;
     } else {
-      yield current as RenderItem;
+      const { absoluteStart, length, source, sourceStart, speaker } = current;
+      yield { absoluteStart, length, source, sourceStart, speaker };
       current = {
         absoluteStart: item.absoluteStart,
         length: item.length,
-        ...('source' in item ? { source: item.source, sourceStart: item.sourceStart } : {}),
+        ...('source' in item
+          ? { source: item.source, sourceStart: item.sourceStart, speaker: item.speaker }
+          : {}),
       };
     }
   }
   if (current.absoluteStart !== undefined) {
-    yield current as RenderItem;
+    const { absoluteStart, length, source, sourceStart, speaker } = current;
+    yield { absoluteStart, length, source, sourceStart, speaker };
   }
 }
 

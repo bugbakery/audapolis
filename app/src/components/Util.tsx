@@ -47,3 +47,11 @@ export const StyledTable = styled.table`
 
   padding-bottom: 20px;
 `;
+
+export const Form = styled.div`
+  padding: 20px;
+  margin-bottom: 50px;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-gap: 20px;
+`;

@@ -16,3 +16,9 @@ export function roughEq(a?: number, b?: number): boolean {
   }
   return Math.abs(a - b) < EPSILON;
 }
+
+export function encodeGetParams(params: Record<string, string | number>): string {
+  return Object.entries(params)
+    .map((kv) => kv.map(encodeURIComponent).join('='))
+    .join('&');
+}

@@ -47,6 +47,7 @@ export const SmallButton = styled.button<{ primary?: boolean }>`
 const IconButtonContainer = styled.button<{ clicked?: boolean; active?: boolean }>`
   width: 30px;
   height: 30px;
+  max-width: 30px;
   padding: 3px;
   border-radius: 10px;
   transition: all 0.2s;
@@ -143,7 +144,7 @@ export const Popup = styled(RawPopup).attrs({
     bottom: 0;
   }
   &-overlay {
-    background: transparent;
+    background: ${({ theme }) => theme.bg.fade(0.5).toString()};
   }
 `;
 
@@ -152,3 +153,28 @@ export const Link = styled.a`
   text-decoration: underline;
   cursor: pointer;
 `;
+
+export function Select<T>({
+  options,
+  name,
+  value,
+  onChange,
+}: {
+  options: T[];
+  name: keyof T;
+  value: T;
+  onChange: (newValue: T) => void;
+}): JSX.Element {
+  return (
+    <select
+      value={options.findIndex((x) => x[name] == value[name])}
+      onChange={(e) => onChange(options[parseInt(e.target.value)])}
+    >
+      {options.map((x, i) => (
+        <option key={i} value={i}>
+          {x[name]}
+        </option>
+      ))}
+    </select>
+  );
+}

@@ -225,6 +225,21 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "opentimelineio"
+version = "0.14.0"
+description = "Editorial interchange format and API"
+category = "main"
+optional = false
+python-versions = ">2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*, !=3.9.0"
+
+[package.dependencies]
+pyaaf2 = ">=1.4.0,<1.5.0"
+
+[package.extras]
+dev = ["check-manifest", "flake8 (>=3.5)", "coverage (>=4.5)", "urllib3 (>=1.24.3)"]
+view = ["PySide2 (>=5.11,<6.0)"]
+
+[[package]]
 name = "pathspec"
 version = "0.9.0"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -243,6 +258,14 @@ python-versions = ">=3.6"
 [package.extras]
 docs = ["Sphinx (>=4)", "furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)"]
 test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)"]
+
+[[package]]
+name = "pyaaf2"
+version = "1.4.0"
+description = "A python module for reading and writing advanced authoring format files"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "pycodestyle"
@@ -516,8 +539,8 @@ python-versions = ">=3.7"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.8"
-content-hash = "360019d9d04cac9e161706941ffaf08058061fe735ff29ff310a8f653ba652ba"
+python-versions = "^3.8, !=3.9.0"
+content-hash = "8205b07f10a59b64b2cfc31fb9a73d0f749592fe96b217ffa31283b55d28a573"
 
 [metadata.files]
 appdirs = [
@@ -678,6 +701,31 @@ mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
 ]
+opentimelineio = [
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:2e2de32d067ed20a0c3fa247c3a54caf7af4c74e24786cdea8cf4010be4c1b1f"},
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:d0039d496ec5c4c4fa67e02feb9332a33c3978216c697455458603e3d5cc7bcf"},
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:d8e561730d0f0e0a82fe8a20c530fa712903eafefa97042fa8ac84cf860cc8a0"},
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27m-win32.whl", hash = "sha256:23bd4f82491d046643a981069d30dc8091cdd3b53b460dfd5deef64b43ee6af5"},
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27m-win_amd64.whl", hash = "sha256:fe35a52297e4e1e5d09311c55ed2a6235d611f3e9fd85eb8d041d0e1827a6e4c"},
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27mu-manylinux2010_i686.whl", hash = "sha256:84b100dce6154d4dab31e806ad1746397c3b1398eb59d795142388385e29a51c"},
+    {file = "OpenTimelineIO-0.14.0-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:58bd9170a2b31e404fd44add87260d18a1e9ed1b6f6044586e4803ce3421c57e"},
+    {file = "OpenTimelineIO-0.14.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:34648084c7307a5b89558a433d7e8782c7b7f8a96533150d58d35fa03831ec53"},
+    {file = "OpenTimelineIO-0.14.0-cp37-cp37m-manylinux2010_i686.whl", hash = "sha256:471840b0e40e38ed5fddf84665579419ec2037fd1ac4aafcae770ffa6544c891"},
+    {file = "OpenTimelineIO-0.14.0-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:f52ef75ceae616b4a56327b3c43557101b5f067cda7c6c62ae9ce4b26ecbd2ab"},
+    {file = "OpenTimelineIO-0.14.0-cp37-cp37m-win32.whl", hash = "sha256:7b43a90b4be97b747d92284c79fac67eaabc78b446e67c87f7c8b86c4e59073a"},
+    {file = "OpenTimelineIO-0.14.0-cp37-cp37m-win_amd64.whl", hash = "sha256:8052b4f5720a87f21a586ad514b8fcd4a52bbcd527484e0e248d291d0aa6d278"},
+    {file = "OpenTimelineIO-0.14.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:19a9bb12c8f3bd7d458ba61f0401bf8ed3e213c0172bac923108a7ffd8d1a2f7"},
+    {file = "OpenTimelineIO-0.14.0-cp38-cp38-manylinux2010_i686.whl", hash = "sha256:e098301be20c609fce4a6d695dea445e81fdcb763743a59ca20c180865f09c11"},
+    {file = "OpenTimelineIO-0.14.0-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:8880ba9273ba0b1aa8dc62f47a069f2ea8f30ea65f22741874a7b5be1cc5bc97"},
+    {file = "OpenTimelineIO-0.14.0-cp38-cp38-win32.whl", hash = "sha256:83b0d5da723e01d090d577657d65ae279ec2090e6d29d34d5963ebca2abc3114"},
+    {file = "OpenTimelineIO-0.14.0-cp38-cp38-win_amd64.whl", hash = "sha256:d2eef87f9d0d82efa14d69bb187c5947b1fe650b1105a482b2b395ee1663644d"},
+    {file = "OpenTimelineIO-0.14.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1313aef8fc6e2230dafcae4b54919fba73d90a45d70397ba1f7afd0f38ac2e0d"},
+    {file = "OpenTimelineIO-0.14.0-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:bf8f945ac528d313821e793eb69a20a961b761c7c8d48bc5a4131930792b157c"},
+    {file = "OpenTimelineIO-0.14.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:64c9421f7e14391f8aaac7deadab5ce64cd4fe57a02e5f86d1925a1573ffb473"},
+    {file = "OpenTimelineIO-0.14.0-cp39-cp39-win32.whl", hash = "sha256:8b9a5da6c84bd36abc2360c0b8d64a1bf46faa77efff22ab639e1170c0a18912"},
+    {file = "OpenTimelineIO-0.14.0-cp39-cp39-win_amd64.whl", hash = "sha256:475cfc31909bc4fc75bea34916b22e9ce61b1352bf1c40941ce844c11d45f10f"},
+    {file = "OpenTimelineIO-0.14.0.tar.gz", hash = "sha256:5655e1beec196d591ebcf3b9ab78f85d69c93e13214e5dffcee50c1da6e66f9b"},
+]
 pathspec = [
     {file = "pathspec-0.9.0-py2.py3-none-any.whl", hash = "sha256:7d15c4ddb0b5c802d161efc417ec1a2558ea2653c2e8ad9c19098201dc1c993a"},
     {file = "pathspec-0.9.0.tar.gz", hash = "sha256:e564499435a2673d586f6b2130bb5b95f04a3ba06f81b8f895b651a3c76aabb1"},
@@ -685,6 +733,9 @@ pathspec = [
 platformdirs = [
     {file = "platformdirs-2.4.0-py3-none-any.whl", hash = "sha256:8868bbe3c3c80d42f20156f22e7131d2fb321f5bc86a2a345375c6481a67021d"},
     {file = "platformdirs-2.4.0.tar.gz", hash = "sha256:367a5e80b3d04d2428ffa76d33f124cf11e8fff2acdaa9b43d545f5c7d661ef2"},
+]
+pyaaf2 = [
+    {file = "pyaaf2-1.4.0.tar.gz", hash = "sha256:160d3c26c7cfef7176d0bdb0e55772156570435982c3abfa415e89639f76e71b"},
 ]
 pycodestyle = [
     {file = "pycodestyle-2.7.0-py2.py3-none-any.whl", hash = "sha256:514f76d918fcc0b55c6680472f0a37970994e07bbb80725808c17089be302068"},
@@ -773,7 +824,9 @@ pyyaml = [
     {file = "PyYAML-6.0.tar.gz", hash = "sha256:68fb519c14306fec9720a2a5b45bc9f0c8d1b9c72adf45c37baedfcd949c35a2"},
 ]
 regex = [
+    {file = "regex-2021.10.8-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:094a905e87a4171508c2a0e10217795f83c636ccc05ddf86e7272c26e14056ae"},
     {file = "regex-2021.10.8-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:981c786293a3115bc14c103086ae54e5ee50ca57f4c02ce7cf1b60318d1e8072"},
+    {file = "regex-2021.10.8-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b0f2f874c6a157c91708ac352470cb3bef8e8814f5325e3c5c7a0533064c6a24"},
     {file = "regex-2021.10.8-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:51feefd58ac38eb91a21921b047da8644155e5678e9066af7bcb30ee0dca7361"},
     {file = "regex-2021.10.8-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ea8de658d7db5987b11097445f2b1f134400e2232cb40e614e5f7b6f5428710e"},
     {file = "regex-2021.10.8-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:1ce02f420a7ec3b2480fe6746d756530f69769292eca363218c2291d0b116a01"},
@@ -797,7 +850,9 @@ regex = [
     {file = "regex-2021.10.8-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:a37305eb3199d8f0d8125ec2fb143ba94ff6d6d92554c4b8d4a8435795a6eccd"},
     {file = "regex-2021.10.8-cp37-cp37m-win32.whl", hash = "sha256:2efd47704bbb016136fe34dfb74c805b1ef5c7313aef3ce6dcb5ff844299f432"},
     {file = "regex-2021.10.8-cp37-cp37m-win_amd64.whl", hash = "sha256:924079d5590979c0e961681507eb1773a142553564ccae18d36f1de7324e71ca"},
+    {file = "regex-2021.10.8-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:19b8f6d23b2dc93e8e1e7e288d3010e58fafed323474cf7f27ab9451635136d9"},
     {file = "regex-2021.10.8-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:b09d3904bf312d11308d9a2867427479d277365b1617e48ad09696fa7dfcdf59"},
+    {file = "regex-2021.10.8-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:951be934dc25d8779d92b530e922de44dda3c82a509cdb5d619f3a0b1491fafa"},
     {file = "regex-2021.10.8-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7f125fce0a0ae4fd5c3388d369d7a7d78f185f904c90dd235f7ecf8fe13fa741"},
     {file = "regex-2021.10.8-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5f199419a81c1016e0560c39773c12f0bd924c37715bffc64b97140d2c314354"},
     {file = "regex-2021.10.8-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:09e1031e2059abd91177c302da392a7b6859ceda038be9e015b522a182c89e4f"},
@@ -805,7 +860,9 @@ regex = [
     {file = "regex-2021.10.8-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:176796cb7f82a7098b0c436d6daac82f57b9101bb17b8e8119c36eecf06a60a3"},
     {file = "regex-2021.10.8-cp38-cp38-win32.whl", hash = "sha256:5e5796d2f36d3c48875514c5cd9e4325a1ca172fc6c78b469faa8ddd3d770593"},
     {file = "regex-2021.10.8-cp38-cp38-win_amd64.whl", hash = "sha256:e4204708fa116dd03436a337e8e84261bc8051d058221ec63535c9403a1582a1"},
+    {file = "regex-2021.10.8-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:6dcf53d35850ce938b4f044a43b33015ebde292840cef3af2c8eb4c860730fff"},
     {file = "regex-2021.10.8-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:b8b6ee6555b6fbae578f1468b3f685cdfe7940a65675611365a7ea1f8d724991"},
+    {file = "regex-2021.10.8-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:e2ec1c106d3f754444abf63b31e5c4f9b5d272272a491fa4320475aba9e8157c"},
     {file = "regex-2021.10.8-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:973499dac63625a5ef9dfa4c791aa33a502ddb7615d992bdc89cf2cc2285daa3"},
     {file = "regex-2021.10.8-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:88dc3c1acd3f0ecfde5f95c32fcb9beda709dbdf5012acdcf66acbc4794468eb"},
     {file = "regex-2021.10.8-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:4786dae85c1f0624ac77cb3813ed99267c9adb72e59fdc7297e1cf4d6036d493"},

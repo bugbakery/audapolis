@@ -15,6 +15,7 @@ import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
 import { ipcRenderer } from 'electron';
 import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 const AppContainer = styled.div`
   width: 100%;
@@ -31,6 +32,7 @@ export default function App(): JSX.Element {
       <Provider store={store}>
         <AppContainer>
           <CurrentPage />
+          <Toaster position="bottom-center" reverseOrder={false} />
         </AppContainer>
       </Provider>
     </ThemeProvider>

@@ -12,13 +12,13 @@ import {
 import { ActionCreators } from 'redux-undo';
 import { MdMovie, MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
 import {
-  exportDocument,
   ExportState,
   saveDocument,
   toggleDisplaySpeakerNames,
   play,
   pause,
   toggleDisplayVideo,
+  setExportPopup,
 } from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
 
@@ -89,7 +89,7 @@ export function EditorTitleBar(): JSX.Element {
           />
           <TitleBarButton
             id={'export'}
-            onClick={() => dispatch(exportDocument())}
+            onClick={() => dispatch(setExportPopup(true))}
             active={!exportRunning && canExport}
             icon={exportRunning ? MdWatchLater : MdShare}
             text={'export document'}

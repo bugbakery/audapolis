@@ -1,23 +1,14 @@
 import * as React from 'react';
+import { useState } from 'react';
 import { Button, Link } from '../components/Controls';
 import { useDispatch, useSelector } from 'react-redux';
 import { abortTranscription, startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
-import { AppContainer, MainCenterColumn } from '../components/Util';
+import { AppContainer, Form, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
-import styled from 'styled-components';
-import { openServersList, openModelManager } from '../state/nav';
-import { useState } from 'react';
+import { openModelManager, openServersList } from '../state/nav';
 import { getServer } from '../state/server';
 import { Joyride } from '../components/Joyride';
-
-const Form = styled.div`
-  padding: 20px;
-  margin-bottom: 50px;
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-gap: 20px;
-`;
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();

@@ -16,8 +16,21 @@ export const createWindow = (): void => {
       nodeIntegration: true,
       contextIsolation: false,
       enableBlinkFeatures: 'ClipboardCustomFormats',
+      nativeWindowOpen: true,
     },
     show: false,
+  });
+
+  window.webContents.on('new-window', (event, url, frameName, disposition, options) => {
+    if (frameName === 'modal') {
+      event.preventDefault();
+      event.newGuest = new BrowserWindow({
+        ...options,
+        parent: window,
+        width: 500,
+        height: 400,
+      });
+    }
   });
 
   if (process.env.NODE_ENV === 'development') {

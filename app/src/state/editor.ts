@@ -16,7 +16,7 @@ import {
 } from '../core/document';
 import undoable, { includeAction, StateWithHistory } from 'redux-undo';
 import { assertSome, EPSILON } from '../util';
-import * as ffmpeg_exporter from '../exporters/ffmpeg';
+import * as ffmpeg_exporter from '../core/ffmpeg';
 import { v4 as uuidv4 } from 'uuid';
 import { player } from '../core/player';
 
@@ -32,6 +32,8 @@ export interface Editor {
   displayVideo: boolean;
 
   selection: Selection | null;
+
+  exportPopup: boolean;
 }
 
 export enum ExportState {
@@ -50,6 +52,8 @@ const editorDefaults = {
 
   selection: null,
   selectionStartItem: null,
+
+  exportPopup: false,
 };
 
 export interface Range {
@@ -211,38 +215,6 @@ export const saveDocument = createAsyncThunk<Document, boolean, { state: RootSta
   }
 );
 
-export const exportDocument = createAsyncThunk<Document, void, { state: RootState }>(
-  'editor/exportDocument',
-  async (_, { getState }) => {
-    const document = getState().editor.present?.document;
-    if (document === undefined) {
-      throw Error('cant export. document is undefined');
-    }
-
-    console.log('starting export', document.content);
-    const path = await ipcRenderer
-      .invoke('save-file', {
-        title: 'Export file',
-        properties: ['saveFile'],
-        filters: [
-          { name: 'mp3 Files', extensions: ['mp3'] },
-          { name: 'wav Files', extensions: ['wav'] },
-          { name: 'All Files', extensions: ['*'] },
-        ],
-      })
-      .then((x) => x.filePath);
-    console.log('saving to ', path);
-
-    const renderItems = DocumentGenerator.fromParagraphs(document.content)
-      .toRenderItems()
-      .collect();
-    console.log(renderItems);
-    await ffmpeg_exporter.exportContent(renderItems, document.sources, path);
-
-    return document;
-  }
-);
-
 export const closeDocument = createAsyncThunk<void, void, { state: RootState }>(
   'editor/delete',
   async (arg, { dispatch }) => {
@@ -371,7 +343,7 @@ export const exportSelection = createAsyncThunk<void, void, { state: RootState }
       })
       .then((x) => x.filePath);
     console.log('exporting to', path);
-    await ffmpeg_exporter.exportContent(render_items, state.document.sources, path);
+    await ffmpeg_exporter.exportAudio(render_items, state.document.sources, path);
   }
 );
 function getSelectionInfo(
@@ -648,6 +620,11 @@ export const importSlice = createSlice({
         }
       });
     },
+
+    setExportPopup: (state, payload: PayloadAction<boolean>) => {
+      assertSome(state);
+      state.exportPopup = payload.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(openDocumentFromDisk.rejected, (state, action) => {
@@ -672,20 +649,6 @@ export const importSlice = createSlice({
     builder.addCase(saveDocument.fulfilled, (state, action) => {
       assertSome(state);
       state.lastSavedDocument = action.payload;
-    });
-    builder.addCase(exportDocument.pending, (state) => {
-      assertSome(state);
-      state.exportState = ExportState.Running;
-    });
-    builder.addCase(exportDocument.fulfilled, (state) => {
-      assertSome(state);
-      state.exportState = ExportState.NotRunning;
-    });
-    builder.addCase(exportDocument.rejected, (state, action) => {
-      assertSome(state);
-      state.exportState = ExportState.NotRunning;
-      console.error('an error occurred while trying to export the file', action.error);
-      alert(`Failed to Export:\n${action.error.name}: ${action.error.message}`);
     });
     builder.addCase(paste.rejected, (state, action) => {
       console.error('paste rejected:', action.payload);
@@ -729,6 +692,8 @@ export const {
   setWord,
   reassignParagraph,
   renameSpeaker,
+
+  setExportPopup,
 } = importSlice.actions;
 const { setState } = importSlice.actions;
 

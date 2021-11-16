@@ -221,6 +221,7 @@ test('renderItemsFromDocumentGenerator behaves correctly', () => {
 
       source: 'source_1',
       sourceStart: 0,
+      speaker: 'someone',
     },
     {
       absoluteStart: 2,
@@ -228,6 +229,7 @@ test('renderItemsFromDocumentGenerator behaves correctly', () => {
 
       source: 'source_2',
       sourceStart: 2,
+      speaker: 'someone',
     },
     {
       absoluteStart: 3,
@@ -235,6 +237,7 @@ test('renderItemsFromDocumentGenerator behaves correctly', () => {
 
       source: 'source_2',
       sourceStart: 2,
+      speaker: 'someone',
     },
   ];
   const documentGenerator = DocumentGenerator.fromParagraphs(input);

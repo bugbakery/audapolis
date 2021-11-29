@@ -128,6 +128,22 @@ export const openDocumentFromMemory = createAsyncThunk<void, Document>(
   }
 );
 
+export const setTime = createAsyncThunk<void, number, { state: RootState }>(
+  'editor/setTimeWithPlay',
+  async (arg, { getState, dispatch }): Promise<void> => {
+    const editor = getState().editor.present;
+    assertSome(editor);
+    const playing = editor.playing;
+    if (playing) {
+      await dispatch(pause());
+    }
+    await dispatch(importSlice.actions.setTime(arg));
+    if (playing) {
+      dispatch(play());
+    }
+  }
+);
+
 export const play = createAsyncThunk<void, void, { state: RootState }>(
   'editor/play',
   async (arg, { getState, dispatch }): Promise<void> => {
@@ -696,7 +712,6 @@ export const {
   toggleDisplayVideo,
   setPlay,
   setPath,
-  setTime,
   setTimeWithoutUpdate,
 
   goLeft,

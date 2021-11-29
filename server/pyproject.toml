@@ -20,7 +20,7 @@ numpy = "1.21.1"
 scipy = "^1.7.3"
 webrtcvad = "^2.0.10"
 scikit-learn = "^1.0.1"
-pydiar = "^0.0.3"
+pydiar = "^0.0.4"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"

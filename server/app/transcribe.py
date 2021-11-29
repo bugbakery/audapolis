@@ -118,7 +118,7 @@ def transform_vosk_result(
 ) -> dict:
     content = []
     current_time = 0
-    for word in result["result"]:
+    for word in result.get("result", []):
         if word["start"] > current_time:
             content.append(
                 {

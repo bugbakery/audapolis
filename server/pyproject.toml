@@ -2,7 +2,7 @@
 name = "Audapolis Server"
 version = "0.0.1"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Karl Engelhardt <audapolis@ca.pajowu.de>", "Jaro Habiger <jarohabiger@googlemail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"

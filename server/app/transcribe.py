@@ -62,6 +62,9 @@ def transcribe_raw_data(model: Model, name, audio, offset, duration, process_cal
     return transform_vosk_result(name, vosk_result, duration, offset)
 
 
+EPSILON = 0.00001
+
+
 def process_audio(
     lang: str,
     model: str,
@@ -119,18 +122,23 @@ def transform_vosk_result(
     content = []
     current_time = 0
     for word in result.get("result", []):
+        word_start = word["start"]
+
         if word["start"] > current_time:
-            content.append(
-                {
-                    "sourceStart": current_time + offset,
-                    "length": word["start"] - current_time,
-                    "type": "silence",
-                }
-            )
+            if (word["start"] - current_time) > 10 * EPSILON:
+                content.append(
+                    {
+                        "sourceStart": current_time + offset,
+                        "length": word["start"] - current_time,
+                        "type": "silence",
+                    }
+                )
+            else:
+                word_start = current_time
 
         content.append(
             {
-                "sourceStart": word["start"] + offset,
+                "sourceStart": word_start + offset,
                 "length": word["end"] - word["start"],
                 "type": "word",
                 "word": word["word"],
@@ -139,12 +147,15 @@ def transform_vosk_result(
         )
         current_time = word["end"]
     if current_time < length:
-        content.append(
-            {
-                "sourceStart": current_time + offset,
-                "length": length - current_time,
-                "type": "silence",
-            }
-        )
+        if (length - current_time) < 10 * EPSILON and content:
+            content[-1]["length"] += length - current_time
+        else:
+            content.append(
+                {
+                    "sourceStart": current_time + offset,
+                    "length": length - current_time,
+                    "type": "silence",
+                }
+            )
 
     return {"speaker": name, "content": content}

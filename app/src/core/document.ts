@@ -340,7 +340,10 @@ export function getItemsAtTime<T extends DocumentGeneratorItem = DocumentGenerat
   generator: GeneratorBox<T>,
   time: number
 ): T[] {
+  const condition = (x: T) =>
+    x.absoluteStart - EPSILON < time && x.absoluteStart + x.length + EPSILON > time;
   return generator
-    .filter((x) => x.absoluteStart - EPSILON < time && x.absoluteStart + x.length + EPSILON > time)
+    .dropwhile((x) => !condition(x))
+    .takewhile(condition)
     .collect();
 }

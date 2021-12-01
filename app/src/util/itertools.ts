@@ -17,6 +17,22 @@ export class GeneratorBox<T> implements Generator<T> {
     const C = Object.getPrototypeOf(this);
     return new C.constructor(filter(predicate, this));
   }
+  dropwhile(predicate: (x: T) => boolean): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(dropwhile(predicate, this));
+  }
+  takewhile(predicate: (x: T) => boolean): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(takewhile(predicate, this));
+  }
+  dropuntil(predicate: (x: T) => boolean): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(dropuntil(predicate, this));
+  }
+  takeuntil(predicate: (x: T) => boolean): this {
+    const C = Object.getPrototypeOf(this);
+    return new C.constructor(takeuntil(predicate, this));
+  }
   enumerate(): GeneratorBox<T & { globalIdx: number }> {
     const C = Object.getPrototypeOf(this);
     return new C.constructor(enumerate(this));
@@ -80,6 +96,46 @@ function* filter<T>(predicate: (x: T) => boolean, input: Generator<T>): Generato
   for (const item of input) {
     if (predicate(item)) {
       yield item;
+    }
+  }
+}
+
+function* dropwhile<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {
+  for (const item of input) {
+    if (!predicate(item)) {
+      yield item;
+      break;
+    }
+  }
+  yield* input;
+}
+
+function* dropuntil<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {
+  for (const item of input) {
+    if (predicate(item)) {
+      yield item;
+      break;
+    }
+  }
+  yield* input;
+}
+
+function* takewhile<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {
+  for (const item of input) {
+    if (predicate(item)) {
+      yield item;
+    } else {
+      break;
+    }
+  }
+}
+
+function* takeuntil<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {
+  for (const item of input) {
+    if (!predicate(item)) {
+      yield item;
+    } else {
+      break;
     }
   }
 }

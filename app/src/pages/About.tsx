@@ -9,6 +9,7 @@ import JSZip from 'jszip';
 import { useState } from 'react';
 import { ipcRenderer } from 'electron';
 import styled from 'styled-components';
+import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
 
 const CenteredH1 = styled.h1`
   margin: 1rem auto;
@@ -56,6 +57,13 @@ export function AboutPage(): JSX.Element {
             Audapolis would not be possible without a large number of open source components. A list
             of all used components and their license can be found{' '}
             <Link onClick={openLicenses}>here: Open Acknowledgements</Link>
+          </p>
+          <p>
+            Audapolis is founded from September 2021 until February 2022 by
+            <img
+              src={pf_funding_svg}
+              alt='logos of the "Bundesministerium für Bildung und Forschung", Prodotype Fund and OKFN-Deutschland'
+            />
           </p>
           <Button
             onClick={() => dispatch(openLanding())}

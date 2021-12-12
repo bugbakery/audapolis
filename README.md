@@ -11,6 +11,10 @@
 * It keeps the data in your hands - **no cloud** whatsoever.
 
 
+## Survey
+
+It would be really nice if you could help us out by answering [our short survey](https://docs.google.com/forms/d/e/1FAIpQLSerdLMYw3C3sfCyliGTal_CfeH5_jw4l2Zv-NmYc8GEabpHnA/viewform) about your needs & expectations so that we can build actually usefull software and know what you need.
+
 
 ## Get It!
 

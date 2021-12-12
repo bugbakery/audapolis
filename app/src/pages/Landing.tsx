@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button, IconButton } from '../components/Controls';
+import { Button, IconButton, Link } from '../components/Controls';
 import { useDispatch } from 'react-redux';
 import { transcribeFile } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
@@ -9,6 +9,7 @@ import { MdHelp, MdSettings } from 'react-icons/md';
 import { openModelManager } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 import { Joyride, resetJoyride } from '../components/Joyride';
+import { shell } from 'electron';
 
 const BottomRightContainer = styled.div`
   position: absolute;
@@ -32,6 +33,28 @@ export function LandingPage(): JSX.Element {
           <p>
             This short introduction will guide you through the basic features and get you up to
             speed.
+          </p>
+        </div>
+      ),
+    },
+    {
+      target: 'body',
+      placement: 'center' as const,
+      content: (
+        <div>
+          <p>
+            It would be really nice if you could help us out by answering{' '}
+            <Link
+              onClick={() =>
+                shell.openExternal(
+                  'https://docs.google.com/forms/d/e/1FAIpQLSerdLMYw3C3sfCyliGTal_CfeH5_jw4l2Zv-NmYc8GEabpHnA/viewform'
+                )
+              }
+            >
+              our short survey
+            </Link>{' '}
+            about your needs & expectations so that we can build actually usefull software and know
+            what you need.
           </p>
         </div>
       ),

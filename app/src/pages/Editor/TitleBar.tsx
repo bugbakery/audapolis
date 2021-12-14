@@ -21,6 +21,7 @@ import {
   setExportPopup,
 } from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
+import { FilmIcon, FloppyDiskIcon, PersonIcon } from 'evergreen-ui';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -49,30 +50,30 @@ export function EditorTitleBar(): JSX.Element {
       <TitleBarSection>
         <TitleBarGroup>
           <TitleBarButton
-            onClick={() => dispatch(ActionCreators.undo())}
-            active={canUndo}
-            icon={MdUndo}
-            text={'undo'}
+            // onClick={() => dispatch(ActionCreators.undo())}
+            disabled={!canUndo}
+            // icon={MdUndo}
+            // text={'undo'}
           />
           <TitleBarButton
-            onClick={() => dispatch(ActionCreators.redo())}
-            active={canRedo}
-            icon={MdRedo}
-            text={'redo'}
+            // onClick={() => dispatch(ActionCreators.redo())}
+            disabled={!canRedo}
+            // icon={MdRedo}
+            // text={'redo'}
           />
         </TitleBarGroup>
         <TitleBarGroup>
           <TitleBarButton
             clicked={displaySpeakerNames}
-            onClick={() => dispatch(toggleDisplaySpeakerNames())}
-            icon={MdPerson}
-            text={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}
+            // onClick={() => dispatch(toggleDisplaySpeakerNames())}
+            // icon={PersonIcon}
+            // text={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}
           />
           <TitleBarButton
             clicked={displayVideo}
-            onClick={() => dispatch(toggleDisplayVideo())}
-            icon={MdMovie}
-            text={displayVideo ? 'hide video' : 'display video'}
+            // onClick={() => dispatch(toggleDisplayVideo())}
+            // icon={FilmIcon}
+            // text={displayVideo ? 'hide video' : 'display video'}
           />
         </TitleBarGroup>
       </TitleBarSection>
@@ -83,16 +84,16 @@ export function EditorTitleBar(): JSX.Element {
         <TitleBarGroup>
           <TitleBarButton
             onClick={() => dispatch(saveDocument(false))}
-            active={canSave}
-            icon={MdSave}
+            disabled={!canSave}
+            icon={FloppyDiskIcon}
             text={'save document'}
           />
           <TitleBarButton
-            id={'export'}
-            onClick={() => dispatch(setExportPopup(true))}
-            active={!exportRunning && canExport}
-            icon={exportRunning ? MdWatchLater : MdShare}
-            text={'export document'}
+            // id={'export'}
+            // onClick={() => dispatch(exportDocument())}
+            disabled={exportRunning && canExport}
+            // icon={exportRunning ? MdWatchLater : MdShare}
+            // text={'export document'}
           />
         </TitleBarGroup>
       </TitleBarSection>

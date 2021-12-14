@@ -25,7 +25,7 @@ const AppContainer = styled.div`
 `;
 export default function App(): JSX.Element {
   const isDark = useMediaPredicate('(prefers-color-scheme: dark)');
-  const theme = isDark ? darkTheme : lightTheme;
+  const theme = lightTheme; //isDark ? darkTheme : lightTheme;
 
   return (
     <ThemeProvider theme={theme}>

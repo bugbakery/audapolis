@@ -1,16 +1,14 @@
 import * as React from 'react';
-import { Button, IconButton, Link } from '../components/Controls';
 import { useDispatch } from 'react-redux';
 import { transcribeFile } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
-import { MdHelp, MdSettings } from 'react-icons/md';
 import { openModelManager } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 import { Joyride, resetJoyride } from '../components/Joyride';
 import { shell } from 'electron';
-
+import { Button, CommentIcon, IconButton, Link, SettingsIcon, Tooltip } from 'evergreen-ui';
 const BottomRightContainer = styled.div`
   position: absolute;
   bottom: 0;
@@ -75,10 +73,10 @@ export function LandingPage(): JSX.Element {
       <Joyride steps={steps} page={'landing'} />
       <TitleBar />
       <MainCenterColumn>
-        <Button primary onClick={() => dispatch(transcribeFile())} id={'import'}>
+        <Button appearance="primary" onClick={() => dispatch(transcribeFile())} id={'import'}>
           Import & Transcribe
         </Button>
-        <Button primary onClick={() => dispatch(openDocumentFromDisk())}>
+        <Button appearance="primary" onClick={() => dispatch(openDocumentFromDisk())}>
           Open Existing
         </Button>
         <Button onClick={() => dispatch(openDocumentFromMemory({ sources: {}, content: [] }))}>
@@ -86,18 +84,12 @@ export function LandingPage(): JSX.Element {
         </Button>
       </MainCenterColumn>
       <BottomRightContainer>
-        <IconButton
-          icon={MdHelp}
-          onClick={() => {
-            resetJoyride();
-          }}
-          text={'restart help tour'}
-        />
-        <IconButton
-          icon={MdSettings}
-          onClick={() => dispatch(openModelManager())}
-          text={'manage transcription models'}
-        />
+        <Tooltip content="restart help tour">
+          <IconButton icon={CommentIcon} onClick={() => resetJoyride()} />
+        </Tooltip>
+        <Tooltip content="manage transcription models">
+          <IconButton icon={SettingsIcon} onClick={() => dispatch(openModelManager())} />
+        </Tooltip>
       </BottomRightContainer>
     </AppContainer>
   );

@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { MdClose, MdMenu } from 'react-icons/md';
 import * as React from 'react';
-import { IconButton } from './Controls';
+import { ToggleIconButton } from './Controls';
 import { platform } from 'os';
 import { ipcRenderer } from 'electron';
 
@@ -92,7 +92,7 @@ export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Elem
   );
 }
 
-export const TitleBarButton = styled(IconButton)`
+export const TitleBarButton = styled(ToggleIconButton)`
   -webkit-app-region: no-drag;
 `;
 

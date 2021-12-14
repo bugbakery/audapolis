@@ -4,8 +4,8 @@ import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setWord, reassignParagraph, renameSpeaker } from '../../state/editor';
 import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
-import { Button, Popup } from '../../components/Controls';
 import { assertSome } from '../../util';
+import { Button, Dialog } from 'evergreen-ui';
 
 const ParagraphContainer = styled.div``;
 const LongSilenceSpan = styled.span`
@@ -150,10 +150,10 @@ function Speaker({
   if (!editing) {
     return (
       <div {...props}>
-        <Popup
-          trigger={() => <SpeakerLabel>{name}</SpeakerLabel>}
-          position={['right center', 'bottom center', 'top center']}
-          on={['click']}
+        <Dialog
+        // trigger={() => <SpeakerLabel>{name}</SpeakerLabel>}
+        // position={['right center', 'bottom center', 'top center']}
+        // on={['click']}
         >
           <SpeakerPopupButton
             onClick={() => setEditing({ isNew: true, type: EditingType.Rename, currentText: name })}
@@ -167,7 +167,7 @@ function Speaker({
           >
             Reassign Speaker
           </SpeakerPopupButton>
-        </Popup>
+        </Dialog>
       </div>
     );
   } else {

@@ -1,14 +1,14 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Button, Link } from '../components/Controls';
 import { useDispatch, useSelector } from 'react-redux';
 import { abortTranscription, startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
-import { AppContainer, Form, MainCenterColumn } from '../components/Util';
+import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
 import { openModelManager, openServersList } from '../state/nav';
 import { getServer } from '../state/server';
 import { Joyride } from '../components/Joyride';
+import { Button, Link } from 'evergreen-ui';
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
@@ -80,7 +80,7 @@ export function TranscribePage(): JSX.Element {
 
         <Button
           id={'start'}
-          primary
+          appearance={'primary'}
           onClick={() =>
             dispatch(
               startTranscription({

@@ -1,10 +1,10 @@
 import { useDispatch } from 'react-redux';
-import { SmallButton } from '../../components/Controls';
 import { exportSelection } from '../../state/editor';
 import * as React from 'react';
 import { HTMLAttributes, RefObject, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { useDocumentEvent, useWindowEvent } from '../../util/useListener';
+import { Button } from 'evergreen-ui';
 const SelectionMenuContainer = styled.div<{ noMouse: boolean }>`
   position: absolute;
   display: block;
@@ -55,9 +55,9 @@ export function SelectionMenu({
         noMouse={mouseDown}
         {...props}
       >
-        <SmallButton onMouseDown={() => dispatch(exportSelection())} primary>
+        <Button onMouseDown={() => dispatch(exportSelection())} appearance="primary">
           Export
-        </SmallButton>
+        </Button>
       </SelectionMenuContainer>
     );
   }

@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useDispatch } from 'react-redux';
 import { AppContainer, MainMaxWidthContainer } from '../components/Util';
 import { TitleBar } from '../components/TitleBar';
-import { Button, Link } from '../components/Controls';
 import { openLanding } from '../state/nav';
 import * as fs from 'fs';
 import JSZip from 'jszip';
@@ -10,6 +9,7 @@ import { useState } from 'react';
 import { ipcRenderer } from 'electron';
 import styled from 'styled-components';
 import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
+import { Button, Link } from 'evergreen-ui';
 
 const CenteredH1 = styled.h1`
   margin: 1rem auto;

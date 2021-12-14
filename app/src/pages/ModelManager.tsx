@@ -1,17 +1,22 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar } from '../components/TitleBar';
-import { AppContainer, MainMaxWidthContainer, StyledTable, Title } from '../components/Util';
-import { Button, IconButton } from '../components/Controls';
+import { AppContainer, MainMaxWidthContainer } from '../components/Util';
 import { openLanding } from '../state/nav';
 import { RootState } from '../state';
 import { deleteModel, downloadModel, Model } from '../state/models';
-import { IconType } from 'react-icons';
-import { MdCloudDownload, MdDelete } from 'react-icons/md';
-import styled, { css } from 'styled-components';
 import { Joyride, ExtendedStoreHelpers } from '../components/Joyride';
-import { HTMLProps, useState } from 'react';
+import { useState } from 'react';
 import { assertSome } from '../util';
+import {
+  Button,
+  CloudDownloadIcon,
+  Heading,
+  IconButton,
+  Table,
+  Tooltip,
+  TrashIcon,
+} from 'evergreen-ui';
 
 export function ModelManagerPage(): JSX.Element {
   const dispatch = useDispatch();
@@ -83,24 +88,6 @@ export function ModelManagerPage(): JSX.Element {
     })
   );
 
-  let downloadedRender = <></>;
-  if (Object.keys(downloaded).length) {
-    if (helpers && steps[0].target == '#downloaded' && helpers.info().index == 0) {
-      helpers.setRun(true);
-    }
-    downloadedRender = (
-      <>
-        <TableTitle>Downloaded Transcription Models</TableTitle>
-        <ModelsTable
-          id={'downloaded'}
-          models={downloaded}
-          actionIcon={MdDelete}
-          onAction={(model) => dispatch(deleteModel(model))}
-        />
-      </>
-    );
-  }
-
   return (
     <AppContainer>
       <TitleBar />
@@ -122,23 +109,32 @@ export function ModelManagerPage(): JSX.Element {
             }
           }}
         />
-        <StyledTable>
-          {downloadedRender}
 
-          <TableTitle>Available Transcription Models</TableTitle>
-          <ModelsTable
-            models={available}
-            actionIcon={MdCloudDownload}
-            onAction={(model) => {
+        <Heading>Downloaded Transcription Models</Heading>
+        <ModelsTable
+          models={downloaded}
+          action={{
+            icon: TrashIcon,
+            text: 'delete model',
+            callback: (model) => dispatch(deleteModel(model)),
+          }}
+        />
+
+        <Heading>Available Transcription Models</Heading>
+        <ModelsTable
+          models={available}
+          action={{
+            icon: CloudDownloadIcon,
+            text: 'download model',
+            callback: (model) => {
               assertSome(helpers);
               helpers.setRun(false);
               helpers.reset(true);
               setSteps(steps_second);
               dispatch(downloadModel(model));
-            }}
-            canDownload={true}
-          />
-        </StyledTable>
+            },
+          }}
+        />
 
         <Button id={'back'} onClick={() => dispatch(openLanding())}>
           Home
@@ -148,66 +144,43 @@ export function ModelManagerPage(): JSX.Element {
   );
 }
 
-function TableTitle({ children }: { children: string }): JSX.Element {
-  return (
-    <thead>
-      <tr>
-        <th colSpan={1000}>
-          <Title>{children}</Title>
-        </th>
-      </tr>
-    </thead>
-  );
-}
-
-const ProgressTr = styled.tr<{ progress?: number }>`
-  ${(props) =>
-    props.progress &&
-    css`
-      background-image: linear-gradient(
-        to right,
-        ${({ theme }) => theme.bgSelection},
-        ${({ theme }) => theme.bgSelection}
-      );
-      background-size: ${props.progress * 100}%;
-      background-repeat: no-repeat;
-    `}
-`;
-
 function ModelsTable({
   models,
-  actionIcon,
-  onAction,
-  canDownload,
-  ...props
+  action,
 }: {
   models: Record<string, (Model & { progress?: number })[]>;
-  actionIcon: IconType;
-  onAction: (model: Model) => void;
-  canDownload?: boolean;
-} & HTMLProps<HTMLTableSectionElement>): JSX.Element {
+  action: {
+    icon: typeof CloudDownloadIcon;
+    text: string;
+    callback: (model: Model) => void;
+  } | null;
+}): JSX.Element {
   const flattened = Object.values(models).flatMap((x) => x);
 
   return (
-    <tbody {...props}>
-      {flattened.map((model, i) => (
-        <ProgressTr id={`${model.lang}-${model.name}`} key={i} progress={model?.progress}>
-          <td>{model.lang}</td>
-          <td>{model.name}</td>
-          <td>{model.size}</td>
-          <td>
-            {model?.progress === undefined ? (
-              <IconButton
-                icon={actionIcon}
-                onClick={() => onAction(model)}
-                id={i == 0 && canDownload ? 'download' : ''}
-              />
-            ) : (
-              <IconButton active={false} />
-            )}
-          </td>
-        </ProgressTr>
-      ))}
-    </tbody>
+    <Table>
+      <Table.Body>
+        {flattened.map((model, i) => (
+          <Table.Row id={`${model.lang}-${model.name}`} key={i} /*progress = { model?.progress}*/>
+            <Table.TextCell>{model.lang}</Table.TextCell>
+            <Table.TextCell>{model.name}</Table.TextCell>
+            <Table.TextCell isNumber>{model.size}</Table.TextCell>
+            <Table.Cell>
+              {model?.progress === undefined && action ? (
+                <Tooltip content={action.text}>
+                  <IconButton
+                    icon={action.icon}
+                    onClick={() => action.callback(model)}
+                    id={i == 0 ? 'download' : ''}
+                  />
+                </Tooltip>
+              ) : (
+                <></>
+              )}
+            </Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table>
   );
 }

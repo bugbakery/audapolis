@@ -12,7 +12,6 @@ import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef }
 import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
-import { Title } from '../../components/Util';
 import styled, { useTheme } from 'styled-components';
 import { SelectionMenu } from './SelectionMenu';
 import { EPSILON } from '../../util';
@@ -26,6 +25,7 @@ import {
   setSelection,
   setTime,
 } from '../../state/editor';
+import { Heading } from 'evergreen-ui';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -257,9 +257,9 @@ function FileNameDisplay({ path }: { path: string }) {
   const base = basename(path, extension);
 
   return (
-    <Title style={{ userSelect: 'none' }}>
+    <Heading style={{ userSelect: 'none' }}>
       {base}
       <span style={{ fontWeight: 'lighter' }}>{extension}</span>
-    </Title>
+    </Heading>
   );
 }

@@ -32,26 +32,3 @@ export const MainMaxWidthContainer = styled.div`
     margin: 0 auto;
   }
 `;
-
-export const Title = styled.h1`
-  text-align: left;
-  font-weight: normal;
-  font-size: 20px;
-  grid-column-start: 2;
-`;
-
-export const StyledTable = styled.table`
-  & tbody > tr:nth-child(odd) {
-    background-color: ${({ theme }) => theme.bgAccent};
-  }
-
-  padding-bottom: 20px;
-`;
-
-export const Form = styled.div`
-  padding: 20px;
-  margin-bottom: 50px;
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-gap: 20px;
-`;

@@ -132,7 +132,7 @@ jobs:
           toolchain: stable
 
       - name: Install pyoxidizer fork
-        run: cargo install --git https://github.com/audapolis/PyOxidizer.git --rev 3f3980d81e67928db83df20b9c1aefa3c8235866 pyoxidizer
+        run: cargo install --git https://github.com/audapolis/PyOxidizer.git --rev 9ad664e9ab1a241e206f4469c9dbb2eb15ca62c1 pyoxidizer
 
       - name: Install Poetry
         uses: snok/install-poetry@v1

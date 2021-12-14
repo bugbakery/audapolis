@@ -113,7 +113,7 @@ jobs:
           python-version: 3.8
 
       - name: Cache cargo
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: |
             ~/.cargo/bin/

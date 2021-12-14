@@ -72,7 +72,7 @@ jobs:
   draft:
     runs-on: ubuntu-latest
     needs: [ get_version ]
-    if: ${{ github.event_name == 'push' && needs.get_version.extract_branch.outputs.branch == 'main' }}
+    if: ${{ github.event_name == 'push' && needs.get_version.outputs.branch == 'main' }}
     steps:
       - name: Waiting on All checks
         uses: lewagon/wait-on-check-action@v0.2

@@ -186,3 +186,15 @@ jobs:
 
           # Password for decrypting `mac_certs`
           # mac_certs_password: ''
+
+      - name: Compile & release Electron app for arm64
+        uses: samuelmeuli/action-electron-builder@v1
+        env:
+          VITE_APP_VERSION: ${{ needs.get_version.outputs.version }}
+        with:
+          build_script_name: build
+          package_root: app/
+          args: --config electron-builder.config.js --arm64
+          github_token: ${{ secrets.github_token }}
+          release: ${{ github.event_name == 'push' && needs.get_version.outputs.branch == 'main' }}
+          max_attempts: 3

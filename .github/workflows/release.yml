@@ -120,11 +120,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-plugins
+            ~/.cargo/
+          key: ${{ runner.os }}-cargo
 
       - uses: actions-rs/toolchain@v1
         name: Install rust

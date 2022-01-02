@@ -1,13 +1,15 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { abortTranscription, startTranscription } from '../state/transcribe';
+import { startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
-import { AppContainer, MainCenterColumn } from '../components/Util';
+import { AppContainer } from '../components/Util';
 import { RootState } from '../state';
-import { openModelManager } from '../state/nav';
+import { openLanding, openModelManager } from '../state/nav';
+import { useState } from 'react';
 import { Joyride } from '../components/Joyride';
-import { Button, Link } from 'evergreen-ui';
+import { Dialog, FormField, Link, majorScale, SelectField, Text } from 'evergreen-ui';
+import * as path from 'path';
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
@@ -35,54 +37,41 @@ export function TranscribePage(): JSX.Element {
       <Joyride steps={steps} page={'model-manager-second'} />
 
       <TitleBar />
-      <MainCenterColumn>
-        <Form>
-          <span style={{ opacity: 0.5 }}>Opened File</span>
-          <span style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
-            {file.split('/').pop()}
-          </span>
+      <Dialog
+        isShown={true}
+        title="Transcription Options"
+        confirmLabel="Transcribe"
+        onConfirm={() =>
+          dispatch(
+            startTranscription({
+              model: models[selectedModel],
+            })
+          )
+        }
+        onCloseComplete={() => dispatch(openLanding())}
+      >
+        <FormField label="Opened File" marginBottom={majorScale(3)}>
+          <Text color="muted">{path.basename(file)}</Text>
+        </FormField>
 
-          <span style={{ opacity: 0.5 }}>Transcription Model</span>
-          <select
-            id={'lang'}
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(parseInt(e.target.value))}
-          >
-            {models.map((model, i) => (
-              <option key={i} value={i}>
-                {model.lang} - {model.name}
-              </option>
-            ))}
-          </select>
-
-          <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openModelManager())}>
-            Download More Transcription Models
-          </Link>
-
-          <span style={{ opacity: 0.5 }}>Auto-detect speakers?</span>
-          <input
-            type={'checkbox'}
-            checked={diarize}
-            onChange={(e) => setDiarize(e.target.checked)}
-          />
-        </Form>
-
-        <Button
-          id={'start'}
-          appearance={'primary'}
-          onClick={() =>
-            dispatch(
-              startTranscription({
-                model: models[selectedModel],
-                diarize,
-              })
-            )
+        <SelectField
+          label="Transcription Model"
+          hint={
+            <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openModelManager())}>
+              Download More Transcription Models
+            </Link>
           }
+          id={'lang'}
+          value={selectedModel}
+          onChange={(e) => setSelectedModel(parseInt(e.target.value))}
         >
-          Start Transcribing
-        </Button>
-        <Button onClick={() => dispatch(abortTranscription())}>abort</Button>
-      </MainCenterColumn>
+          {models.map((model, i) => (
+            <option key={i} value={i}>
+              {model.lang} - {model.name}
+            </option>
+          ))}
+        </SelectField>
+      </Dialog>
     </AppContainer>
   );
 }

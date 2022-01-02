@@ -28,6 +28,7 @@ const config = {
     category: 'Audio',
   },
   extraResources: ['./server/**', './generated/**'],
+  asar: false
 };
 
 module.exports = config;

@@ -7,9 +7,9 @@ import { AppContainer } from '../components/Util';
 import { RootState } from '../state';
 import { openLanding, openModelManager } from '../state/nav';
 import { useState } from 'react';
-import { Joyride } from '../components/Joyride';
-import { Dialog, FormField, Link, majorScale, SelectField, Text } from 'evergreen-ui';
+import { Button, Checkbox, Combobox, Dialog, FormField, Link, majorScale, Text } from 'evergreen-ui';
 import * as path from 'path';
+import { TranscribeJoyride } from '../joyride/TranscribeJoyride';
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
@@ -17,60 +17,69 @@ export function TranscribePage(): JSX.Element {
   const models = useSelector((state: RootState) =>
     Object.values(state.models.downloaded).flatMap((x) => x)
   );
-
-  const [selectedModel, setSelectedModel] = useState(0);
+ const [selectedModel, setSelectedModel] = useState(0);
   const [diarize, setDiarize] = useState(true);
 
-  const steps = [
-    {
-      target: '#lang',
-      content: <p>Here you should select the model you just downloaded...</p>,
-    },
-    {
-      target: '#start',
-      content: <p>... and now start the transcription. This might take a moment.</p>,
-    },
-  ];
 
   return (
     <AppContainer>
-      <Joyride steps={steps} page={'model-manager-second'} />
+      <TranscribeJoyride />
 
       <TitleBar />
       <Dialog
         isShown={true}
         title="Transcription Options"
-        confirmLabel="Transcribe"
-        onConfirm={() =>
-          dispatch(
-            startTranscription({
-              model: models[selectedModel],
-            })
-          )
-        }
         onCloseComplete={() => dispatch(openLanding())}
+        footer={({ close }) => (
+          <>
+            <Button tabIndex={0} onClick={() => close()}>
+              Cancel
+            </Button>
+
+            <Button
+              id={'start' /* for joyride */}
+              tabIndex={0}
+              marginLeft={8}
+              appearance="primary"
+              onClick={() =>
+                dispatch(
+                  startTranscription({
+                    model: models[selectedModel],
+                    diarize
+                  })
+                )
+              }
+            >
+              Transcribe
+            </Button>
+          </>
+        )}
       >
         <FormField label="Opened File" marginBottom={majorScale(3)}>
           <Text color="muted">{path.basename(file)}</Text>
         </FormField>
-
-        <SelectField
+        <Checkbox
+          label="Auto-detect speakers"
+          checked={diarize}
+          onChange={e => setDiarize(e.target.checked)}/>
+        <FormField
           label="Transcription Model"
           hint={
-            <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openModelManager())}>
+            <Link onClick={() => dispatch(openModelManager())}>
               Download More Transcription Models
             </Link>
           }
-          id={'lang'}
-          value={selectedModel}
-          onChange={(e) => setSelectedModel(parseInt(e.target.value))}
+          marginBottom={majorScale(3)}
+          id={'model' /* for joyride */}
         >
-          {models.map((model, i) => (
-            <option key={i} value={i}>
-              {model.lang} - {model.name}
-            </option>
-          ))}
-        </SelectField>
+          <Combobox
+            width={'100%'}
+            initialSelectedItem={selectedModel}
+            items={models}
+            itemToString={(model) => `${model.lang} - ${model.name}`}
+            onChange={(selected) => setSelectedModel(selected)}
+          />
+        </FormField>
       </Dialog>
     </AppContainer>
   );

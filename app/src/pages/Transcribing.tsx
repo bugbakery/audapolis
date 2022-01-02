@@ -24,9 +24,8 @@ export function TranscribingPage(): JSX.Element {
 
           <Line percent={progress * 100} style={{ width: '100%' }} />
           <Pane textAlign={'center'} marginBottom={majorScale(4)}>
-            <Text color={'muted'}>{(progress * 100).toFixed(0)}&nbsp;%</Text>
-            <Text color={'muted'} width={100} display={'inline-block'} textAlign={'left'}>
-              &nbsp;-&nbsp;{server_state}
+            <Text color={'muted'}>
+              {(progress * 100).toFixed(0)}&nbsp;%&nbsp;-&nbsp;{server_state}
             </Text>
           </Pane>
         </MainMaxWidthContainer>

@@ -33,26 +33,31 @@ export interface DownloadModelTask {
 }
 
 export interface ModelsState {
-  downloaded: Record<string, Model[]>;
-  available: Record<string, Model[]>;
+  downloaded: Model[];
   downloading: DownloadingModel[];
+  all: Model[];
 }
 
 export const fetchModelState = createAsyncThunk<
-  { downloaded: Record<string, Model[]>; available: Record<string, Model[]> },
+  { downloaded: Model[]; all: Model[] },
   void,
   { state: RootState }
 >('models/fetchModelState', async (_, { getState }) => {
   const server = getServer(getState());
   assertSome(server);
-  const available = await fetch(`${getServerName(server)}/models/available`, {
+  const all: Record<string, Model> = await fetch(`${getServerName(server)}/models/available`, {
     headers: { Authorization: getAuthHeader(server) },
   }).then((x) => x.json());
-  const downloaded = await fetch(`${getServerName(server)}/models/downloaded`, {
-    headers: { Authorization: getAuthHeader(server) },
-  }).then((x) => x.json());
+  const downloaded: Record<string, Model> = await fetch(
+    `${getServerName(server)}/models/downloaded`,
+    {
+      headers: { Authorization: getAuthHeader(server) },
+    }
+  ).then((x) => x.json());
 
-  return { available, downloaded };
+  const flatten = (x: Record<string, Model>) => Object.values(x).flatMap((x) => x);
+
+  return { all: flatten(all), downloaded: flatten(downloaded) };
 });
 
 export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>(
@@ -100,9 +105,9 @@ export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
 export const modelsSlice = createSlice({
   name: 'models',
   initialState: {
-    downloaded: {},
-    available: {},
+    downloaded: [],
     downloading: [],
+    all: [],
   } as ModelsState,
   reducers: {
     setProgress: (

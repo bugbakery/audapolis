@@ -21,7 +21,6 @@ const AppContainer = styled.div`
   width: 100%;
   height: 100%;
   background-color: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.fg};
 `;
 export default function App(): JSX.Element {
   const isDark = useMediaPredicate('(prefers-color-scheme: dark)');

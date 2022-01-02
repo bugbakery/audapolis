@@ -18,6 +18,7 @@ const BottomRightContainer = styled.div`
     margin: 5px;
   }
 `;
+
 export function LandingPage(): JSX.Element {
   const dispatch = useDispatch();
 
@@ -73,13 +74,31 @@ export function LandingPage(): JSX.Element {
       <Joyride steps={steps} page={'landing'} />
       <TitleBar />
       <MainCenterColumn>
-        <Button appearance="primary" onClick={() => dispatch(transcribeFile())} id={'import'}>
+        <Button
+          appearance="primary"
+          onClick={() => dispatch(transcribeFile())}
+          id={'import'}
+          size={'large'}
+          marginY={5}
+          width={300}
+        >
           Import & Transcribe
         </Button>
-        <Button appearance="primary" onClick={() => dispatch(openDocumentFromDisk())}>
+        <Button
+          appearance="primary"
+          onClick={() => dispatch(openDocumentFromDisk())}
+          size={'large'}
+          marginY={5}
+          width={300}
+        >
           Open Existing
         </Button>
-        <Button onClick={() => dispatch(openDocumentFromMemory({ sources: {}, content: [] }))}>
+        <Button
+          onClick={() => dispatch(openDocumentFromMemory({ sources: {}, content: [] }))}
+          size={'large'}
+          marginY={20}
+          width={300}
+        >
           New Blank Document
         </Button>
       </MainCenterColumn>

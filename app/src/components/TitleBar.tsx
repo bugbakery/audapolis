@@ -1,59 +1,44 @@
 import styled from 'styled-components';
-import { MdClose, MdMenu } from 'react-icons/md';
 import * as React from 'react';
 import { ToggleIconButton } from './Controls';
 import { platform } from 'os';
 import { ipcRenderer } from 'electron';
+import { CrossIcon, MenuIcon, Heading, IconButton, Pane } from 'evergreen-ui';
 
 function getWindowControlsRect(): DOMRect {
-  const windowControlsOverlay = (window.navigator as any).windowControlsOverlay;
+  const windowControlsOverlay = window.navigator.windowControlsOverlay;
   if (windowControlsOverlay.visible) {
     return windowControlsOverlay.getBoundingClientRect();
   } else {
     return new DOMRect(55, 0, window.innerWidth - 2 * 55, 55);
   }
 }
-const CloseIcon = styled(MdClose)`
-  padding: 17px;
-  position: absolute;
-  top: 0;
-  right: 0;
-  -webkit-app-region: no-drag;
-`;
-function FallbackCloseButton() {
-  if ((window.navigator as any).windowControlsOverlay.visible) {
+function WindowControlsButton({
+  doRender,
+  side,
+  icon,
+  onClick,
+}: {
+  doRender: boolean;
+  side: 'left' | 'right';
+  icon: React.ElementType;
+  onClick: () => void;
+}) {
+  if (!doRender) {
     return <></>;
   } else {
     const rect = getWindowControlsRect();
     return (
-      <CloseIcon
-        onClick={() => {
-          window.close();
-        }}
-        style={{ width: rect.x, height: rect.height }}
-      />
-    );
-  }
-}
-
-const MenuIcon = styled(MdMenu)`
-  padding: 17px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  -webkit-app-region: no-drag;
-`;
-function FallbackWindowMenu() {
-  if (platform() == 'darwin') {
-    return <></>;
-  } else {
-    const rect = getWindowControlsRect();
-    return (
-      <MenuIcon
-        onClick={() => {
-          ipcRenderer.send('show-menu');
-        }}
-        style={{ width: rect.x, height: rect.height }}
+      <IconButton
+        width={rect.x}
+        height={rect.height}
+        position={'absolute'}
+        top={0}
+        {...{ [side]: 0 }}
+        style={{ WebkitAppRegion: 'no-drag' }}
+        appearance={'minimal'}
+        onClick={onClick}
+        icon={icon}
       />
     );
   }
@@ -72,21 +57,35 @@ const TitleBarContainer = styled.div`
   -webkit-app-region: drag;
   -webkit-user-select: none;
 `;
-export const WindowTitle = styled.h1`
-  margin: 0;
-  font-size: 18px;
-  font-weight: normal;
-`;
 
 export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Element {
   if (!children) {
-    children = <WindowTitle>audapolis</WindowTitle>;
+    children = (
+      <Heading is={'h1'} fontWeight={'normal'}>
+        audapolis
+      </Heading>
+    );
   }
 
   return (
     <TitleBarContainer>
-      <FallbackCloseButton />
-      <FallbackWindowMenu />
+      <WindowControlsButton
+        doRender={platform() != 'darwin'}
+        side={'left'}
+        onClick={() => {
+          ipcRenderer.send('show-menu');
+        }}
+        icon={MenuIcon}
+      />
+      <WindowControlsButton
+        doRender={!window.navigator.windowControlsOverlay.visible}
+        side={'right'}
+        icon={CrossIcon}
+        onClick={() => {
+          window.close();
+        }}
+      />
+
       {children}
     </TitleBarContainer>
   );

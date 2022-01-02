@@ -1,5 +1,6 @@
 import argparse
 import json
+import time
 import zipfile
 from pathlib import Path
 from pprint import pprint
@@ -11,21 +12,31 @@ parser.add_argument("file", type=Path)
 parser.add_argument("lang", type=str)
 parser.add_argument("model", type=str)
 parser.add_argument("--server", default="http://127.0.0.1:8000")
+parser.add_argument("--token")
+parser.add_argument("--diarize", action="store_true")
 args = parser.parse_args()
+
+headers = {}
+if args.token:
+    headers["Authorization"] = f"Bearer {args.token}"
 
 print(f"Uploading {args.file}")
 upload_req = requests.post(
     f"{args.server}/tasks/start_transcription/",
     files={"file": open(args.file, "rb")},
-    params={"lang": args.lang, "model": args.model},
+    params={"lang": args.lang, "model": args.model, "diarize": args.diarize},
+    data={"fileName": str(args.file)},
+    headers=headers,
 )
 
 while True:
-    status_req = requests.get(f"{args.server}/tasks/{upload_req.json()['uuid']}/")
+    status_req = requests.get(
+        f"{args.server}/tasks/{upload_req.json()['uuid']}/", headers=headers
+    )
     if status_req.json()["state"] == "done":
         pprint(status_req.json())
         break
-
+    time.sleep(0.1)
     print(status_req.json(), end="\r")
 
 output_file = args.file.with_suffix(".audapolis")

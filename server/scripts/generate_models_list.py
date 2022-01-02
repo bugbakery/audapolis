@@ -27,6 +27,9 @@ for row in rows:
         if current_lang == "English Other" or "not" in raw["Notes"].text.lower():
             continue
 
+        if current_lang == "Speaker identification model":
+            continue
+
         name = "big"
         possible_names = ["small", "nano", "zamia", "linto-2.0", "linto-2.2", "lgraph"]
         for possible_name in possible_names:

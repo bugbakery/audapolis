@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ipcRenderer } from 'electron';
-import { openTranscribe, openLanding, openTranscribing, openModelManager } from './nav';
+import { openTranscribe, openTranscribing, openModelManager } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
@@ -60,10 +60,6 @@ export const transcribeFile = createAsyncThunk<string, void, { state: RootState 
     return file.filePaths[0];
   }
 );
-
-export const abortTranscription = createAsyncThunk('transcribe/abort', async (_, { dispatch }) => {
-  dispatch(openLanding());
-});
 
 export const startTranscription = createAsyncThunk<
   void,

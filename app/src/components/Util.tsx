@@ -21,10 +21,16 @@ export const MainCenterColumn = styled.div`
   flex-grow: 1;
 `;
 
-export function MainMaxWidthContainer({ children }: { children: JSX.Element[] }): JSX.Element {
+export function MainMaxWidthContainer({
+  children,
+  width = 800,
+}: {
+  children: JSX.Element[];
+  width: number;
+}): JSX.Element {
   return (
     <Pane width={'100%'} padding={20} display={'flex'} flexDirection={'column'} overflowY={'auto'}>
-      <Pane width={'100%'} maxWidth={800} marginX={'auto'}>
+      <Pane width={'100%'} maxWidth={width} marginX={'auto'}>
         {children}
       </Pane>
     </Pane>

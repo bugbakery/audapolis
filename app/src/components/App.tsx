@@ -10,7 +10,6 @@ import { ModelManagerPage } from '../pages/ModelManager';
 import styled, { ThemeProvider } from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
-import { ServersListPage } from '../pages/ServersList';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
 import { ipcRenderer } from 'electron';
@@ -64,8 +63,6 @@ function CurrentPage(): JSX.Element {
       return <EditorPage />;
     case Page.Transcribing:
       return <TranscribingPage />;
-    case Page.ServersList:
-      return <ServersListPage />;
     case Page.ModelManager:
       return <ModelManagerPage />;
     case Page.About:

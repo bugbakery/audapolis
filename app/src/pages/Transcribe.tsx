@@ -5,15 +5,13 @@ import { abortTranscription, startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import { RootState } from '../state';
-import { openModelManager, openServersList } from '../state/nav';
-import { getServer } from '../state/server';
+import { openModelManager } from '../state/nav';
 import { Joyride } from '../components/Joyride';
 import { Button, Link } from 'evergreen-ui';
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
   const file = useSelector((state: RootState) => state.transcribe.file) || '';
-  const serverName = useSelector((state: RootState) => getServer(state).name) || 'no server';
   const models = useSelector((state: RootState) =>
     Object.values(state.models.downloaded).flatMap((x) => x)
   );
@@ -42,15 +40,6 @@ export function TranscribePage(): JSX.Element {
           <span style={{ opacity: 0.5 }}>Opened File</span>
           <span style={{ textOverflow: 'ellipsis', overflow: 'hidden' }}>
             {file.split('/').pop()}
-          </span>
-
-          <span style={{ opacity: 0.5 }}>Transcription Server</span>
-          <span>
-            {serverName}
-            {' - '}
-            <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openServersList())}>
-              Manage Servers
-            </Link>
           </span>
 
           <span style={{ opacity: 0.5 }}>Transcription Model</span>

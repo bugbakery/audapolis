@@ -7,7 +7,6 @@ export enum Page {
   Transcribe,
   Editor,
   Transcribing,
-  ServersList,
   ModelManager,
   About,
 }
@@ -44,9 +43,6 @@ export const navSlice = createSlice({
     openTranscribing: (state) => {
       state.page = Page.Transcribing;
     },
-    openServersList: (state) => {
-      state.page = Page.ServersList;
-    },
     openAbout: (state) => {
       state.page = Page.About;
     },
@@ -61,6 +57,5 @@ export const navSlice = createSlice({
   },
 });
 
-export const { openEditor, openLanding, openTranscribing, openServersList, openAbout } =
-  navSlice.actions;
+export const { openEditor, openLanding, openTranscribing, openAbout } = navSlice.actions;
 export default navSlice.reducer;

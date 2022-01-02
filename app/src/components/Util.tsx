@@ -1,4 +1,6 @@
+import React from 'react';
 import styled from 'styled-components';
+import { Pane } from 'evergreen-ui';
 
 export const AppContainer = styled.div`
   width: 100%;
@@ -19,16 +21,12 @@ export const MainCenterColumn = styled.div`
   flex-grow: 1;
 `;
 
-export const MainMaxWidthContainer = styled.div`
-  width: 100%;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-
-  & > * {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-`;
+export function MainMaxWidthContainer({ children }: { children: JSX.Element[] }): JSX.Element {
+  return (
+    <Pane width={'100%'} padding={20} display={'flex'} flexDirection={'column'} overflowY={'auto'}>
+      <Pane width={'100%'} maxWidth={800} marginX={'auto'}>
+        {children}
+      </Pane>
+    </Pane>
+  );
+}

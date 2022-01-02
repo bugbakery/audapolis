@@ -2,185 +2,132 @@ import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainMaxWidthContainer } from '../components/Util';
-import { openLanding } from '../state/nav';
 import { RootState } from '../state';
 import { deleteModel, downloadModel, Model } from '../state/models';
-import { Joyride, ExtendedStoreHelpers } from '../components/Joyride';
-import { useState } from 'react';
-import { assertSome } from '../util';
 import {
+  ArrowLeftIcon,
   Button,
   CloudDownloadIcon,
   Heading,
   IconButton,
+  majorScale,
   Table,
   Tooltip,
   TrashIcon,
 } from 'evergreen-ui';
+import { Circle } from 'rc-progress';
+import { openLanding } from '../state/nav';
 
 export function ModelManagerPage(): JSX.Element {
   const dispatch = useDispatch();
-  const all_available = useSelector((state: RootState) => state.models.available);
+  const all = useSelector((state: RootState) => state.models.all);
   const downloaded = useSelector((state: RootState) => state.models.downloaded);
   const downloading = useSelector((state: RootState) => state.models.downloading);
 
-  const steps_first = [
-    {
-      target: 'body',
-      placement: 'center' as const,
-      content: (
-        <p>
-          Here you can download so called "transcription models". These models will help the
-          computer transcribe audio into text. For Each language you want to work with you need at
-          least one model
-        </p>
-      ),
-    },
-    {
-      target: '#English-small',
-      content: <p>Small models are fast to download and use not much disk space.</p>,
-    },
-    {
-      target: '#English-big',
-      content: (
-        <p>
-          Big models take longer to load, consume more disk space but generally give better results.
-        </p>
-      ),
-    },
-    {
-      target: '#download',
-      content: (
-        <p>You should now download at least one transcription model. This might take some time.</p>
-      ),
-    },
-  ];
+  const notDownloaded = all.filter((x) => {
+    const predicate = (candidate: Model) => candidate.lang == x.lang && candidate.name == x.name;
+    const downloadedModel = downloaded.find(predicate);
+    const downloadingModel = downloading.find(predicate);
+    return !(downloadedModel || downloadingModel);
+  });
 
-  const steps_second = [
-    {
-      target: '#downloaded',
-      content: <p>Congratulations 🎉. You Now have a transcription model...</p>,
-    },
-    {
-      target: '#back',
-      content: (
-        <p>...and can go back and transcribe your media file. Do you remember how to do that?</p>
-      ),
-    },
-  ];
+  const lastColumnProps = {
+    flexGrow: 0,
+    flexBasis: 60,
+  };
 
-  const [helpers, setHelpers] = useState(null as null | ExtendedStoreHelpers);
-  const [steps, setSteps] = useState(steps_first);
-
-  const flattened_downloaded = Object.values(downloaded).flatMap((x) => x);
-  const available = Object.fromEntries(
-    Object.entries(all_available).map(([lang, models]) => {
-      return [
-        lang,
-        models.flatMap((model) => {
-          const predicate = (candidate: Model) =>
-            candidate.lang == lang && candidate.name == model.name;
-          const downloadedModel = flattened_downloaded.find(predicate);
-          const downloadingModel = downloading.find(predicate);
-          return downloadedModel ? [] : downloadingModel ? [downloadingModel] : [model];
-        }),
-      ];
-    })
-  );
+  const firstColumnProps = {
+    flexBasis: '30%',
+  };
 
   return (
     <AppContainer>
       <TitleBar />
       <MainMaxWidthContainer>
-        <Joyride
-          steps={steps}
-          page={'model-manager'}
-          getHelpers={(helpers) => setHelpers(helpers)}
-          callback={(state) => {
-            if (
-              steps[0].target == 'body' &&
-              state.index == state.size - 1 &&
-              state.action == 'next'
-            ) {
-              assertSome(helpers);
-              helpers.setRun(false);
-              helpers.reset(true);
-              setSteps(steps_second);
-            }
-          }}
-        />
+        <Button
+          id={'back'}
+          onClick={() => dispatch(openLanding())}
+          iconBefore={ArrowLeftIcon}
+          appearance={'minimal'}
+        >
+          back to home screen
+        </Button>
 
-        <Heading>Downloaded Transcription Models</Heading>
-        <ModelsTable
-          models={downloaded}
-          action={{
-            icon: TrashIcon,
-            text: 'delete model',
-            callback: (model) => dispatch(deleteModel(model)),
-          }}
-        />
+        <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
+          Transcription Models
+        </Heading>
 
-        <Heading>Available Transcription Models</Heading>
-        <ModelsTable
-          models={available}
-          action={{
-            icon: CloudDownloadIcon,
-            text: 'download model',
-            callback: (model) => {
-              assertSome(helpers);
-              helpers.setRun(false);
-              helpers.reset(true);
-              setSteps(steps_second);
-              dispatch(downloadModel(model));
-            },
-          }}
-        />
+        <Table>
+          <Table.Head padding={0}>
+            <Table.TextHeaderCell {...firstColumnProps}>Language</Table.TextHeaderCell>
+            <Table.TextHeaderCell>Variant</Table.TextHeaderCell>
+            <Table.TextHeaderCell>Size</Table.TextHeaderCell>
+            <Table.TextHeaderCell {...lastColumnProps} />
+          </Table.Head>
 
-        <Button id={'back'} onClick={() => dispatch(openLanding())}>
-          Home
+          <Table.Body>
+            {downloaded.map((model, i) => (
+              <Table.Row id={`${model.lang}-${model.name}`} key={i}>
+                <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
+                <Table.TextCell>{model.name}</Table.TextCell>
+                <Table.TextCell isNumber>{model.size}</Table.TextCell>
+                <Table.Cell {...lastColumnProps}>
+                  <Tooltip content={'delete model'}>
+                    <IconButton icon={TrashIcon} onClick={() => dispatch(deleteModel(model))} />
+                  </Tooltip>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+
+            {downloading.map((model, i) => (
+              <Table.Row id={`${model.lang}-${model.name}`} key={i}>
+                <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
+                <Table.TextCell>{model.name}</Table.TextCell>
+                <Table.TextCell isNumber>{model.size}</Table.TextCell>
+                <Table.Cell {...lastColumnProps}>
+                  <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
+                    <Button padding={0} appearance={'minimal'}>
+                      <Circle
+                        style={{ height: majorScale(3) }}
+                        percent={model.progress * 100}
+                        strokeWidth={50}
+                        trailWidth={0}
+                        strokeLinecap={'butt'}
+                      />
+                    </Button>
+                  </Tooltip>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+
+            {notDownloaded.map((model, i) => (
+              <Table.Row id={`${model.lang}-${model.name}`} key={i}>
+                <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
+                <Table.TextCell>{model.name}</Table.TextCell>
+                <Table.TextCell isNumber>{model.size}</Table.TextCell>
+                <Table.Cell {...lastColumnProps}>
+                  <Tooltip content={'download model'}>
+                    <IconButton
+                      icon={CloudDownloadIcon}
+                      onClick={() => dispatch(downloadModel(model))}
+                    />
+                  </Tooltip>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table>
+
+        <Button
+          id={'back'}
+          onClick={() => dispatch(openLanding())}
+          iconBefore={ArrowLeftIcon}
+          marginY={majorScale(2)}
+          appearance={'minimal'}
+        >
+          back to home screen
         </Button>
       </MainMaxWidthContainer>
     </AppContainer>
-  );
-}
-
-function ModelsTable({
-  models,
-  action,
-}: {
-  models: Record<string, (Model & { progress?: number })[]>;
-  action: {
-    icon: typeof CloudDownloadIcon;
-    text: string;
-    callback: (model: Model) => void;
-  } | null;
-}): JSX.Element {
-  const flattened = Object.values(models).flatMap((x) => x);
-
-  return (
-    <Table>
-      <Table.Body>
-        {flattened.map((model, i) => (
-          <Table.Row id={`${model.lang}-${model.name}`} key={i} /*progress = { model?.progress}*/>
-            <Table.TextCell>{model.lang}</Table.TextCell>
-            <Table.TextCell>{model.name}</Table.TextCell>
-            <Table.TextCell isNumber>{model.size}</Table.TextCell>
-            <Table.Cell>
-              {model?.progress === undefined && action ? (
-                <Tooltip content={action.text}>
-                  <IconButton
-                    icon={action.icon}
-                    onClick={() => action.callback(model)}
-                    id={i == 0 ? 'download' : ''}
-                  />
-                </Tooltip>
-              ) : (
-                <></>
-              )}
-            </Table.Cell>
-          </Table.Row>
-        ))}
-      </Table.Body>
-    </Table>
   );
 }

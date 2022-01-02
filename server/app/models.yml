@@ -3,15 +3,20 @@
 
 English:
 - name: small
-  url: http://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+  url: https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
   description: Lightweight wideband model for Android and RPi
   size: 40M
   wer_speed: 9.85 (librispeech test-clean) 10.38 (tedlium)
 - name: big
-  url: http://alphacephei.com/vosk/models/vosk-model-en-us-0.21.zip
-  description: Accurate wideband model
-  size: 1.6G
-  wer_speed: 5.43 (librispeech test-clean) 6.42 (tedlium) 40.63(callcenter)
+  url: https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip
+  description: Accurate generic US English model
+  size: 1.8G
+  wer_speed: 5.69 (librispeech test-clean) 6.05 (tedlium) 29.78(callcenter)
+- name: lgraph
+  url: https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip
+  description: Big US English model with dynamic graph
+  size: 128M
+  wer_speed: 7.82 (librispeech) 8.20 (tedlium)
 Indian English:
 - name: big
   url: https://alphacephei.com/vosk/models/vosk-model-en-in-0.4.zip
@@ -19,7 +24,7 @@ Indian English:
   size: 370M
   wer_speed: TBD
 - name: small
-  url: http://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip
+  url: https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip
   description: Lightweight Indian English model for mobile applications
   size: 36M
   wer_speed: TBD
@@ -34,18 +39,42 @@ Chinese:
   description: Lightweight wideband model for Android and RPi
   size: 32M
   wer_speed: TBD
+- name: big
+  url: https://alphacephei.com/vosk/models/vosk-model-cn-kaldi-multicn-2.zip
+  description: Original Wideband Kaldi multi-cn model from <a href="https://kaldi-asr.org/models/m11">Kaldi</a>
+  size: 195M
+  wer_speed: TBD
+- name: lgraph
+  url: https://alphacephei.com/vosk/models/vosk-model-cn-kaldi-multicn-2-lgraph.zip
+  description: Original Wideband Kaldi multi-cn model from <a href="https://kaldi-asr.org/models/m11">Kaldi</a>
+    with dynamic graph
+  size: 101M
+  wer_speed: TBD
+- name: big
+  url: https://alphacephei.com/vosk/models/vosk-model-cn-kaldi-cvte-2.zip
+  description: CVTE Kaldi model from <a href="https://kaldi-asr.org/models/m2">Kaldi</a>
+  size: 3.3G
+  wer_speed: TBD
 Russian:
+- name: big
+  url: https://alphacephei.com/vosk/models/vosk-model-ru-0.22.zip
+  description: Big mixed band Russian model for server processing
+  size: 1.5G
+  wer_speed: 5.74 (our audiobooks) 13.35 (open_stt audiobooks) 20.73 (open_stt youtube)
+    37.38 (openstt calls) 8.65 (golos crowd) 19.71 (sova devices)
+- name: small
+  url: https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
+  description: Lightweight wideband model for Android/iOS and RPi
+  size: 45M
+  wer_speed: 22.71 (openstt audiobooks) 31.97 (openstt youtube) 29.89 (sova devices)
+    11.79 (golos crowd)
+Old Russian:
 - name: big
   url: https://alphacephei.com/vosk/models/vosk-model-ru-0.10.zip
   description: Big narrowband Russian model for server processing
   size: 2.5G
   wer_speed: 5.71 (our audiobooks) 16.26 (open_stt audiobooks) 26.20 (public_youtube_700_val
     open_stt) 40.15 (asr_calls_2_val open_stt)
-- name: small
-  url: https://alphacephei.com/vosk/models/vosk-model-small-ru-0.15.zip
-  description: Lightweight wideband model for Android/iOS and RPi
-  size: 43M
-  wer_speed: 22.21 (openstt audiobooks) 30.89 (openstt youtube) 28.65 (sova devices)
 French:
 - name: small
   url: https://alphacephei.com/vosk/models/vosk-model-small-fr-pguyot-0.3.zip
@@ -187,10 +216,4 @@ Swedish:
   description: Repackaged model from <a href="https://github.com/rhasspy/sv_kaldi-rhasspy">Rhasspy
     project</a>
   size: 289M
-  wer_speed: TBD
-Speaker identification model:
-- name: big
-  url: https://alphacephei.com/vosk/models/vosk-model-spk-0.4.zip
-  description: Model for speaker identification, should work for all languages
-  size: 13M
   wer_speed: TBD

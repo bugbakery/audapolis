@@ -59,13 +59,14 @@ async def start_transcription(
     background_tasks: BackgroundTasks,
     lang: str,
     model: str,
+    diarize: bool = False,
     file: UploadFile = File(...),
     fileName: str = Form(...),
     auth: str = Depends(token_auth),
 ):
     task = tasks.add(TranscriptionTask(file.filename, TranscriptionState.QUEUED))
     background_tasks.add_task(
-        process_audio, lang, model, file.file, fileName, task.uuid
+        process_audio, lang, model, file.file, fileName, task.uuid, diarize
     )
     return task
 

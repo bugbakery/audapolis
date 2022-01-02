@@ -19,6 +19,7 @@ export function TranscribePage(): JSX.Element {
   );
 
   const [selectedModel, setSelectedModel] = useState(0);
+  const [diarize, setDiarize] = useState(true);
 
   const steps = [
     {
@@ -68,6 +69,13 @@ export function TranscribePage(): JSX.Element {
           <Link style={{ gridColumn: '2 / 2' }} onClick={() => dispatch(openModelManager())}>
             Download More Transcription Models
           </Link>
+
+          <span style={{ opacity: 0.5 }}>Auto-detect speakers?</span>
+          <input
+            type={'checkbox'}
+            checked={diarize}
+            onChange={(e) => setDiarize(e.target.checked)}
+          />
         </Form>
 
         <Button
@@ -77,6 +85,7 @@ export function TranscribePage(): JSX.Element {
             dispatch(
               startTranscription({
                 model: models[selectedModel],
+                diarize,
               })
             )
           }

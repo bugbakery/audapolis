@@ -5,7 +5,7 @@ description = ""
 authors = ["Karl Engelhardt <audapolis@ca.pajowu.de>", "Jaro Habiger <jarohabiger@googlemail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8, !=3.9.0"
+python = "^3.8, !=3.9.0, <3.11"
 fastapi = "^0.68.1"
 uvicorn = {extras = ["standard"], version = "^0.15.0"}
 python-multipart = "^0.0.5"
@@ -15,6 +15,12 @@ vosk = "^0.3.31"
 requests = "^2.26.0"
 OpenTimelineIO = "^0.14.0"
 pydantic = "^1.8.2"
+python_speech_features = "^0.6"
+numpy = "1.21.1"
+scipy = "^1.7.3"
+webrtcvad = "^2.0.10"
+scikit-learn = "^1.0.1"
+pydiar = "^0.0.3"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"

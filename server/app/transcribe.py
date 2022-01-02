@@ -53,16 +53,10 @@ def process_audio(
     rec = KaldiRecognizer(model, SAMPLE_RATE)
     rec.SetWords(True)
 
-    finished = False
-    while not finished:
-        block_start = task.processed
-        block_end = task.processed + VOSK_BLOCK_SIZE
-        data = audio[block_start * 1000 : block_end * 1000]
-        if block_end > task.total:
-            block_end = task.total
-            finished = True
-        rec.AcceptWaveform(data.get_array_of_samples().tobytes())
-        task.processed = block_end
+    for chunk in audio[:: VOSK_BLOCK_SIZE * 1000]:
+        rec.AcceptWaveform(chunk.get_array_of_samples().tobytes())
+        task.processed += len(chunk) / 1000
+
     task.state = TranscriptionState.POST_PROCESSING
     vosk_result = json.loads(rec.FinalResult())
     content = transform_vosk_result(fileName, vosk_result, audio.duration_seconds)

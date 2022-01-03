@@ -82,6 +82,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Import and trust codesigning cert
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
+        run: ./.github/workflows/import_cert.sh
+        env:
+          MAC_CERTS_PASSWORD: ${{ secrets.mac_certs_password }}
+          MAC_KEY: ${{ secrets.mac_certs }}
+          MAC_CERT: ${{ secrets.mac_cert }}
+
       # Build server
       - name: Set up python
         uses: actions/setup-python@v2
@@ -153,7 +162,6 @@ jobs:
           # This option will restart the build as many attempts as possible
           max_attempts: 3
 
-
           # Code Signing params
 
           # Base64-encoded code signing certificate for Windows
@@ -163,10 +171,9 @@ jobs:
           # windows_certs_password: ''
 
           # Base64-encoded code signing certificate for macOS
-          # mac_certs: ''
-
+          mac_certs: ${{ secrets.mac_certs }}
           # Password for decrypting `mac_certs`
-          # mac_certs_password: ''
+          mac_certs_password: ${{ secrets.mac_certs_password }}
 
   finalize:
     needs: [ upload_artifacts ]

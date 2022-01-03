@@ -1,5 +1,5 @@
 namespace React {
   interface CSSProperties {
-    WebkitAppRegion?: 'no-drag' | 'drag';
+    webkitAppRegion?: 'no-drag' | 'drag';
   }
 }

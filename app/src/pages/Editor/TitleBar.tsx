@@ -1,27 +1,37 @@
-import styled, { useTheme } from 'styled-components';
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
-import { FaPause, FaPlay } from 'react-icons/fa';
-import {
-  TitleBar,
-  TitleBarButton,
-  TitleBarGroup,
-  TitleBarSection,
-} from '../../components/TitleBar';
+import { TitleBar, TitleBarGroup, TitleBarSection } from '../../components/TitleBar';
 import { ActionCreators } from 'redux-undo';
-import { MdMovie, MdPerson, MdRedo, MdSave, MdShare, MdUndo, MdWatchLater } from 'react-icons/md';
 import {
   ExportState,
   saveDocument,
   toggleDisplaySpeakerNames,
   play,
-  pause,
   toggleDisplayVideo,
   setExportPopup,
+  pause,
 } from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
-import { FilmIcon, FloppyDiskIcon, PersonIcon } from 'evergreen-ui';
+import {
+  ExportIcon,
+  FilmIcon,
+  FloppyDiskIcon,
+  IconButton,
+  IconButtonProps,
+  Pane,
+  PersonIcon,
+  RedoIcon,
+  TimeIcon,
+  Tooltip,
+  UndoIcon,
+  Text,
+  PlayIcon,
+  PauseIcon,
+  majorScale,
+  PaneProps,
+} from 'evergreen-ui';
+import { ForwardedRef } from 'react';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -49,85 +59,74 @@ export function EditorTitleBar(): JSX.Element {
     <TitleBar>
       <TitleBarSection>
         <TitleBarGroup>
-          <TitleBarButton
-            // onClick={() => dispatch(ActionCreators.undo())}
-            disabled={!canUndo}
-            // icon={MdUndo}
-            // text={'undo'}
-          />
-          <TitleBarButton
-            // onClick={() => dispatch(ActionCreators.redo())}
-            disabled={!canRedo}
-            // icon={MdRedo}
-            // text={'redo'}
-          />
+          <Tooltip content={'undo'}>
+            <TitleBarButton
+              disabled={!canUndo}
+              icon={UndoIcon}
+              onClick={() => dispatch(ActionCreators.undo())}
+            />
+          </Tooltip>
+          <Tooltip content={'redo'}>
+            <TitleBarButton
+              icon={RedoIcon}
+              disabled={!canRedo}
+              onClick={() => dispatch(ActionCreators.redo())}
+            />
+          </Tooltip>
         </TitleBarGroup>
         <TitleBarGroup>
-          <TitleBarButton
-            clicked={displaySpeakerNames}
-            // onClick={() => dispatch(toggleDisplaySpeakerNames())}
-            // icon={PersonIcon}
-            // text={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}
-          />
-          <TitleBarButton
-            clicked={displayVideo}
-            // onClick={() => dispatch(toggleDisplayVideo())}
-            // icon={FilmIcon}
-            // text={displayVideo ? 'hide video' : 'display video'}
-          />
+          <Tooltip content={displaySpeakerNames ? 'hide speaker names' : 'display speaker names'}>
+            <TitleBarButton
+              icon={PersonIcon}
+              isActive={displaySpeakerNames}
+              onClick={() => dispatch(toggleDisplaySpeakerNames())}
+            />
+          </Tooltip>
+          <Tooltip content={displayVideo ? 'hide video' : 'display video'}>
+            <TitleBarButton
+              icon={FilmIcon}
+              isActive={displayVideo}
+              onClick={() => dispatch(toggleDisplayVideo())}
+            />
+          </Tooltip>
         </TitleBarGroup>
       </TitleBarSection>
 
-      <PlayerControls id={'player-controls'} />
+      <PlayerControls id={'player-controls' /* for joyride */} />
 
       <TitleBarSection>
         <TitleBarGroup>
-          <TitleBarButton
-            onClick={() => dispatch(saveDocument(false))}
-            disabled={!canSave}
-            icon={FloppyDiskIcon}
-            text={'save document'}
-          />
-          <TitleBarButton
-            // id={'export'}
-            // onClick={() => dispatch(exportDocument())}
-            disabled={exportRunning && canExport}
-            // icon={exportRunning ? MdWatchLater : MdShare}
-            // text={'export document'}
-          />
+          <Tooltip content={'save document'}>
+            <TitleBarButton
+              icon={FloppyDiskIcon}
+              disabled={!canSave}
+              onClick={() => dispatch(saveDocument(false))}
+            />
+          </Tooltip>
+
+          <Tooltip content={'export document'}>
+            {/* TODO: add circular progressbar here */}
+            <TitleBarButton
+              icon={exportRunning ? TimeIcon : ExportIcon}
+              disabled={exportRunning && canExport}
+              onClick={() => dispatch(saveDocument(false))}
+            />
+          </Tooltip>
         </TitleBarGroup>
       </TitleBarSection>
     </TitleBar>
   );
 }
 
-const PlayerControlsContainer = styled.div`
-  background-color: ${({ theme }) => theme.bg};
-  box-shadow: inset 0 0 3px ${({ theme }) => theme.fg.alpha(0.3).toString()};
-  border-radius: 20px;
-  height: 30px;
-  width: 200px;
-  font-size: 18px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  -webkit-app-region: no-drag;
+const TitleBarButton = React.forwardRef(function titleBarButton(
+  props: IconButtonProps,
+  ref: ForwardedRef<HTMLButtonElement>
+) {
+  return <IconButton ref={ref} borderRadius={8} appearance={'minimal'} iconSize={16} {...props} />;
+});
 
-  & > div {
-    padding-right: 30px;
-  }
-
-  & > svg {
-    height: 75%;
-    width: auto;
-    padding: 3px;
-  }
-`;
-
-function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
+function PlayerControls(props: PaneProps) {
   const time = useSelector((state: RootState) => state.editor.present?.currentTime) || 0;
-  const theme = useTheme();
   const formatInt = (x: number) => {
     const str = Math.floor(x).toString();
     return (str.length == 1 ? '0' + str : str).substr(0, 2);
@@ -136,12 +135,23 @@ function PlayerControls(props: React.HTMLAttributes<HTMLDivElement>) {
   const dispatch = useDispatch();
 
   return (
-    <PlayerControlsContainer {...props}>
-      <div>
+    <Pane
+      borderRadius={8}
+      border={'default'}
+      height={30}
+      width={200}
+      display={'flex'}
+      flexDirection={'row'}
+      alignItems={'center'}
+      justifyContent={'center'}
+      style={{ webkitAppRegion: 'no-drag' }}
+      {...props}
+    >
+      <Text marginRight={majorScale(2)}>
         {formatInt(time / 60)}:{formatInt(time % 60)}:{formatInt((time * 100) % 100)}
-      </div>
-      <FaPlay color={playing ? theme.playAccent : theme.fg} onClick={() => dispatch(play())} />
-      <FaPause color={playing ? theme.fg : theme.playAccent} onClick={() => dispatch(pause())} />
-    </PlayerControlsContainer>
+      </Text>
+      <PlayIcon color={playing ? 'info' : 'default'} onClick={() => dispatch(play())} size={19} />
+      <PauseIcon color={playing ? 'default' : 'info'} onClick={() => dispatch(pause())} size={19} />
+    </Pane>
   );
 }

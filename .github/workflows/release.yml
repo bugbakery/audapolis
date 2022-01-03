@@ -69,34 +69,6 @@ jobs:
         shell: bash
         run: echo "Currently on branch '${{ steps.extract_branch.outputs.branch }}'"
 
-  draft:
-    runs-on: ubuntu-latest
-    needs: [ get_version ]
-    if: ${{ github.event_name == 'push' && needs.get_version.outputs.branch == 'main' }}
-    steps:
-      - name: Waiting on All checks
-        uses: lewagon/wait-on-check-action@v0.2
-        with:
-          ref: ${{ github.ref }}
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          running-workflow-name: 'draft'
-
-      - name: Delete outdated drafts
-        uses: hugo19941994/delete-draft-releases@v1.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release Draft
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
-        with:
-          prerelease: true
-          draft: true
-          tag_name: v${{ needs.get_version.outputs.version }}
-          name: v${{ needs.get_versions.outputs.version }}
-          body: a pre-release of audapolis
-
   upload_artifacts:
     name: Build version
     needs: [ get_version ]
@@ -147,6 +119,13 @@ jobs:
 
       - name: Install dependencies
         run: npm --prefix app/ ci
+
+      - name: Delete outdated drafts
+        uses: hugo19941994/delete-draft-releases@v1.0.0
+        with:
+          threshold: 5d
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Compile app and upload artifacts
       - name: Compile & release Electron app

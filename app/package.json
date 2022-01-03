@@ -3,7 +3,7 @@
   "productName": "audapolis",
   "version": "0.0.1",
   "description": "an editor for spoken-word audio with automatic transcription",
-  "author": "audapolis team <audapolis@ca.pajowu.de>",
+  "author": "audapolis team <audapolis@pajowu.de>",
   "maintainers": [
     "pajowu <git@ca.pajowu.de>",
     "anuejn <jarohabiger@googlemail.com>"

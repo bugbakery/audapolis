@@ -30,12 +30,18 @@ const config = {
     ],
   },
   win: {
-    artifactName: "${name}-win-${arch}-${version}.${ext}",
+    artifactName: '${name}-win-${arch}-${version}.${ext}',
   },
   linux: {
-    target: ['AppImage', 'snap', 'deb', 'rpm', 'pacman'],
+    target: [
+      'AppImage',
+      // 'snap',
+      'deb',
+      'rpm',
+      'pacman',
+    ],
     category: 'Audio',
-    artifactName: "${name}-linux-${arch}-${version}.${ext}",
+    artifactName: '${name}-linux-${arch}-${version}.${ext}',
   },
   extraResources: ['./server/**', './generated/**'],
   asar: false,

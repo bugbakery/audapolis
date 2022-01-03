@@ -93,8 +93,8 @@ jobs:
         with:
           prerelease: true
           draft: true
-          tag_name: v${{ needs.get_version.outputs.build-version }}
-          name: v${{ needs.get_versions.outputs.build-version }}
+          tag_name: v${{ needs.get_version.outputs.version }}
+          name: v${{ needs.get_versions.outputs.version }}
           body: a pre-release of audapolis
 
   upload_artifacts:

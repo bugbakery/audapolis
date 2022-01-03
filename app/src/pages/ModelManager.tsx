@@ -17,6 +17,7 @@ import {
 } from 'evergreen-ui';
 import { Circle } from 'rc-progress';
 import { openLanding } from '../state/nav';
+import { ModelManagerTour } from '../tour/ModelManagerTour';
 
 export function ModelManagerPage(): JSX.Element {
   const dispatch = useDispatch();
@@ -42,10 +43,12 @@ export function ModelManagerPage(): JSX.Element {
 
   return (
     <AppContainer>
+      <ModelManagerTour hasDownloaded={downloaded.length > 0} />
+
       <TitleBar />
       <MainMaxWidthContainer>
         <Button
-          id={'back'}
+          id={'back' /* for tour */}
           onClick={() => dispatch(openLanding())}
           iconBefore={ArrowLeftIcon}
           appearance={'minimal'}
@@ -67,7 +70,11 @@ export function ModelManagerPage(): JSX.Element {
 
           <Table.Body>
             {downloaded.map((model, i) => (
-              <Table.Row id={`${model.lang}-${model.name}`} key={i}>
+              <Table.Row
+                id={`${model.lang}-${model.name}` /* for tour */}
+                className={'downloaded' /* for tour */}
+                key={i}
+              >
                 <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
                 <Table.TextCell>{model.name}</Table.TextCell>
                 <Table.TextCell isNumber>{model.size}</Table.TextCell>
@@ -80,7 +87,7 @@ export function ModelManagerPage(): JSX.Element {
             ))}
 
             {downloading.map((model, i) => (
-              <Table.Row id={`${model.lang}-${model.name}`} key={i}>
+              <Table.Row id={`${model.lang}-${model.name}` /* for tour */} key={i}>
                 <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
                 <Table.TextCell>{model.name}</Table.TextCell>
                 <Table.TextCell isNumber>{model.size}</Table.TextCell>
@@ -101,13 +108,14 @@ export function ModelManagerPage(): JSX.Element {
             ))}
 
             {notDownloaded.map((model, i) => (
-              <Table.Row id={`${model.lang}-${model.name}`} key={i}>
+              <Table.Row id={`${model.lang}-${model.name}` /* for tour */} key={i}>
                 <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
                 <Table.TextCell>{model.name}</Table.TextCell>
                 <Table.TextCell isNumber>{model.size}</Table.TextCell>
                 <Table.Cell {...lastColumnProps}>
                   <Tooltip content={'download model'}>
                     <IconButton
+                      className={'download' /* for tour */}
                       icon={CloudDownloadIcon}
                       onClick={() => dispatch(downloadModel(model))}
                     />
@@ -119,7 +127,6 @@ export function ModelManagerPage(): JSX.Element {
         </Table>
 
         <Button
-          id={'back'}
           onClick={() => dispatch(openLanding())}
           iconBefore={ArrowLeftIcon}
           marginY={majorScale(2)}

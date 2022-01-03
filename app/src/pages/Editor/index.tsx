@@ -6,10 +6,10 @@ import { Document } from './Document';
 import { Player } from './Player';
 import { KeyboardEventHandler } from 'react';
 import { insertParagraphBreak, togglePlaying } from '../../state/editor';
-import { Joyride } from '../../components/Joyride';
 import { useDispatch, useSelector } from 'react-redux';
 import { ExportDocumentPopup } from './ExportDocumentPopup';
 import { RootState } from '../../state';
+import { Tour } from '../../components/Tour';
 
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
@@ -90,7 +90,7 @@ export function EditorPage(): JSX.Element {
 
   return (
     <AppContainer tabIndex={-1} onKeyDown={handleKeyPress} ref={(ref) => ref?.focus()}>
-      <Joyride steps={steps} page={'editor'} />
+      <Tour steps={steps} page={'editor'} />
       <EditorTitleBar />
       {popupState ? <ExportDocumentPopup /> : <></>}
 

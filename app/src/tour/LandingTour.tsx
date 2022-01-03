@@ -1,13 +1,11 @@
-import { Joyride } from '../components/Joyride';
+import { Tour } from '../components/Tour';
 import * as React from 'react';
 import { Text } from 'evergreen-ui';
 
 const steps = [
   {
-    target: 'body',
-    placement: 'center' as const,
     title: <>Welcome to audapolis!</>,
-    content: (
+    body: (
       <Text>
         This short introduction will guide you through the basic features and get you up to speed.
       </Text>
@@ -15,7 +13,7 @@ const steps = [
   },
   {
     target: '#import',
-    content: (
+    body: (
       <Text>
         You can import your media files here. They will automatically be transcribed later. You can
         for example start with your favourite speech.
@@ -24,6 +22,6 @@ const steps = [
   },
 ];
 
-export function LandingJoyride(): JSX.Element {
-  return <Joyride steps={steps} page={'landing'} />;
+export function LandingTour(): JSX.Element {
+  return <Tour steps={steps} page={'landing'} />;
 }

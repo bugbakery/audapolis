@@ -10,6 +10,7 @@ import { ipcRenderer } from 'electron';
 import styled from 'styled-components';
 import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
 import { Button, Link } from 'evergreen-ui';
+import { ModelManagerTour } from '../tour/ModelManagerTour';
 
 const CenteredH1 = styled.h1`
   margin: 1rem auto;

@@ -9,7 +9,7 @@ import { openLanding, openModelManager } from '../state/nav';
 import { useState } from 'react';
 import { Button, Checkbox, Combobox, Dialog, FormField, Link, majorScale, Text } from 'evergreen-ui';
 import * as path from 'path';
-import { TranscribeJoyride } from '../joyride/TranscribeJoyride';
+import { TranscribeTour } from '../tour/TranscribeTour';
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
@@ -23,7 +23,7 @@ export function TranscribePage(): JSX.Element {
 
   return (
     <AppContainer>
-      <TranscribeJoyride />
+      <TranscribeTour />
 
       <TitleBar />
       <Dialog
@@ -37,7 +37,7 @@ export function TranscribePage(): JSX.Element {
             </Button>
 
             <Button
-              id={'start' /* for joyride */}
+              id={'start' /* for tour */}
               tabIndex={0}
               marginLeft={8}
               appearance="primary"
@@ -70,7 +70,7 @@ export function TranscribePage(): JSX.Element {
             </Link>
           }
           marginBottom={majorScale(3)}
-          id={'model' /* for joyride */}
+          id={'model' /* for tour */}
         >
           <Combobox
             width={'100%'}

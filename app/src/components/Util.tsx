@@ -26,7 +26,7 @@ export function MainMaxWidthContainer({
   width = 800,
 }: {
   children: JSX.Element[];
-  width: number;
+  width?: number;
 }): JSX.Element {
   return (
     <Pane width={'100%'} padding={20} display={'flex'} flexDirection={'column'} overflowY={'auto'}>

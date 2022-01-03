@@ -63,6 +63,9 @@
     "vite-plugin-commonjs-externals": "^0.1.1"
   },
   "dependencies": {
+    "@emotion/react": "^11.7.1",
+    "@reactour/mask": "^0.4.0",
+    "@reactour/utils": "^0.2.1",
     "@reduxjs/toolkit": "^1.6.1",
     "@tedconf/fessonia": "^2.2.1",
     "appdirectory": "^0.1.0",
@@ -78,7 +81,6 @@
     "react-dom": "^17.0.2",
     "react-hot-toast": "^2.1.1",
     "react-icons": "^4.2.0",
-    "react-joyride": "^2.3.2",
     "react-media-hook": "^0.4.9",
     "react-redux": "^7.2.5",
     "redux-undo": "^1.0.1",

@@ -6,9 +6,9 @@ import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { openModelManager } from '../state/nav';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
-import { resetJoyride } from '../components/Joyride';
+import { resetTour } from '../components/Tour';
 import { Button, CommentIcon, IconButton, SettingsIcon, Tooltip } from 'evergreen-ui';
-import { LandingJoyride } from '../joyride/LandingJoyride';
+import { LandingTour } from '../tour/LandingTour';
 
 const BottomRightContainer = styled.div`
   position: absolute;
@@ -25,13 +25,13 @@ export function LandingPage(): JSX.Element {
 
   return (
     <AppContainer>
-      <LandingJoyride />
+      <LandingTour />
       <TitleBar />
       <MainCenterColumn>
         <Button
           appearance="primary"
           onClick={() => dispatch(transcribeFile())}
-          id={'import' /* for joyride */}
+          id={'import' /* for tour */}
           size={'large'}
           marginY={5}
           width={300}
@@ -58,7 +58,7 @@ export function LandingPage(): JSX.Element {
       </MainCenterColumn>
       <BottomRightContainer>
         <Tooltip content="restart help tour">
-          <IconButton icon={CommentIcon} onClick={() => resetJoyride()} />
+          <IconButton icon={CommentIcon} onClick={() => resetTour()} />
         </Tooltip>
         <Tooltip content="manage transcription models">
           <IconButton icon={SettingsIcon} onClick={() => dispatch(openModelManager())} />

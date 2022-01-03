@@ -127,6 +127,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # From https://github.com/samuelmeuli/action-electron-builder/issues/42
+      - name: Install libarchive-tools for pacman build # Related https://github.com/electron-userland/electron-builder/issues/4181
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get install libarchive-tools
+
       # Compile app and upload artifacts
       - name: Compile & release Electron app
         uses: samuelmeuli/action-electron-builder@v1

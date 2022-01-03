@@ -18,7 +18,7 @@
     "prebuild": "node scripts/generate_licenses.mjs generated/licenses.zip server/licenses.md",
     "build": "node scripts/build.js",
     "predist": "cross-env MODE=production npm run build",
-    "dist": "electron-builder build --config electron-builder.config.js --dir --config.asar=false",
+    "dist": "electron-builder build --config electron-builder.config.js",
     "test": "jest",
     "start": "node scripts/dev.js",
     "lint": "npm-run-all --continue-on-error lint:*",

@@ -7,6 +7,8 @@ function Color(x: string): RawColor & string {
 
 // you can add new fields to the theme in custom.d.ts!
 
+//TODO do theming of evergreen:
+//  * darker gray for active buttons
 export const darkTheme: DefaultTheme = {
   bg: Color('#282828'),
   bgAccent: Color('#444'),

@@ -1,9 +1,8 @@
 import styled from 'styled-components';
 import * as React from 'react';
-import { ToggleIconButton } from './Controls';
 import { platform } from 'os';
 import { ipcRenderer } from 'electron';
-import { CrossIcon, MenuIcon, Heading, IconButton, Pane } from 'evergreen-ui';
+import { CrossIcon, MenuIcon, Heading, IconButton } from 'evergreen-ui';
 
 function getWindowControlsRect(): DOMRect {
   const windowControlsOverlay = window.navigator.windowControlsOverlay;
@@ -30,12 +29,13 @@ function WindowControlsButton({
     const rect = getWindowControlsRect();
     return (
       <IconButton
+        iconSize={16}
         width={rect.x}
         height={rect.height}
         position={'absolute'}
         top={0}
         {...{ [side]: 0 }}
-        style={{ WebkitAppRegion: 'no-drag' }}
+        style={{ webkitAppRegion: 'no-drag' }}
         appearance={'minimal'}
         onClick={onClick}
         icon={icon}
@@ -91,10 +91,6 @@ export function TitleBar({ children }: { children?: React.ReactNode }): JSX.Elem
   );
 }
 
-export const TitleBarButton = styled(ToggleIconButton)`
-  -webkit-app-region: no-drag;
-`;
-
 export const TitleBarSection = styled.div`
   display: flex;
   flex-direction: row;
@@ -109,5 +105,6 @@ export const TitleBarGroup = styled.div`
   flex-grow: 0;
   & > * {
     margin: 0 5px;
+    -webkit-app-region: no-drag;
   }
 `;

@@ -20,15 +20,25 @@ const config = {
   },
   mac: {
     category: 'public.app-category.productivity', // this is also where libreoffice lives
-    target: 'dmg',
     darkModeSupport: true,
+    artifactName: '${name}-mac-${arch}-${version}.${ext}',
+    target: [
+      {
+        target: 'dmg',
+        arch: ['x64', 'arm64'],
+      },
+    ],
+  },
+  win: {
+    artifactName: "${name}-win-${arch}-${version}.${ext}",
   },
   linux: {
-    target: 'AppImage',
+    target: ['AppImage', 'snap', 'deb', 'rpm', 'pacman'],
     category: 'Audio',
+    artifactName: "${name}-linux-${arch}-${version}.${ext}",
   },
   extraResources: ['./server/**', './generated/**'],
-  asar: false
+  asar: false,
 };
 
 module.exports = config;

@@ -25,22 +25,16 @@ import {
   setSelection,
   setTime,
 } from '../../state/editor';
-import { Heading } from 'evergreen-ui';
+import { Heading, majorScale, Pane, Text } from 'evergreen-ui';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
   width: 100%;
+  max-width: ${({ displaySpeakerNames }) => (displaySpeakerNames ? 950 : 800)}px;
+  transition: max-width 0.3s;
   line-height: 1.5;
   padding: 30px 30px 200px;
 
-  display: grid;
-  row-gap: 1em;
-  column-gap: 1em;
-  transition: all 1s;
-  grid-template-columns: ${(props) => (props.displaySpeakerNames ? '100' : '0')}px min(
-      800px,
-      calc(100% - ${(props) => (props.displaySpeakerNames ? '100' : '0')}px)
-    );
   justify-content: center;
 
   & > * {
@@ -178,8 +172,17 @@ export function Document(): JSX.Element {
     >
       <Cursor />
       <SelectionMenu documentRef={ref} />
-      <FileNameDisplay path={fileName} />
       <SelectionApply documentRef={ref} />
+
+      <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(4)}>
+        <Pane
+          width={displaySpeakerNames ? 150 : 0}
+          transition={'width 0.3s'}
+          flexShrink={0}
+          marginRight={majorScale(1)}
+        />
+        <FileNameDisplay path={fileName} />
+      </Pane>
 
       {content.length > 0 ? (
         content.map((p, i) => {
@@ -190,7 +193,8 @@ export function Document(): JSX.Element {
               speaker={p.speaker}
               content={p.content}
               paragraphIdx={i}
-              color={displaySpeakerNames ? speakerColor : theme.fg}
+              color={speakerColor}
+              displaySpeakerNames={displaySpeakerNames}
             />
           );
         })
@@ -201,6 +205,7 @@ export function Document(): JSX.Element {
           content={[{ type: 'artificial_silence', absoluteStart: 0, length: 0 }]}
           paragraphIdx={0}
           color={theme.fg}
+          displaySpeakerNames={displaySpeakerNames}
         />
       )}
     </DocumentContainer>
@@ -257,9 +262,9 @@ function FileNameDisplay({ path }: { path: string }) {
   const base = basename(path, extension);
 
   return (
-    <Heading style={{ userSelect: 'none' }}>
+    <Heading userSelect={'none'} fontWeight={400} size={600}>
       {base}
-      <span style={{ fontWeight: 'lighter' }}>{extension}</span>
+      <span style={{ fontWeight: 100 }}>{extension}</span>
     </Heading>
   );
 }

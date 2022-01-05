@@ -35,7 +35,7 @@ function WindowControlsButton({
         position={'absolute'}
         top={0}
         {...{ [side]: 0 }}
-        style={{ webkitAppRegion: 'no-drag' }}
+        style={{ WebkitAppRegion: 'no-drag' }}
         appearance={'minimal'}
         onClick={onClick}
         icon={icon}

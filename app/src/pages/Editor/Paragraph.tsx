@@ -5,18 +5,67 @@ import { useDispatch } from 'react-redux';
 import { setWord, reassignParagraph, renameSpeaker } from '../../state/editor';
 import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
 import { assertSome } from '../../util';
-import { Button, Dialog } from 'evergreen-ui';
+import { Button, majorScale, Pane, PaneProps, Popover, Position, Text } from 'evergreen-ui';
 
-const ParagraphContainer = styled.div``;
-const LongSilenceSpan = styled.span`
-  font-family: 'quarter_rest';
-`;
+export function Paragraph({
+  speaker,
+  content,
+  paragraphIdx,
+  color,
+  displaySpeakerNames,
+}: ParagraphType<TimedParagraphItem> & {
+  paragraphIdx: number;
+  color: string;
+  displaySpeakerNames: boolean;
+}): JSX.Element {
+  const dispatch = useDispatch();
+
+  return (
+    <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
+      <Speaker
+        name={speaker}
+        paragraphIdx={paragraphIdx}
+        color={color.toString()}
+        width={displaySpeakerNames ? 150 : 0}
+        transition={'width 0.3s'}
+        flexShrink={0}
+        marginRight={majorScale(1)}
+      />
+      <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 1s'}>
+        {content.map((item, i) => {
+          const commonProps = {
+            key: i,
+            'data-item': `${paragraphIdx}-${i}`,
+          };
+
+          if (item.type == 'word') {
+            return (
+              <Word
+                word={item.word}
+                changehandler={(text: string) => {
+                  dispatch(setWord({ text, absoluteStart: item.absoluteStart }));
+                }}
+                {...commonProps}
+              />
+            );
+          } else if (item.type == 'silence' || item.type == 'artificial_silence') {
+            if (item.length > 0.4) {
+              return <LongSilence {...commonProps} />;
+            } else {
+              return <ShortSilence preserve={i == 0 || i == content.length - 1} {...commonProps} />;
+            }
+          }
+        })}
+      </Pane>
+    </Pane>
+  );
+}
 
 function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
-    <LongSilenceSpan className={'item'} {...props}>
+    <span style={{ fontFamily: 'quarter_rest' }} className={'item'} {...props}>
       {' _'}
-    </LongSilenceSpan>
+    </span>
   );
 }
 
@@ -108,17 +157,6 @@ export function Word({
   );
 }
 
-const SpeakerPopupButton = styled(Button)`
-  border: none;
-  display: block;
-  padding: 10px;
-  width: 100%;
-  margin: 0;
-  &:hover {
-    background: ${({ theme }) => theme.fg.alpha(0.3).toString()};
-  }
-`;
-
 enum EditingType {
   Reassign,
   Rename,
@@ -133,46 +171,71 @@ const SpeakerInput = styled.input`
   width: 100%;
   font-size: inherit;
 `;
-const SpeakerLabel = styled.div`
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-  user-select: none;
-`;
+
 function Speaker({
   name,
   paragraphIdx,
+  color,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { name: string; paragraphIdx: number }): JSX.Element {
+}: PaneProps & {
+  name: string;
+  paragraphIdx: number;
+}): JSX.Element {
   const [editing, setEditing] = useState(null as SpeakerEditing);
   const dispatch = useDispatch();
 
   if (!editing) {
+    const EditingStartButton = ({
+      type,
+      bottom,
+      ...props
+    }: {
+      type: EditingType;
+      children: string;
+      bottom?: boolean;
+    }) => (
+      <Button
+        {...props}
+        onClick={() => setEditing({ isNew: true, type, currentText: name })}
+        display={'block'}
+        margin={majorScale(1)}
+        marginBottom={bottom ? majorScale(1) : 0}
+      />
+    );
+
     return (
-      <div {...props}>
-        <Dialog
-        // trigger={() => <SpeakerLabel>{name}</SpeakerLabel>}
-        // position={['right center', 'bottom center', 'top center']}
-        // on={['click']}
+      <Pane
+        {...props}
+        textOverflow={'ellipsis'}
+        overflow={'hidden'}
+        whiteSpace={'nowrap'}
+        userSelect={'none'}
+      >
+        <Popover
+          position={Position.RIGHT}
+          content={
+            <Pane display={'flex'} flexDirection={'column'}>
+              <EditingStartButton type={EditingType.Rename}>Rename Speaker</EditingStartButton>
+              <EditingStartButton type={EditingType.Reassign} bottom>
+                Reassign Speaker
+              </EditingStartButton>
+            </Pane>
+          }
         >
-          <SpeakerPopupButton
-            onClick={() => setEditing({ isNew: true, type: EditingType.Rename, currentText: name })}
+          <Text
+            maxWidth={props.width}
+            paddingRight={majorScale(2)}
+            display={'inline-block'}
+            color={color}
           >
-            Rename Speaker
-          </SpeakerPopupButton>
-          <SpeakerPopupButton
-            onClick={() =>
-              setEditing({ isNew: true, type: EditingType.Reassign, currentText: name })
-            }
-          >
-            Reassign Speaker
-          </SpeakerPopupButton>
-        </Dialog>
-      </div>
+            {name}
+          </Text>
+        </Popover>
+      </Pane>
     );
   } else {
     return (
-      <div {...props}>
+      <Pane {...props}>
         <SpeakerInput
           value={editing.currentText}
           ref={(ref) => {
@@ -207,48 +270,7 @@ function Speaker({
             setEditing(null);
           }}
         />
-      </div>
+      </Pane>
     );
   }
-}
-
-export function Paragraph({
-  speaker,
-  content,
-  paragraphIdx,
-  color,
-}: ParagraphType<TimedParagraphItem> & { paragraphIdx: number; color: string }): JSX.Element {
-  const dispatch = useDispatch();
-
-  return (
-    <>
-      <Speaker name={speaker} paragraphIdx={paragraphIdx} style={{ color: color }} />
-      <ParagraphContainer style={{ color: color }}>
-        {content.map((item, i) => {
-          const commonProps = {
-            key: i,
-            'data-item': `${paragraphIdx}-${i}`,
-          };
-
-          if (item.type == 'word') {
-            return (
-              <Word
-                word={item.word}
-                changehandler={(text: string) => {
-                  dispatch(setWord({ text, absoluteStart: item.absoluteStart }));
-                }}
-                {...commonProps}
-              />
-            );
-          } else if (item.type == 'silence' || item.type == 'artificial_silence') {
-            if (item.length > 0.4) {
-              return <LongSilence {...commonProps} />;
-            } else {
-              return <ShortSilence preserve={i == 0 || i == content.length - 1} {...commonProps} />;
-            }
-          }
-        })}
-      </ParagraphContainer>
-    </>
-  );
 }

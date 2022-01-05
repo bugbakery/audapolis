@@ -8,9 +8,10 @@ import { MdVideocamOff } from 'react-icons/md';
 
 const PlayerContainer = styled.div<{ visible: boolean }>`
   position: absolute;
-  bottom: 0;
+  bottom: ${({ visible }) => (visible ? 0 : -300)}px;
+  transition: bottom 0.3s;
   right: 0;
-  display: ${({ visible }) => (visible ? 'block' : 'none')};
+  display: block;
 `;
 const PlayerContainerInner = styled.div`
   position: relative;

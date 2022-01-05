@@ -144,7 +144,7 @@ function PlayerControls(props: PaneProps) {
       flexDirection={'row'}
       alignItems={'center'}
       justifyContent={'center'}
-      style={{ webkitAppRegion: 'no-drag' }}
+      style={{ WebkitAppRegion: 'no-drag' }}
       {...props}
     >
       <Text marginRight={majorScale(2)}>

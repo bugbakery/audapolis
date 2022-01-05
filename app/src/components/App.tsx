@@ -9,7 +9,7 @@ import { TranscribingPage } from '../pages/Transcribing';
 import { ModelManagerPage } from '../pages/ModelManager';
 import styled, { ThemeProvider } from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
-import { darkTheme, lightTheme } from './theme';
+import { lightTheme } from './theme';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
 import { ipcRenderer } from 'electron';
@@ -20,6 +20,20 @@ const AppContainer = styled.div`
   width: 100%;
   height: 100%;
   background-color: ${({ theme }) => theme.bg};
+
+  & ::-webkit-scrollbar {
+    width: 16px; /* width of the entire scrollbar */
+  }
+
+  & ::-webkit-scrollbar-track {
+    background: transparent; /* color of the tracking area */
+  }
+
+  & ::-webkit-scrollbar-thumb {
+    background-color: darkgray; /* color of the scroll thumb */
+    border-radius: 20px; /* roundness of the scroll thumb */
+    border: 5px solid white; /* creates padding around scroll thumb */
+  }
 `;
 export default function App(): JSX.Element {
   const isDark = useMediaPredicate('(prefers-color-scheme: dark)');

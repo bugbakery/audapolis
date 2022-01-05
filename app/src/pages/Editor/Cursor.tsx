@@ -1,51 +1,40 @@
-import styled from 'styled-components';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { DocumentGenerator, getItemsAtTime, Paragraph } from '../../core/document';
-
-const CursorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: stretch;
-  height: calc(1em + 8px);
-  position: absolute;
-  transform: translate(calc(-50% + 1px), -6px);
-  user-select: none;
-  pointer-events: none;
-`;
-const CursorPoint = styled.div`
-  width: 8px;
-  height: 8px;
-  margin-bottom: -2px;
-  border-radius: 100%;
-  background-color: ${({ theme }) => theme.playAccent};
-  transition: all 0.1s;
-`;
-const CursorNeedle = styled.div`
-  width: 2px;
-  height: 100%;
-  background-color: ${({ theme }) => theme.playAccent};
-`;
+import { Pane, useTheme } from 'evergreen-ui';
 
 export function Cursor(): JSX.Element {
-  // we do this to re-render the cursor when the window resizes
+  const theme = useTheme();
+
+  const ref = useRef(null as null | HTMLDivElement);
+
+  // we do this to re-render the cursor when the parent container size changes
   const [_, setWindowSize] = useState(null as null | { height: number; width: number });
   useEffect(() => {
-    window.addEventListener('resize', () =>
-      setWindowSize({ height: window.innerHeight, width: window.innerWidth })
-    );
-  }, []);
+    if (!ref.current?.parentElement) return;
 
-  const [ref, setRef] = useState<HTMLDivElement | null>(null);
+    const observer = new ResizeObserver(() => {
+      setWindowSize({ height: window.innerHeight, width: window.innerWidth });
+    });
+    observer.observe(ref.current.parentElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [ref]);
+
   const content = useSelector((state: RootState) => state.editor.present?.document?.content);
   const time = useSelector((state: RootState) => state.editor.present?.currentTime);
   let left = -100;
   let top = -100;
-  if (ref?.parentElement && content != null && time != null) {
-    const { x, y } = computeCursorPosition(content, ref.parentElement as HTMLDivElement, time) || {
+  if (ref.current?.parentElement && content != null && time != null) {
+    const { x, y } = computeCursorPosition(
+      content,
+      ref.current?.parentElement as HTMLDivElement,
+      time
+    ) || {
       x: -100,
       y: -100,
     };
@@ -54,18 +43,30 @@ export function Cursor(): JSX.Element {
   }
 
   return (
-    <CursorContainer
-      id={'cursor'}
-      style={{ left, top }}
-      ref={(newRef) => {
-        if (ref != newRef) {
-          setRef(newRef);
-        }
-      }}
+    <Pane
+      id={'cursor' /* for joyride */}
+      display={'flex'}
+      flexDirection={'column'}
+      alignItems={'center'}
+      justifyContent={'stretch'}
+      height={'calc(1em + 8px)'}
+      position={'absolute'}
+      transform={'translate(calc(-50% + 1px), -6px)'}
+      userSelect={'none'}
+      pointerEvents={'none'}
+      style={{ left, top } /* we inject this directly for performance reasons */}
+      ref={ref}
     >
-      <CursorPoint />
-      <CursorNeedle />
-    </CursorContainer>
+      <Pane
+        width={8}
+        height={8}
+        marginBottom={-2}
+        borderRadius={'100%'}
+        backgroundColor={theme.colors.selected}
+        transition={'all 0.1s'}
+      />
+      <Pane width={2} height={'100%'} backgroundColor={theme.colors.selected} />
+    </Pane>
   );
 }
 

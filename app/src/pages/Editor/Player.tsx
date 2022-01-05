@@ -9,7 +9,7 @@ import { CrossedOutIcon } from '../../components/Util';
 
 const PlayerContainer = styled.div<{ visible: boolean }>`
   position: absolute;
-  bottom: ${({ visible }) => (visible ? 0 : -300)}px;
+  bottom: ${({ visible }) => (visible ? 0 : -100)}%;
   transition: bottom 0.3s;
   right: 0;
   display: block;

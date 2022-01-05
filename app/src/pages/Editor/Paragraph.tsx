@@ -27,11 +27,11 @@ export function Paragraph({
         paragraphIdx={paragraphIdx}
         color={color.toString()}
         width={displaySpeakerNames ? 150 : 0}
-        transition={'width 0.3s'}
+        transition={'width 0.2s'}
         flexShrink={0}
         marginRight={majorScale(1)}
       />
-      <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 1s'}>
+      <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 0.5s'}>
         {content.map((item, i) => {
           const commonProps = {
             key: i,

@@ -31,7 +31,7 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
   width: 100%;
   max-width: ${({ displaySpeakerNames }) => (displaySpeakerNames ? 950 : 800)}px;
-  transition: max-width 0.3s;
+  transition: max-width 0.2s;
   line-height: 1.5;
   padding: 30px 30px 200px;
 
@@ -179,7 +179,7 @@ export function Document(): JSX.Element {
       <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(4)}>
         <Pane
           width={displaySpeakerNames ? 150 : 0}
-          transition={'width 0.3s'}
+          transition={'width .2s'}
           flexShrink={0}
           marginRight={majorScale(1)}
         />

@@ -3,7 +3,7 @@ import { AppContainer, BackButton, MainMaxWidthContainer } from '../components/U
 import { TitleBar } from '../components/TitleBar';
 import * as fs from 'fs';
 import JSZip from 'jszip';
-import { useState } from 'react';
+import { useEffect, useState } from "react";
 import { ipcRenderer } from 'electron';
 import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
 import { Heading, Link, majorScale, Paragraph } from 'evergreen-ui';
@@ -26,7 +26,9 @@ function openLicenses() {
 export function AboutPage(): JSX.Element {
   const [aboutData, setAboutData] = useState({ version: 'n/a' });
 
-  ipcRenderer.invoke('get-about').then((x) => setAboutData(x));
+  useEffect(() => {
+    ipcRenderer.invoke('get-about').then((x) => setAboutData(x));
+  }, []);
 
   return (
     <AppContainer>

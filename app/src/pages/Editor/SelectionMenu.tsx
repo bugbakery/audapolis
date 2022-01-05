@@ -1,14 +1,15 @@
 import { useDispatch } from 'react-redux';
 import { exportSelection } from '../../state/editor';
 import * as React from 'react';
-import { HTMLAttributes, RefObject, useState } from 'react';
+import { HTMLAttributes, RefObject, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { useDocumentEvent, useWindowEvent } from '../../util/useListener';
+import { useDocumentEvent } from '../../util/useListener';
 import { Button } from 'evergreen-ui';
-const SelectionMenuContainer = styled.div<{ noMouse: boolean }>`
+import { useElementSize } from '../../util/useElementSize';
+const SelectionMenuContainer = styled.div<{ noMouse: boolean; centerHorizontally: boolean }>`
   position: absolute;
   display: block;
-  transform: translate(-50%, -100%);
+  transform: translate(${({ centerHorizontally }) => (centerHorizontally ? '-50%' : '0')}, -100%);
   user-select: none;
   ${(props) =>
     props.noMouse &&
@@ -25,19 +26,25 @@ export function SelectionMenu({
   const dispatch = useDispatch();
 
   const [selection, setSelection] = useState(
-    null as null | { left: number; right: number; top: number }
+    null as null | { left: number; right: number; top: number; firstRowLeft: number }
   );
   const listener = () => {
     const selection = document.getSelection();
     if (selection && !selection?.isCollapsed) {
       const { left, right, top } = selection?.getRangeAt(0).getBoundingClientRect();
-      setSelection({ left, right, top });
+      const firstRowLeft =
+        getElementFromNode(selection?.getRangeAt(0).startContainer)?.getBoundingClientRect()
+          ?.left || 0;
+      setSelection({ left, right, top, firstRowLeft });
     } else {
       setSelection(null);
     }
   };
   useDocumentEvent('selectionchange', listener);
-  useWindowEvent('resize', listener);
+  useElementSize(documentRef.current, listener);
+
+  const containerRef = useRef(null as null | HTMLDivElement);
+  const containerSize = useElementSize(containerRef.current);
 
   const [mouseDown, setMouseDown] = useState(false);
   useDocumentEvent('mousedown', () => setMouseDown(true));
@@ -48,10 +55,16 @@ export function SelectionMenu({
   if (selection && documentBoundingRect) {
     return (
       <SelectionMenuContainer
+        ref={containerRef}
         style={{
-          top: selection.top - documentBoundingRect.top,
-          left: (selection.left + selection.right) / 2 - documentBoundingRect.left,
+          top: `calc(${selection.top - documentBoundingRect.top}px - 0.5em`,
+          left: Math.min(
+            Math.max((selection.left + selection.right) / 2, selection.firstRowLeft) -
+              documentBoundingRect.left,
+            documentBoundingRect.width - (containerSize?.width || 0)
+          ),
         }}
+        centerHorizontally={(selection.left + selection.right) / 2 > selection.firstRowLeft}
         noMouse={mouseDown}
         {...props}
       >
@@ -62,4 +75,12 @@ export function SelectionMenu({
     );
   }
   return <></>;
+}
+
+function getElementFromNode(node: Node): Element | null {
+  if (node.nodeType == 1) {
+    return node as Element;
+  } else {
+    return node.parentElement;
+  }
 }

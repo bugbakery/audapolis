@@ -15,12 +15,12 @@ import { AboutPage } from '../pages/About';
 import { ipcRenderer } from 'electron';
 import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider as EvergreenThemeProvider } from 'evergreen-ui';
+import { Theme, ThemeProvider as EvergreenThemeProvider } from 'evergreen-ui';
 
-const AppContainer = styled.div`
+const AppContainer = styled.div<{ theme: Theme }>`
   width: 100%;
   height: 100%;
-  background-color: ${({ theme }) => theme.bg};
+  background-color: ${({ theme }) => theme.colors.overlayBackgroundColor};
 
   & ::-webkit-scrollbar {
     width: 16px; /* width of the entire scrollbar */
@@ -43,7 +43,7 @@ export default function App(): JSX.Element {
   return (
     <EvergreenThemeProvider value={theme}>
       <ReduxProvider store={store}>
-        <AppContainer>
+        <AppContainer theme={theme}>
           <CurrentPage />
           <Toaster position="bottom-center" reverseOrder={false} />
         </AppContainer>

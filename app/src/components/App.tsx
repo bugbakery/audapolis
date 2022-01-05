@@ -8,7 +8,7 @@ import { EditorPage } from '../pages/Editor';
 import { TranscribingPage } from '../pages/Transcribing';
 import { ModelManagerPage } from '../pages/ModelManager';
 import styled from 'styled-components';
-import { useMediaPredicate } from 'react-media-hook';
+// import { useMediaPredicate } from 'react-media-hook';
 import { lightTheme } from './theme';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
@@ -37,7 +37,8 @@ const AppContainer = styled.div<{ theme: Theme }>`
   }
 `;
 export default function App(): JSX.Element {
-  const isDark = useMediaPredicate('(prefers-color-scheme: dark)');
+  // TODO: re-enable dark theme
+  // const isDark = useMediaPredicate('(prefers-color-scheme: dark)');
   const theme = lightTheme; //isDark ? darkTheme : lightTheme;
 
   return (

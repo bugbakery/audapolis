@@ -1,8 +1,6 @@
 import { FileFilter, ipcRenderer } from 'electron';
-import { IconButton } from './Controls';
-import { MdFolderOpen } from 'react-icons/md';
 import React from 'react';
-import styled from 'styled-components';
+import { FolderOpenIcon, Group, IconButton, TextInput, Tooltip } from 'evergreen-ui';
 
 export function FilePicker({
   value,
@@ -29,18 +27,12 @@ export function FilePicker({
   };
 
   return (
-    <IconButton
-      icon={MdFolderOpen}
-      text={'choose location...'}
-      style={{ marginLeft: 10 }}
-      onClick={onClick}
-    />
+    <Tooltip content="choose location...">
+      <IconButton icon={FolderOpenIcon} onClick={onClick} />
+    </Tooltip>
   );
 }
 
-const FilePickerContainer = styled.span`
-  display: flex;
-`;
 export function FilePickerWithText(props: {
   value: string;
   onChange: (newValue: string) => void;
@@ -48,16 +40,9 @@ export function FilePickerWithText(props: {
   filters: FileFilter[];
 }): JSX.Element {
   return (
-    <FilePickerContainer>
-      <input
-        type="text"
-        value={props.value}
-        ref={(element) => {
-          if (element) element.scrollLeft = element.scrollWidth;
-        }}
-        onChange={(e) => props.onChange(e.target.value)}
-      />
+    <Group width={'100%'}>
+      <TextInput readOnly value={props.value} flex={1} textOverflow="ellipsis" paddingRight={0} />
       <FilePicker {...props} />
-    </FilePickerContainer>
+    </Group>
   );
 }

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useSelector } from 'react-redux';
 import { TitleBar } from '../components/TitleBar';
-import { AppContainer, MainCenterColumn, MainMaxWidthContainer } from '../components/Util';
+import { AppContainer, MainMaxWidthContainer } from '../components/Util';
 import { RootState } from '../state';
 import { Line } from 'rc-progress';
 import * as path from 'path';
@@ -16,20 +16,18 @@ export function TranscribingPage(): JSX.Element {
   return (
     <AppContainer>
       <TitleBar />
-      <MainCenterColumn>
-        <MainMaxWidthContainer width={500}>
-          <FormField label="Transcribing File" marginBottom={majorScale(3)}>
-            <Text color="muted">{path.basename(file)}</Text>
-          </FormField>
+      <MainMaxWidthContainer width={500} centerVertically>
+        <FormField label="Transcribing File" marginBottom={majorScale(3)}>
+          <Text color="muted">{path.basename(file)}</Text>
+        </FormField>
 
-          <Line percent={progress * 100} style={{ width: '100%' }} />
-          <Pane textAlign={'center'} marginBottom={majorScale(4)}>
-            <Text color={'muted'}>
-              {(progress * 100).toFixed(0)}&nbsp;%&nbsp;-&nbsp;{server_state}
-            </Text>
-          </Pane>
-        </MainMaxWidthContainer>
-      </MainCenterColumn>
+        <Line percent={progress * 100} style={{ width: '100%' }} />
+        <Pane textAlign={'center'}>
+          <Text color={'muted'}>
+            {(progress * 100).toFixed(0)}&nbsp;%&nbsp;-&nbsp;{server_state}
+          </Text>
+        </Pane>
+      </MainMaxWidthContainer>
     </AppContainer>
   );
 }

@@ -1,11 +1,10 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar } from '../components/TitleBar';
-import { AppContainer, MainMaxWidthContainer } from '../components/Util';
+import { AppContainer, BackButton, MainMaxWidthContainer } from '../components/Util';
 import { RootState } from '../state';
 import { deleteModel, downloadModel, Model } from '../state/models';
 import {
-  ArrowLeftIcon,
   Button,
   CloudDownloadIcon,
   Heading,
@@ -16,7 +15,6 @@ import {
   TrashIcon,
 } from 'evergreen-ui';
 import { Circle } from 'rc-progress';
-import { openLanding } from '../state/nav';
 import { ModelManagerTour } from '../tour/ModelManagerTour';
 
 export function ModelManagerPage(): JSX.Element {
@@ -47,14 +45,7 @@ export function ModelManagerPage(): JSX.Element {
 
       <TitleBar />
       <MainMaxWidthContainer>
-        <Button
-          id={'back' /* for tour */}
-          onClick={() => dispatch(openLanding())}
-          iconBefore={ArrowLeftIcon}
-          appearance={'minimal'}
-        >
-          back to home screen
-        </Button>
+        <BackButton id={'back' /* for tour */} />
 
         <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
           Transcription Models
@@ -126,14 +117,7 @@ export function ModelManagerPage(): JSX.Element {
           </Table.Body>
         </Table>
 
-        <Button
-          onClick={() => dispatch(openLanding())}
-          iconBefore={ArrowLeftIcon}
-          marginY={majorScale(2)}
-          appearance={'minimal'}
-        >
-          back to home screen
-        </Button>
+        <BackButton marginY={majorScale(2)} />
       </MainMaxWidthContainer>
     </AppContainer>
   );

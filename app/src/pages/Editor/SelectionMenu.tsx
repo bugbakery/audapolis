@@ -50,7 +50,7 @@ export function SelectionMenu({
       <SelectionMenuContainer
         style={{
           top: selection.top - documentBoundingRect.top,
-          left: (selection.left + selection.right) / 2,
+          left: (selection.left + selection.right) / 2 - documentBoundingRect.left,
         }}
         noMouse={mouseDown}
         {...props}

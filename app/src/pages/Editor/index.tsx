@@ -6,9 +6,8 @@ import { Document } from './Document';
 import { Player } from './Player';
 import { KeyboardEventHandler } from 'react';
 import { insertParagraphBreak, togglePlaying } from '../../state/editor';
-import { useDispatch, useSelector } from 'react-redux';
-import { ExportDocumentPopup } from './ExportDocumentPopup';
-import { RootState } from '../../state';
+import { useDispatch } from 'react-redux';
+import { ExportDocumentDialog } from './ExportDocumentDialog';
 import { EditorTour } from '../../tour/EditorTour';
 
 const MainContainer = styled(MainCenterColumn)`
@@ -21,8 +20,6 @@ const MainContainer = styled(MainCenterColumn)`
 `;
 export function EditorPage(): JSX.Element {
   const dispatch = useDispatch();
-  const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
-
   const handleKeyPress: KeyboardEventHandler = (e) => {
     if (e.key === ' ') {
       dispatch(togglePlaying());
@@ -38,7 +35,7 @@ export function EditorPage(): JSX.Element {
       <Player />
 
       <EditorTitleBar />
-      {popupState ? <ExportDocumentPopup /> : <></>}
+      <ExportDocumentDialog />
 
       <MainContainer>
         <Document />

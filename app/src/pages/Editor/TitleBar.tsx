@@ -110,7 +110,7 @@ export function EditorTitleBar(): JSX.Element {
             <TitleBarButton
               icon={exportRunning ? TimeIcon : ExportIcon}
               disabled={exportRunning && canExport}
-              onClick={() => dispatch(saveDocument(false))}
+              onClick={() => dispatch(setExportPopup(true))}
             />
           </Tooltip>
         </TitleBarGroup>

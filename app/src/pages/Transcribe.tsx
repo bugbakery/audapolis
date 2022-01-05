@@ -7,7 +7,16 @@ import { AppContainer } from '../components/Util';
 import { RootState } from '../state';
 import { openLanding, openModelManager } from '../state/nav';
 import { useState } from 'react';
-import { Button, Checkbox, Combobox, Dialog, FormField, Link, majorScale, Text } from 'evergreen-ui';
+import {
+  Button,
+  Checkbox,
+  Combobox,
+  Dialog,
+  FormField,
+  Link,
+  majorScale,
+  Text,
+} from 'evergreen-ui';
 import * as path from 'path';
 import { TranscribeTour } from '../tour/TranscribeTour';
 
@@ -17,9 +26,8 @@ export function TranscribePage(): JSX.Element {
   const models = useSelector((state: RootState) =>
     Object.values(state.models.downloaded).flatMap((x) => x)
   );
- const [selectedModel, setSelectedModel] = useState(0);
+  const [selectedModel, setSelectedModel] = useState(0);
   const [diarize, setDiarize] = useState(true);
-
 
   return (
     <AppContainer>
@@ -45,7 +53,7 @@ export function TranscribePage(): JSX.Element {
                 dispatch(
                   startTranscription({
                     model: models[selectedModel],
-                    diarize
+                    diarize,
                   })
                 )
               }
@@ -61,7 +69,8 @@ export function TranscribePage(): JSX.Element {
         <Checkbox
           label="Auto-detect speakers"
           checked={diarize}
-          onChange={e => setDiarize(e.target.checked)}/>
+          onChange={(e) => setDiarize(e.target.checked)}
+        />
         <FormField
           label="Transcription Model"
           hint={

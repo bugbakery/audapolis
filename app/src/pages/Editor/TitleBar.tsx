@@ -30,6 +30,7 @@ import {
   PauseIcon,
   majorScale,
   PaneProps,
+  useTheme,
 } from 'evergreen-ui';
 import { ForwardedRef } from 'react';
 
@@ -134,6 +135,8 @@ function PlayerControls(props: PaneProps) {
   const playing = useSelector((state: RootState) => state.editor.present?.playing);
   const dispatch = useDispatch();
 
+  const theme = useTheme();
+
   return (
     <Pane
       borderRadius={8}
@@ -150,8 +153,16 @@ function PlayerControls(props: PaneProps) {
       <Text marginRight={majorScale(2)}>
         {formatInt(time / 60)}:{formatInt(time % 60)}:{formatInt((time * 100) % 100)}
       </Text>
-      <PlayIcon color={playing ? 'info' : 'default'} onClick={() => dispatch(play())} size={19} />
-      <PauseIcon color={playing ? 'default' : 'info'} onClick={() => dispatch(pause())} size={19} />
+      <PlayIcon
+        color={playing ? theme.colors.playAccent : 'default'}
+        onClick={() => dispatch(play())}
+        size={19}
+      />
+      <PauseIcon
+        color={playing ? 'default' : theme.colors.playAccent}
+        onClick={() => dispatch(pause())}
+        size={19}
+      />
     </Pane>
   );
 }

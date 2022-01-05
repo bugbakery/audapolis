@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { RootState, store } from '../state';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Provider as ReduxProvider, useDispatch, useSelector } from 'react-redux';
 import { openAbout, Page } from '../state/nav';
 import { LandingPage } from '../pages/Landing';
 import { TranscribePage } from '../pages/Transcribe';
 import { EditorPage } from '../pages/Editor';
 import { TranscribingPage } from '../pages/Transcribing';
 import { ModelManagerPage } from '../pages/ModelManager';
-import styled, { ThemeProvider } from 'styled-components';
+import styled from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { lightTheme } from './theme';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
@@ -15,6 +15,7 @@ import { AboutPage } from '../pages/About';
 import { ipcRenderer } from 'electron';
 import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider as EvergreenThemeProvider } from 'evergreen-ui';
 
 const AppContainer = styled.div`
   width: 100%;
@@ -40,14 +41,14 @@ export default function App(): JSX.Element {
   const theme = lightTheme; //isDark ? darkTheme : lightTheme;
 
   return (
-    <ThemeProvider theme={theme}>
-      <Provider store={store}>
+    <EvergreenThemeProvider value={theme}>
+      <ReduxProvider store={store}>
         <AppContainer>
           <CurrentPage />
           <Toaster position="bottom-center" reverseOrder={false} />
         </AppContainer>
-      </Provider>
-    </ThemeProvider>
+      </ReduxProvider>
+    </EvergreenThemeProvider>
   );
 }
 

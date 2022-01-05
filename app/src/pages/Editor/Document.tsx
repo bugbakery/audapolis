@@ -12,7 +12,6 @@ import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef }
 import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
-import styled, { useTheme } from 'styled-components';
 import { SelectionMenu } from './SelectionMenu';
 import { EPSILON } from '../../util';
 import {
@@ -25,7 +24,8 @@ import {
   setSelection,
   setTime,
 } from '../../state/editor';
-import { Heading, majorScale, Pane } from 'evergreen-ui';
+import { Heading, majorScale, Pane, useTheme } from 'evergreen-ui';
+import styled from 'styled-components';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -159,6 +159,8 @@ export function Document(): JSX.Element {
     }
   };
 
+  console.log(theme.colors);
+
   return (
     <DocumentContainer
       id={'document'}
@@ -186,7 +188,7 @@ export function Document(): JSX.Element {
 
       {content.length > 0 ? (
         content.map((p, i) => {
-          const speakerColor = theme.speakers[speakerIndices[p.speaker]];
+          const speakerColor = theme.colors.speakers[speakerIndices[p.speaker]];
           return (
             <Paragraph
               key={i}
@@ -204,7 +206,7 @@ export function Document(): JSX.Element {
           speaker=""
           content={[{ type: 'artificial_silence', absoluteStart: 0, length: 0 }]}
           paragraphIdx={0}
-          color={theme.fg}
+          color={theme.colors.text.info}
           displaySpeakerNames={displaySpeakerNames}
         />
       )}

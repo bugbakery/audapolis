@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { DocumentGenerator, getItemsAtTime, Paragraph } from '../../core/document';
 import { Pane, useTheme } from 'evergreen-ui';
+import { useElementSize } from '../../util/useElementSize';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
@@ -11,19 +12,7 @@ export function Cursor(): JSX.Element {
   const ref = useRef(null as null | HTMLDivElement);
 
   // we do this to re-render the cursor when the parent container size changes
-  const [_, setWindowSize] = useState(null as null | { height: number; width: number });
-  useEffect(() => {
-    if (!ref.current?.parentElement) return;
-
-    const observer = new ResizeObserver(() => {
-      setWindowSize({ height: window.innerHeight, width: window.innerWidth });
-    });
-    observer.observe(ref.current.parentElement);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [ref]);
+  const _parentSize = useElementSize(ref.current?.parentElement);
 
   const content = useSelector((state: RootState) => state.editor.present?.document?.content);
   const time = useSelector((state: RootState) => state.editor.present?.currentTime);
@@ -62,10 +51,10 @@ export function Cursor(): JSX.Element {
         height={8}
         marginBottom={-2}
         borderRadius={'100%'}
-        backgroundColor={theme.colors.selected}
+        backgroundColor={theme.colors.playAccent}
         transition={'all 0.1s'}
       />
-      <Pane width={2} height={'100%'} backgroundColor={theme.colors.selected} />
+      <Pane width={2} height={'100%'} backgroundColor={theme.colors.playAccent} />
     </Pane>
   );
 }

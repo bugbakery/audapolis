@@ -25,7 +25,7 @@ import {
   setSelection,
   setTime,
 } from '../../state/editor';
-import { Heading, majorScale, Pane, Text } from 'evergreen-ui';
+import { Heading, majorScale, Pane } from 'evergreen-ui';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;

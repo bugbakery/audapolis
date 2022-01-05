@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button, CrossIcon, Heading, IconButton, majorScale, Pane, Popover } from 'evergreen-ui';
 import { useElemRect } from '@reactour/utils';
-import Mask from '@reactour/mask';
+import { Mask } from '@reactour/mask';
 
 export interface Step {
   title?: JSX.Element;

@@ -6,6 +6,7 @@ const steps = [
   {
     target: '#model',
     body: <Text>Here you should select the model you just downloaded...</Text>,
+    showDependency: 'animationDone',
   },
   {
     target: '#start',
@@ -13,6 +14,6 @@ const steps = [
   },
 ];
 
-export function TranscribeTour(): JSX.Element {
-  return <Tour steps={steps} page={'transcribe'} />;
+export function TranscribeTour(states: { animationDone: boolean }): JSX.Element {
+  return <Tour steps={steps} page={'transcribe'} dependencyStates={states} />;
 }

@@ -25,18 +25,20 @@ export function TranscribePage(): JSX.Element {
   const models = useSelector((state: RootState) =>
     Object.values(state.models.downloaded).flatMap((x) => x)
   );
-  const [selectedModel, setSelectedModel] = useState(0);
+  const [selectedModel, setSelectedModel] = useState(models[0]);
   const [diarize, setDiarize] = useState(true);
+  const [animationDone, setAnimationDone] = useState(false);
 
   return (
     <AppContainer>
-      <TranscribeTour />
+      <TranscribeTour animationDone={animationDone} />
 
       <TitleBar />
       <Dialog
         isShown={true}
         title="Transcription Options"
         onCloseComplete={() => dispatch(openLanding())}
+        onOpenComplete={() => setAnimationDone(true)}
         footer={({ close }) => (
           <>
             <Button tabIndex={0} onClick={() => close()}>
@@ -51,7 +53,7 @@ export function TranscribePage(): JSX.Element {
               onClick={() =>
                 dispatch(
                   startTranscription({
-                    model: models[selectedModel],
+                    model: selectedModel,
                     diarize,
                   })
                 )

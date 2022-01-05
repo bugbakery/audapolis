@@ -1,35 +1,28 @@
 import * as React from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
-import { DocumentGenerator, getItemsAtTime, Paragraph } from '../../core/document';
+import {
+  DocumentGenerator,
+  DocumentGeneratorItem,
+  getItemsAtTime,
+  Paragraph,
+} from '../../core/document';
 import { Pane, useTheme } from 'evergreen-ui';
 import { useElementSize } from '../../util/useElementSize';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
 
-  const ref = useRef(null as null | HTMLDivElement);
+  const [ref, setRef] = useState<HTMLDivElement | null>(null);
 
   // we do this to re-render the cursor when the parent container size changes
-  const _parentSize = useElementSize(ref.current?.parentElement);
+  const _parentSize = useElementSize(ref?.parentElement);
 
-  const content = useSelector((state: RootState) => state.editor.present?.document?.content);
-  const time = useSelector((state: RootState) => state.editor.present?.currentTime);
-  let left = -100;
-  let top = -100;
-  if (ref.current?.parentElement && content != null && time != null) {
-    const { x, y } = computeCursorPosition(
-      content,
-      ref.current?.parentElement as HTMLDivElement,
-      time
-    ) || {
-      x: -100,
-      y: -100,
-    };
-    left = x;
-    top = y;
-  }
+  const { left, top } = useComputeCursorPosition(ref?.parentElement) || {
+    left: -100,
+    top: -100,
+  };
 
   return (
     <Pane
@@ -44,7 +37,7 @@ export function Cursor(): JSX.Element {
       userSelect={'none'}
       pointerEvents={'none'}
       style={{ left, top } /* we inject this directly for performance reasons */}
-      ref={ref}
+      ref={(ref: HTMLDivElement) => setRef(ref)}
     >
       <Pane
         width={8}
@@ -58,27 +51,58 @@ export function Cursor(): JSX.Element {
   );
 }
 
-function computeCursorPosition(
-  content: Paragraph[],
-  ref: HTMLDivElement,
-  time: number
-): { x: number; y: number } | null {
-  const items = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time);
-  const item = items[items.length - 1];
-  if (!item) return null;
-  const itemElement = ref
-    .getElementsByClassName('item')
-    .item(item.globalIdx) as HTMLDivElement | null;
+function useComputeCursorPosition(parentElement: HTMLElement | null | undefined): {
+  left: number;
+  top: number;
+} | null {
+  const content = useSelector((state: RootState) => state.editor.present?.document?.content);
+  const time = useSelector((state: RootState) => state.editor.present?.currentTime);
 
-  if (!itemElement) {
-    return null;
+  // we use caching here because we have to calculate the cursor position every frame
+  const last = useRef<null | {
+    content: Paragraph[];
+    parentElement: HTMLElement;
+    item: DocumentGeneratorItem;
+    itemElement: HTMLDivElement;
+  }>();
+  const lastItem = last.current?.item;
+
+  if (!content || !time || !parentElement) return null;
+
+  if (
+    !(
+      last &&
+      lastItem &&
+      last.current?.content == content &&
+      last.current?.parentElement == parentElement &&
+      lastItem?.absoluteStart <= time &&
+      lastItem?.absoluteStart + lastItem?.length >= time
+    )
+  ) {
+    const items = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time);
+    const item = items[items.length - 1];
+    if (!item) return null;
+    const itemElement = parentElement
+      .getElementsByClassName('item')
+      .item(item.globalIdx) as HTMLDivElement | null;
+    if (!itemElement) return null;
+
+    last.current = {
+      content,
+      parentElement,
+      item,
+      itemElement,
+    };
   }
 
-  const y = itemElement.offsetTop;
-  let x = itemElement.offsetLeft;
+  if (!last.current) return null;
+  const { itemElement, item } = last.current;
+
+  let left = itemElement.offsetLeft;
+  const top = itemElement.offsetTop;
   if (item.absoluteStart <= time) {
     const timeInWord = time - item.absoluteStart;
-    x += (timeInWord / item.length) * itemElement.offsetWidth;
+    left += (timeInWord / item.length) * itemElement.offsetWidth;
   }
-  return { x, y };
+  return { left, top };
 }

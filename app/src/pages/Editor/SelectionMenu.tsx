@@ -1,10 +1,10 @@
 import { useDispatch } from 'react-redux';
-import { exportSelection } from '../../state/editor';
+import { exportSelection, copySelectionText } from '../../state/editor';
 import * as React from 'react';
 import { HTMLAttributes, RefObject, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { useDocumentEvent } from '../../util/useListener';
-import { Button } from 'evergreen-ui';
+import { Button, Group } from 'evergreen-ui';
 import { useElementSize } from '../../util/useElementSize';
 const SelectionMenuContainer = styled.div<{ noMouse: boolean; centerHorizontally: boolean }>`
   position: absolute;
@@ -68,9 +68,10 @@ export function SelectionMenu({
         noMouse={mouseDown}
         {...props}
       >
-        <Button onMouseDown={() => dispatch(exportSelection())} appearance="primary">
-          Export
-        </Button>
+        <Group>
+          <Button onMouseDown={() => dispatch(exportSelection())}>Export</Button>
+          <Button onMouseDown={() => dispatch(copySelectionText())}>Copy text</Button>
+        </Group>
       </SelectionMenuContainer>
     );
   }

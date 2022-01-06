@@ -96,7 +96,7 @@ app.on('activate', () => {
 });
 
 (global as any).window = {};
-import './ipc';
+import './ipc/ipc';
 import './server';
-import { windowList } from './windowList';
+import { windowList } from './ipc/windowList';
 import { applyMenu, setMenu, unregisterAccelerators } from './menu';

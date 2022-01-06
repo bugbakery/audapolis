@@ -1,5 +1,4 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ipcRenderer } from 'electron';
 import { openTranscribe, openTranscribing, openModelManager } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
@@ -11,6 +10,7 @@ import { fetchModelState, Model } from './models';
 import { getAuthHeader, getServer, getServerName } from './server';
 import { createHash } from 'crypto';
 import { convertToWav } from '../core/ffmpeg';
+import { openFile } from '../../main_process/ipc/ipc_client';
 export interface TranscribeState {
   file?: string;
   processed: number;
@@ -34,7 +34,7 @@ export interface Task {
   content?: Record<any, any>;
 }
 
-export const transcribeFile = createAsyncThunk<string, void, { state: RootState }>(
+export const transcribeFile = createAsyncThunk<string | undefined, void, { state: RootState }>(
   'transcribe/transcribeFile',
   async (_, { dispatch, getState }) => {
     await dispatch(fetchModelState()).unwrap();
@@ -43,11 +43,9 @@ export const transcribeFile = createAsyncThunk<string, void, { state: RootState 
       alert('Please download a transcription model first!');
       return;
     }
-    const file = await ipcRenderer.invoke('open-file', {
+    const file = await openFile({
       title: 'Import media file...',
-      properties: ['openFile'],
-      promptToCreate: true,
-      createDirectory: true,
+      properties: ['openFile', 'promptToCreate', 'createDirectory'],
       filters: [
         { name: 'Audio Files', extensions: ['wav', 'mp3'] },
         { name: 'All Files', extensions: ['*'] },

@@ -1,7 +1,12 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState, store } from './index';
-import { ipcRenderer } from 'electron';
 import { fetchModelState } from './models';
+import {
+  requestLocalServerInfo,
+  subscribeLocalServerInfo,
+  subscribeLocalServerStderr,
+} from '../../main_process/ipc/ipc_client';
+import { assertSome } from '../util';
 
 export interface ServerState {
   servers: ServerConfig[];
@@ -67,21 +72,23 @@ export const getServer = (state: RootState): ServerConfig => {
   return state.server.servers[state.server.selectedServer];
 };
 
-ipcRenderer.on('local-server-stderr', (event, arg: string) => {
+subscribeLocalServerStderr((stderr) => {
   console.groupCollapsed('server stderr');
-  arg.split('\n').forEach((line) => {
+  stderr.split('\n').forEach((line) => {
     console.log(line);
   });
   console.groupEnd();
 });
-ipcRenderer.on('local-server-info', (event, arg) => {
+subscribeLocalServerInfo((info) => {
+  assertSome(info.port);
+
   store.dispatch(
     setLocalServer({
       hostname: 'http://localhost',
-      port: arg.port,
-      token: arg.token,
-      state: arg.state,
+      port: info.port,
+      token: info.token,
+      state: info.state,
     })
   );
 });
-ipcRenderer.send('local-server-request');
+requestLocalServerInfo();

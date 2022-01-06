@@ -1,13 +1,7 @@
-import {
-  BrowserWindow,
-  globalShortcut,
-  ipcMain,
-  Menu,
-  MenuItemConstructorOptions,
-  shell,
-} from 'electron';
-import { assertSome } from '../src/util';
+import { BrowserWindow, globalShortcut, Menu, MenuItemConstructorOptions, shell } from 'electron';
 import { createWindow } from './index';
+import { MenuItemConstructorOptionsIpc } from './types';
+import { openAbout } from './ipc/ipc';
 
 type ShortcutMap = Record<string, string>;
 export const menuMap: Record<number, { menu: Menu; accelerators: ShortcutMap }> = {};
@@ -18,10 +12,6 @@ function onMac(
 ): MenuItemConstructorOptions[] {
   return process.platform === 'darwin' ? mac : otherPlatforms;
 }
-
-type PatchType = { click?: string; submenu?: MenuItemConstructorOptionsIpc[] };
-export type MenuItemConstructorOptionsIpc = Exclude<MenuItemConstructorOptions, PatchType> &
-  PatchType;
 
 export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsIpc[]): void {
   const transformMenuTemplate = (
@@ -93,7 +83,7 @@ export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsI
       submenu: [
         {
           label: 'About',
-          click: () => window.webContents.send('open-about'),
+          click: () => openAbout(window),
         },
         {
           label: 'Learn More',
@@ -129,18 +119,3 @@ export function applyMenu(window: BrowserWindow): void {
 export function unregisterAccelerators(): void {
   globalShortcut.unregisterAll();
 }
-
-ipcMain.on('set-menu', (event, args) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  assertSome(win);
-  setMenu(win, args);
-});
-
-ipcMain.on('show-menu', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  assertSome(win);
-  menuMap[win.id].menu.popup({
-    x: 0,
-    y: 55,
-  });
-});

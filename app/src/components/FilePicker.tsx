@@ -1,6 +1,7 @@
-import { FileFilter, ipcRenderer } from 'electron';
+import { FileFilter } from 'electron';
 import React from 'react';
 import { FolderOpenIcon, Group, IconButton, TextInput, Tooltip } from 'evergreen-ui';
+import { openFile, saveFile } from '../../main_process/ipc/ipc_client';
 
 export function FilePicker({
   value,
@@ -14,16 +15,25 @@ export function FilePicker({
   save: boolean;
 }): JSX.Element {
   const onClick = async () => {
-    const newPath = await ipcRenderer
-      .invoke(save ? 'save-file' : 'open-file', {
+    if (save) {
+      const newPath = await saveFile({
         defaultPath: value,
         title: 'Save file as...',
-        properties: ['saveFile'],
+        properties: ['createDirectory', 'showOverwriteConfirmation'],
         filters: [...filters, { name: 'All Files', extensions: ['*'] }],
-      })
-      .then((x) => x.filePath);
-
-    if (newPath) onChange(newPath);
+      }).then((x) => x.filePath);
+      if (newPath) onChange(newPath);
+    } else {
+      if (save) {
+        const newPath = await openFile({
+          defaultPath: value,
+          title: 'Save file as...',
+          properties: ['createDirectory', 'openFile', 'promptToCreate'],
+          filters: [...filters, { name: 'All Files', extensions: ['*'] }],
+        }).then((x) => x.filePaths[0]);
+        if (newPath) onChange(newPath);
+      }
+    }
   };
 
   return (

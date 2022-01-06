@@ -4,9 +4,9 @@ import { TitleBar } from '../components/TitleBar';
 import * as fs from 'fs';
 import JSZip from 'jszip';
 import { useEffect, useState } from 'react';
-import { ipcRenderer } from 'electron';
 import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
 import { Heading, Link, majorScale, Paragraph } from 'evergreen-ui';
+import { getAbout, openTextInSystem } from '../../main_process/ipc/ipc_client';
 
 function openLicenses() {
   const data = fs.readFileSync('generated/licenses.zip');
@@ -15,7 +15,7 @@ function openLicenses() {
       .file('licenses.txt')
       ?.async('text')
       .then((x) => {
-        ipcRenderer.invoke('open-text-in-system', {
+        openTextInSystem({
           name: 'licenses.txt',
           text: x,
         });
@@ -27,7 +27,7 @@ export function AboutPage(): JSX.Element {
   const [aboutData, setAboutData] = useState({ version: 'n/a' });
 
   useEffect(() => {
-    ipcRenderer.invoke('get-about').then((x) => setAboutData(x));
+    getAbout().then((x) => setAboutData(x));
   }, []);
 
   return (

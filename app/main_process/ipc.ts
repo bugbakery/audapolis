@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import { assertSome } from '../util';
+import { assertSome } from '../src/util';
 import path from 'path';
 import fs from 'fs';
 

@@ -9,7 +9,7 @@ import {
   Paragraph,
 } from '../../core/document';
 import { Pane, useTheme } from 'evergreen-ui';
-import { useElementSize } from '../../util/useElementSize';
+import { useElementSize } from '../../components/useElementSize';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();

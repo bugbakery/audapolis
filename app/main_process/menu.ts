@@ -6,7 +6,7 @@ import {
   MenuItemConstructorOptions,
   shell,
 } from 'electron';
-import { assertSome } from '../util';
+import { assertSome } from '../src/util';
 import { createWindow } from './index';
 
 type ShortcutMap = Record<string, string>;

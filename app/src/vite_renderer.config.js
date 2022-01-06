@@ -22,7 +22,7 @@ export default defineConfig({
   base: '',
   plugins: [reactRefresh(), commonjsExternals({ externals: commonjsPackages })],
   build: {
-    outDir: '../build/renderer/',
+    outDir: '../build/renderer_process/',
     emptyOutDir: true,
     minify: false,
     brotliSize: false,

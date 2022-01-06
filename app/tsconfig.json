@@ -24,6 +24,7 @@
     ]
   },
   "include": [
+    "main_process/**/*",
     "src/**/*",
     "src/*.d.ts",
     "src/types/*.d.ts"

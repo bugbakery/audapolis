@@ -2,7 +2,7 @@ const { build } = require('vite');
 const { dirname } = require('path');
 
 const mode = (process.env.MODE = process.env.MODE || 'production');
-const packagesConfigs = ['src/vite_main.config.js', 'src/vite_renderer.config.js'];
+const packagesConfigs = ['main_process/vite_main.config.js', 'src/vite_renderer.config.js'];
 
 const buildByConfig = (configFile) => build({ configFile, mode });
 (async () => {

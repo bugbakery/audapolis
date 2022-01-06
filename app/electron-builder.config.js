@@ -12,7 +12,7 @@ if (process.env.VITE_APP_VERSION === undefined) {
 const config = {
   directories: {
     output: 'dist',
-    buildResources: 'src/resources/',
+    buildResources: './assets/',
   },
   files: ['build/**'],
   extraMetadata: {

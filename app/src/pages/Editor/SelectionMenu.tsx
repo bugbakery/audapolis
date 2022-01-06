@@ -3,9 +3,9 @@ import { exportSelection, copySelectionText } from '../../state/editor';
 import * as React from 'react';
 import { HTMLAttributes, RefObject, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { useDocumentEvent } from '../../util/useListener';
+import { useDocumentEvent } from '../../components/useListener';
 import { Button, Group } from 'evergreen-ui';
-import { useElementSize } from '../../util/useElementSize';
+import { useElementSize } from '../../components/useElementSize';
 const SelectionMenuContainer = styled.div<{ noMouse: boolean; centerHorizontally: boolean }>`
   position: absolute;
   display: block;

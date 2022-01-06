@@ -13,7 +13,7 @@
     "url": "https://github.com/audapolis/audapolis",
     "directory": "app/"
   },
-  "main": "build/main/start.cjs.js",
+  "main": "build/main_process/start.cjs.js",
   "scripts": {
     "prebuild": "node scripts/generate_licenses.mjs generated/licenses.zip server/licenses.md",
     "build": "node scripts/build.js",
@@ -24,7 +24,7 @@
     "lint": "npm-run-all --continue-on-error lint:*",
     "lint:tsc": "tsc --noEmit --incremental",
     "lint:eslint": "eslint --ext .ts,.tsx . --cache",
-    "format": "prettier --write 'src/**/*'"
+    "format": "prettier --write '{src,main_process}/**/*'"
   },
   "keywords": [],
   "license": "AGPL-3.0",

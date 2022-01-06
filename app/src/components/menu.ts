@@ -14,7 +14,7 @@ import {
 import { transcribeFile } from '../state/transcribe';
 import { ActionCreators } from 'redux-undo';
 import { v4 as uuidv4 } from 'uuid';
-import { MenuItemConstructorOptionsIpc } from '../main_process/menu';
+import { MenuItemConstructorOptionsIpc } from '../../main_process/menu';
 
 export function setMenu(menu: MenuItemConstructorOptions[]): void {
   const listeners: Record<string, () => void> = {};

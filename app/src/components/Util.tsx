@@ -95,7 +95,7 @@ export function CrossedOutIcon({
         color={color}
         style={{
           clipPath: `polygon(
-            0 0, 
+            0 0,
             ${100 - gapPercent}% 0,
             0 ${100 - gapPercent}%,
             0 100%,

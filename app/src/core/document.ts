@@ -149,8 +149,8 @@ export async function serializeDocumentToFile(document: Document, path: string):
 }
 
 export type TimedParagraphItem = ParagraphItem & { absoluteStart: number };
-export function computeTimed(content: Paragraph[]): Paragraph<TimedParagraphItem>[] {
-  let accumulatedTime = 0;
+export function computeTimed(content: Paragraph[], offset = 0): Paragraph<TimedParagraphItem>[] {
+  let accumulatedTime = offset;
   return content.map((paragraph) => {
     return {
       ...paragraph,
@@ -217,6 +217,32 @@ export class DocumentGenerator<
 
   toRenderItems(): GeneratorBox<RenderItem> {
     return new GeneratorBox(renderItemsFromDocumentGenerator(this));
+  }
+
+  toTimedParagraphs(): Paragraph<TimedParagraphItem>[] {
+    const timedParagraphs = [];
+    let lastParagraph = null;
+    for (const item of this) {
+      const generatorItemToParagraphItem = (item: DocumentGeneratorItem): TimedParagraphItem => {
+        // eslint-disable-next-line unused-imports/no-unused-vars
+        const { paragraphUuid, itemIdx, speaker, ...rest } = item;
+        return rest;
+      };
+
+      if (lastParagraph != item.paragraphUuid) {
+        timedParagraphs.push({
+          speaker: item.speaker,
+          content: [generatorItemToParagraphItem(item)],
+        });
+      } else {
+        timedParagraphs[timedParagraphs.length - 1].content.push(
+          generatorItemToParagraphItem(item)
+        );
+      }
+      lastParagraph = item.paragraphUuid;
+    }
+
+    return timedParagraphs;
   }
 
   getItemsAtTime(time: number): DocumentGeneratorItem[] {

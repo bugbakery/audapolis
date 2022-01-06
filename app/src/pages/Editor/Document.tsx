@@ -264,7 +264,7 @@ function FileNameDisplay({ path }: { path: string }) {
   return (
     <Heading userSelect={'none'} fontWeight={400} size={600}>
       {base}
-      <span style={{ fontWeight: 100 }}>{extension}</span>
+      <span style={{ fontWeight: 200 }}>{extension}</span>
     </Heading>
   );
 }

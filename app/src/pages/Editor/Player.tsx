@@ -16,7 +16,9 @@ const PlayerContainer = styled.div<{ visible: boolean }>`
 `;
 
 const VideoTag = styled.video<{ visible: boolean }>`
-  width: 300px;
+  max-width: 90vw;
+  max-height: calc(300px / 16 * 9);
+  height: 100%;
   display: ${({ visible }) => (visible ? 'block' : 'none')};
   position: relative;
   z-index: 2;

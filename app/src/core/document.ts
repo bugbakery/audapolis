@@ -224,6 +224,18 @@ export class DocumentGenerator<
   }
 }
 
+export function getDocumentDuration(content: Paragraph[]): number {
+  let accumulatedTime = 0;
+  for (let p = 0; p < content.length; p++) {
+    const paragraph = content[p];
+    for (let i = 0; i < paragraph.content.length; i++) {
+      const item = paragraph.content[i];
+      accumulatedTime += item.length;
+    }
+  }
+  return accumulatedTime;
+}
+
 function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGeneratorItem> {
   let accumulatedTime = 0;
   for (let p = 0; p < content.length; p++) {

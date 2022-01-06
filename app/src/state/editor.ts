@@ -8,6 +8,7 @@ import {
   Document,
   DocumentGenerator,
   DocumentGeneratorItem,
+  getDocumentDuration,
   getItemsAtTime,
   serializeDocument,
   serializeDocumentToFile,
@@ -602,6 +603,16 @@ export const importSlice = createSlice({
       state.selection = null;
     },
 
+    selectAll: (state) => {
+      assertSome(state);
+      const item = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(0)[0];
+      assertSome(item);
+      state.selection = {
+        range: { start: 0, length: getDocumentDuration(state.document.content) },
+        startItem: item,
+      };
+    },
+
     setWord: (state, arg: PayloadAction<{ absoluteStart: number; text: string }>) => {
       console.log(state, arg.payload);
       assertSome(state);
@@ -714,6 +725,8 @@ export const {
   renameSpeaker,
 
   setExportPopup,
+
+  selectAll,
 } = importSlice.actions;
 const { setState } = importSlice.actions;
 

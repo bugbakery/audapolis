@@ -1,11 +1,19 @@
-import styled from 'styled-components';
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setWord, reassignParagraph, renameSpeaker } from '../../state/editor';
 import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
 import { assertSome } from '../../util';
-import { Button, majorScale, Pane, PaneProps, Popover, Position, Text } from 'evergreen-ui';
+import {
+  Button,
+  majorScale,
+  Pane,
+  PaneProps,
+  Popover,
+  Position,
+  Text,
+  TextInput,
+} from 'evergreen-ui';
 
 export function Paragraph({
   speaker,
@@ -167,11 +175,6 @@ type SpeakerEditing = null | {
   isNew: boolean;
 };
 
-const SpeakerInput = styled.input`
-  width: 100%;
-  font-size: inherit;
-`;
-
 function Speaker({
   name,
   paragraphIdx,
@@ -227,6 +230,9 @@ function Speaker({
             paddingRight={majorScale(2)}
             display={'inline-block'}
             color={color}
+            onContextMenu={(e: React.MouseEvent<HTMLSpanElement>) =>
+              (e.target as HTMLSpanElement).click()
+            }
           >
             {name}
           </Text>
@@ -236,16 +242,17 @@ function Speaker({
   } else {
     return (
       <Pane {...props}>
-        <SpeakerInput
+        <TextInput
+          width={'100%'}
           value={editing.currentText}
-          ref={(ref) => {
+          ref={(ref: HTMLInputElement) => {
             if (editing.isNew) {
               ref?.focus();
               ref?.select();
               setEditing({ ...editing, isNew: false });
             }
           }}
-          onKeyDown={(e) => {
+          onKeyDown={(e: React.KeyboardEvent) => {
             e.stopPropagation();
             if (e.key == 'Enter') {
               if (editing.type == EditingType.Reassign) {
@@ -263,7 +270,7 @@ function Speaker({
               setEditing(null);
             }
           }}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setEditing({ ...editing, currentText: e.target.value });
           }}
           onBlur={() => {

@@ -97,7 +97,7 @@ export function Document(): JSX.Element {
     const parent = node?.parentElement;
     const [paragraphIdx, itemIdx] = getParagraphItemIdx(parent);
     if (paragraphIdx == content.length - 1) return false;
-    return itemIdx == content[paragraphIdx]?.content.length - 1;
+    return itemIdx == content[paragraphIdx]?.content.length - 1 && offset != 1;
   };
 
   const setBrowserRangeToStateRange = (selectionRange: globalThis.Range) => {
@@ -116,6 +116,7 @@ export function Document(): JSX.Element {
         )
           ? 4 * EPSILON
           : 0;
+
         const timeAdd = selectionRange.startOffset == nodeLength ? item.length : 0;
         dispatch(setTime(item.absoluteStart + timeAdd - timeSubtract));
       }

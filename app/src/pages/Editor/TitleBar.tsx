@@ -150,7 +150,7 @@ function PlayerControls(props: PaneProps) {
       style={{ WebkitAppRegion: 'no-drag' }}
       {...props}
     >
-      <Text marginRight={majorScale(2)} style={{ fontVariantNumeric: 'tabular-nums' }}>
+      <Text marginRight={majorScale(2)} style={{ fontVariantNumeric: 'tabular-nums' }} size={500}>
         {formatInt(time / 60)}:{formatInt(time % 60)}:{formatInt((time * 100) % 100)}
       </Text>
       <PlayIcon

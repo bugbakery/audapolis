@@ -52,7 +52,6 @@ export function Cursor(): JSX.Element {
         marginBottom={-2}
         borderRadius={'100%'}
         backgroundColor={theme.colors.playAccent}
-        transition={'all 0.1s'}
       />
       <Pane width={2} height={'100%'} backgroundColor={theme.colors.playAccent} />
     </Pane>

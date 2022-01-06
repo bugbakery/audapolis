@@ -45,6 +45,7 @@ export function AboutPage(): JSX.Element {
         <Paragraph>
           Audapolis is founded from September 2021 until February 2022 by
           <img
+            width={'100%'}
             src={pf_funding_svg}
             alt='logos of the "Bundesministerium für Bildung und Forschung", Prodotype Fund and OKFN-Deutschland'
           />

@@ -260,22 +260,6 @@ export const copy = createAsyncThunk<void, void, { state: RootState }>(
       .exactUntil(selection.range.start + selection.range.length)
       .toParagraphs();
 
-    const selectionText = documentSlice
-      .map((paragraph) => {
-        let paragraphText = '';
-        if (state.displaySpeakerNames) {
-          paragraphText += `${paragraph.speaker}:\t`;
-        }
-        paragraphText += paragraph.content
-          .filter((x) => x.type == 'word')
-          .map((x) => (x as Word).word)
-          .join(' ');
-        return paragraphText;
-      })
-      .join('\n\n');
-
-    console.log('copying', selectionText);
-
     const serializedSlice = await serializeDocument({
       content: documentSlice,
       sources: state.document.sources,
@@ -309,6 +293,42 @@ export const paste = createAsyncThunk<Document, void, { state: RootState }>(
     const deserialized = await deserializeDocument(buffer);
     console.log('deserialized', deserialized);
     return deserialized;
+  }
+);
+
+export const copySelectionText = createAsyncThunk<void, void, { state: RootState }>(
+  'editor/copySelectionText',
+  async (arg, { getState }) => {
+    const state = getState().editor.present;
+    assertSome(state);
+
+    const selection = state.selection;
+    if (!selection) {
+      return;
+    }
+
+    const filterFn = (item: DocumentGeneratorItem) =>
+      item.absoluteStart >= selection.range.start &&
+      item.absoluteStart + item.length <= selection.range.start + selection.range.length;
+    const paragraphs = DocumentGenerator.fromParagraphs(state.document.content)
+      .filter(filterFn)
+      .toParagraphs();
+
+    const selectionText = paragraphs
+      .map((paragraph) => {
+        let paragraphText = '';
+        if (state.displaySpeakerNames) {
+          paragraphText += `${paragraph.speaker}:\n`;
+        }
+        paragraphText += paragraph.content
+          .filter((x) => x.type == 'word')
+          .map((x) => (x as Word).word)
+          .join(' ');
+        return paragraphText;
+      })
+      .join('\n\n');
+
+    clipboard.writeText(selectionText);
   }
 );
 

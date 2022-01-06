@@ -67,7 +67,7 @@ function useComputeCursorPosition(parentElement: HTMLElement | null | undefined)
   }>();
   const lastItem = last.current?.item;
 
-  if (!content || !time || !parentElement) return null;
+  if (!content || time == undefined || !parentElement) return null;
 
   if (
     !(

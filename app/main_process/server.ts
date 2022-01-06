@@ -2,8 +2,9 @@ import path from 'path';
 import process from 'process';
 import fs from 'fs';
 import { spawn } from 'child_process';
-import { app, ipcMain, dialog } from 'electron';
-import { sendAll } from './windowList';
+import { app, dialog } from 'electron';
+import { publishServerInfo, publishServerStderr } from './ipc/ipc';
+import { ServerInfo } from './types';
 
 function findServer() {
   const possibilities = [
@@ -58,9 +59,9 @@ interface ServerStartedMessage {
   token: string;
 }
 
-let serverInfo = {
-  port: null as null | number,
-  token: null as null | string,
+export const serverInfo: ServerInfo = {
+  port: null,
+  token: null,
   state: 'not started',
 };
 
@@ -86,7 +87,7 @@ function startServer() {
 
   serverProcess.stderr.on('data', (data: Buffer) => {
     console.log(`server-stderr: \n${data}`);
-    sendAll('local-server-stderr', data.toString());
+    publishServerStderr(data.toString());
   });
 
   serverProcess.on('close', (code: number | null) => {
@@ -100,12 +101,3 @@ function startServer() {
   });
 }
 startServer();
-
-function publishServerInfo(update?: Partial<typeof serverInfo>): void {
-  serverInfo = { ...serverInfo, ...update };
-  sendAll('local-server-info', serverInfo);
-}
-
-ipcMain.on('local-server-request', () => {
-  publishServerInfo();
-});

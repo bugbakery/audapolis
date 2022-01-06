@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { RootState, store } from '../state';
-import { Provider as ReduxProvider, useDispatch, useSelector } from 'react-redux';
-import { openAbout, Page } from '../state/nav';
+import { Provider as ReduxProvider, useSelector } from 'react-redux';
+import { Page } from '../state/nav';
 import { LandingPage } from '../pages/Landing';
 import { TranscribePage } from '../pages/Transcribe';
 import { EditorPage } from '../pages/Editor';
@@ -12,8 +12,6 @@ import styled from 'styled-components';
 import { lightTheme } from './theme';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
-import { ipcRenderer } from 'electron';
-import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Theme, ThemeProvider as EvergreenThemeProvider } from 'evergreen-ui';
 
@@ -55,20 +53,7 @@ export default function App(): JSX.Element {
 
 function CurrentPage(): JSX.Element {
   const page = useSelector((state: RootState) => state.nav.page);
-
   setMenu(page == Page.Editor ? editorMenu : nonEditorMenu);
-
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    const func = () => {
-      dispatch(openAbout());
-    };
-    ipcRenderer.on('open-about', func);
-    return () => {
-      ipcRenderer.removeListener('open-about', func);
-    };
-  });
 
   switch (page) {
     case Page.Landing:

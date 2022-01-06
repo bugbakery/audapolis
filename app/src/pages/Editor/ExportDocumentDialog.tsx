@@ -103,7 +103,7 @@ export function ExportDocumentDialog(): JSX.Element {
   const [otioFormat, setOtioFormat] = useState(otioFormats[0]);
 
   const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
-  console.log('popup shown', popupState);
+
   return (
     <Dialog
       onCloseComplete={() => dispatch(setExportPopup(false))}

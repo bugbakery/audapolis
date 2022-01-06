@@ -159,8 +159,6 @@ export function Document(): JSX.Element {
     }
   };
 
-  console.log(theme.colors);
-
   return (
     <DocumentContainer
       id={'document'}

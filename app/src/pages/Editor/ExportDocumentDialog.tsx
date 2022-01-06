@@ -136,8 +136,7 @@ export function ExportDocumentDialog(): JSX.Element {
                     x: formState.width,
                     y: formState.height,
                   });
-                }
-                if (formState.type == 'OpenTimelineIO') {
+                } else if (formState.type == 'OpenTimelineIO') {
                   const server = state.server.servers[state.server.selectedServer];
                   await exportOtio(
                     documentBaseName,

@@ -42,7 +42,7 @@ repos:
     hooks:
       - id: tsc
         name: tsc
-        entry: npm --prefix app/ run lint:tsc
+        entry: npm --prefix app/ run check:tsc
         language: node
         files: app/.*
         pass_filenames: false

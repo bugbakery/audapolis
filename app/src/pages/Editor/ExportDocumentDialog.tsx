@@ -21,6 +21,7 @@ type ExportType = {
   // We pass a ref as onExport which the function will set to its export function
   component: (props: {
     exportCallbackRef: MutableRefObject<(document: Document, path: string) => Promise<void>>;
+    outputPath: string;
   }) => JSX.Element;
 };
 
@@ -114,7 +115,7 @@ export function ExportDocumentDialog(): JSX.Element {
         />
       </FormField>
 
-      <ExportOptionComponent exportCallbackRef={exportFnRef} />
+      <ExportOptionComponent exportCallbackRef={exportFnRef} outputPath={formState.path} />
     </Dialog>
   );
 }

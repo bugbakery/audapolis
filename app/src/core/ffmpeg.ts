@@ -5,13 +5,41 @@ import Fessonia from '@tedconf/fessonia';
 import ffmpegPath from 'ffmpeg-static';
 import AppDirectory from 'appdirectory';
 import { player } from './player';
+import { WebVtt } from '../util/WebVtt';
 
 const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fessonia({
   ffmpeg_bin: ffmpegPath,
 });
 
+function getSubtitleCodec(outputPath: string): string {
+  if (outputPath.endsWith('.mp4')) {
+    return 'mov_text';
+  } else if (outputPath.endsWith('.mkv')) {
+    return 'srt';
+  }
+  throw Error('subtitles not supported for this file ending');
+}
+
+function addSubtitles(
+  cmd: Fessonia.FFmpegCommand,
+  concatVideo: Fessonia.FilterChain,
+  outputObj: Fessonia.FFmpegOutput,
+  outputPath: string,
+  subtitles: { path: string; type: 'burn_in' | 'seperate_track' }
+) {
+  if (subtitles?.type == 'burn_in') {
+    concatVideo.appendNodes(new FilterNode('subtitles', { filename: subtitles.path }));
+  } else if (subtitles?.type == 'seperate_track') {
+    const subtitleInput = new FFmpegInput(subtitles.path);
+    cmd.addInput(subtitleInput);
+    outputObj.addStream(subtitleInput.streamSpecifier('s'));
+    outputObj.addOptions({ 'c:s': getSubtitleCodec(outputPath) });
+  }
+}
+
 async function combineVideoParts(
   parts: { v: Fessonia.FFmpegInput; a: Fessonia.FFmpegInput }[],
+  subtitles: { path: string; type: 'burn_in' | 'seperate_track' } | null,
   targetResolution: { x: number; y: number },
   output: string
 ): Promise<unknown> {
@@ -38,19 +66,29 @@ async function combineVideoParts(
 
     return { v: scale.streamSpecifier(), a: p.a.streamSpecifier('a') };
   });
-  const concat = new FilterChain([
-    new FilterNode('concat', { n: parts.length.toString(), v: '1', a: '1' }),
+  const concatVideo = new FilterChain([
+    new FilterNode('concat', { n: parts.length.toString(), v: '1', a: '0' }),
+  ]);
+  const concatAudio = new FilterChain([
+    new FilterNode('concat', { n: parts.length.toString(), v: '0', a: '1' }),
   ]);
   for (const part of partSpecifiers) {
-    concat.addInput(part.v);
-    concat.addInput(part.a);
+    concatVideo.addInput(part.v);
+    concatAudio.addInput(part.a);
   }
-  cmd.addFilterChain(concat);
+
   const outputObj = new FFmpegOutput(output);
-  outputObj.addStream(concat.streamSpecifier());
-  outputObj.addStream(concat.streamSpecifier());
+  if (subtitles != null) {
+    addSubtitles(cmd, concatVideo, outputObj, output, subtitles);
+  }
+  cmd.addFilterChain(concatVideo);
+  cmd.addFilterChain(concatAudio);
+  outputObj.addStream(concatVideo.streamSpecifier());
+  outputObj.addStream(concatAudio.streamSpecifier());
   outputObj.addOptions({ vsync: 'vfr' });
+
   cmd.addOutput(outputObj);
+
   console.debug('ffmpeg commandline: ', getFfmpegComandLine(cmd));
   cmd.on('update', (data) => {
     console.debug(`Received update on ffmpeg process:`, data);
@@ -62,19 +100,32 @@ async function combineVideoParts(
   cmd.spawn(true);
   return promise;
 }
+
 function filterSource(filter: string, options: Record<string, string | number>) {
   const filters = new FilterChain([new FilterNode(filter, options)]);
   return new FFmpegInput(filters, {
     f: 'lavfi',
   });
 }
+
+export function isSeperateSubtitleTrackSupported(outputPath: string): boolean {
+  return outputPath.endsWith('.mp4') || outputPath.endsWith('.mkv');
+}
+
 export async function exportVideo(
   content: RenderItem[],
   sources: Record<string, Source>,
   outputPath: string,
-  targetResolution: { x: number; y: number }
+  targetResolution: { x: number; y: number },
+  subtitles: { vtt: WebVtt; type: 'burn_in' | 'seperate_track' } | null
 ): Promise<void> {
   const tempdir = await getTempDir();
+
+  let diskSubtitles = null;
+  if (subtitles !== null) {
+    fs.writeFileSync(path.join(tempdir, 'subtitles.vtt'), subtitles.vtt.toString());
+    diskSubtitles = { path: path.join(tempdir, 'subtitles.vtt').toString(), type: subtitles.type };
+  }
 
   const files = content.map((part, i) => {
     const blackSource = filterSource('color', {
@@ -104,7 +155,7 @@ export async function exportVideo(
     }
   });
 
-  await combineVideoParts(files, targetResolution, outputPath);
+  await combineVideoParts(files, diskSubtitles, targetResolution, outputPath);
   fs.rmdirSync(tempdir, { recursive: true });
 }
 

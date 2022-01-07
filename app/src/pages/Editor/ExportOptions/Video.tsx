@@ -14,6 +14,14 @@ import { player } from '../../../core/player';
 import { DocumentGenerator, Document } from '../../../core/document';
 import { exportVideo, isSeperateSubtitleTrackSupported } from '../../../core/ffmpeg';
 import { contentToVtt } from '../../../core/webvtt';
+import { ExportType } from './index';
+
+export const exportDefinition: ExportType = {
+  type: 'video',
+  defaultExtension: '.mp4',
+  filters: [{ name: 'Video Files', extensions: ['mp4', 'mkv', 'gif'] }],
+  component: Video,
+};
 
 export function Video({
   exportCallbackRef,

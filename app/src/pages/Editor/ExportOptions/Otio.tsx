@@ -6,6 +6,14 @@ import { assertSome } from '../../../util';
 import { useSelector, useStore } from 'react-redux';
 import { exportOtio } from '../../../core/otio';
 import path from 'path';
+import { ExportType } from './index';
+
+export const exportDefinition: ExportType = {
+  type: 'OpenTimelineIO',
+  defaultExtension: '_proj',
+  filters: [],
+  component: Otio,
+};
 
 export function Otio({
   exportCallbackRef,

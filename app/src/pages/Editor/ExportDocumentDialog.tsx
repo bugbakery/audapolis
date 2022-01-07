@@ -1,60 +1,25 @@
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RootState } from '../../state';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { setExportPopup } from '../../state/editor';
 import path from 'path';
 import { FilePickerWithText } from '../../components/FilePicker';
-import { FileFilter } from 'electron';
 import { toast } from 'react-hot-toast';
 import { Document } from '../../core/document';
 import { assertSome, switchExtension } from '../../util';
 import { Button, Combobox, Dialog, FormField, majorScale } from 'evergreen-ui';
-import { Video } from './ExportOptions/Video';
-import { Otio } from './ExportOptions/Otio';
-import { Audio } from './ExportOptions/Audio';
-import { Subtitles } from './ExportOptions/Subtitles';
+import { exportDefinition as audioExportDefinition } from './ExportOptions/Audio';
+import { exportDefinition as videoExportDefinition } from './ExportOptions/Video';
+import { exportDefinition as otioExportDefinition } from './ExportOptions/Otio';
+import { exportDefinition as subtitleExportDefinition } from './ExportOptions/Subtitles';
 import { getHomePath } from '../../../main_process/ipc/ipc_client';
+import { ExportType } from './ExportOptions';
 
-type ExportType = {
-  type: string;
-  defaultExtension: string;
-  filters: FileFilter[];
-  // We pass a ref as onExport which the function will set to its export function
-  component: (props: {
-    exportCallbackRef: MutableRefObject<(document: Document, path: string) => Promise<void>>;
-    outputPath: string;
-    setOutputPath: (path: string) => void;
-  }) => JSX.Element;
-};
-
-const exportValues: (ExportType & { filters: FileFilter[] })[] = [
-  {
-    type: 'audio',
-    defaultExtension: '.mp3',
-    filters: [{ name: 'Audio Files', extensions: ['mp3', 'wav', 'ogg', 'wma', 'aac'] }],
-    component: Audio,
-  },
-  {
-    type: 'video',
-    defaultExtension: '.mp4',
-    filters: [{ name: 'Video Files', extensions: ['mp4', 'mkv', 'gif'] }],
-    component: Video,
-  },
-  {
-    type: 'OpenTimelineIO',
-    defaultExtension: '_proj',
-    filters: [],
-    component: Otio,
-  },
-  {
-    type: 'Subtitles',
-    defaultExtension: '.vtt',
-    filters: [
-      { name: 'WebVTT Files', extensions: ['vtt'] },
-      { name: 'SRT Files', extensions: ['srt'] },
-    ],
-    component: Subtitles,
-  },
+const exportValues: ExportType[] = [
+  audioExportDefinition,
+  videoExportDefinition,
+  otioExportDefinition,
+  subtitleExportDefinition,
 ];
 
 export function ExportDocumentDialog(): JSX.Element {

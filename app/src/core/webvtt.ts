@@ -33,13 +33,13 @@ function paragraphToCue(
     payloadEscaped: true,
   });
 }
-export async function exportWebVTT(
+
+export function contentToVtt(
   content: Paragraph[],
-  outputPath: string,
   wordTimings: boolean,
   includeSpeakerNames: boolean,
   limitLineLength: number | null
-): Promise<void> {
+): WebVtt {
   const vtt = new WebVtt(
     'This file was automatically generated using audapolis: https://github.com/audapolis/audapolis'
   );
@@ -73,7 +73,22 @@ export async function exportWebVTT(
       vtt.add(cue);
     }
   }
-  const vttString = vtt.toString();
+  return vtt;
+}
+
+export async function exportWebVTT(
+  content: Paragraph[],
+  outputPath: string,
+  wordTimings: boolean,
+  includeSpeakerNames: boolean,
+  limitLineLength: number | null
+): Promise<void> {
+  const vttString = contentToVtt(
+    content,
+    wordTimings,
+    includeSpeakerNames,
+    limitLineLength
+  ).toString();
   console.log(vttString);
   fs.writeFileSync(outputPath, vttString);
 }

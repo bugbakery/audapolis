@@ -11,6 +11,7 @@ import { getAuthHeader, getServer, getServerName } from './server';
 import { createHash } from 'crypto';
 import { convertToWav } from '../core/ffmpeg';
 import { openFile } from '../../main_process/ipc/ipc_client';
+
 export interface TranscribeState {
   file?: string;
   processed: number;
@@ -25,6 +26,7 @@ export enum TranscriptionState {
   POST_PROCESSING = 'post_processing',
   DONE = 'done',
 }
+
 export interface Task {
   uuid: string;
   filename: string;
@@ -47,7 +49,10 @@ export const transcribeFile = createAsyncThunk<string | undefined, void, { state
       title: 'Import media file...',
       properties: ['openFile', 'promptToCreate', 'createDirectory'],
       filters: [
-        { name: 'Audio Files', extensions: ['wav', 'mp3'] },
+        {
+          name: 'Audio & Video Files',
+          extensions: ['mp3', 'wav', 'ogg', 'wma', 'aac', 'mp4', 'mkv', 'mov'],
+        },
         { name: 'All Files', extensions: ['*'] },
       ],
     });

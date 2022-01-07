@@ -1,5 +1,7 @@
+export type SubtitleFormat = 'vtt' | 'srt';
+
 interface VttElement {
-  toString: () => string;
+  toString: (format: SubtitleFormat) => string;
 }
 
 export class VttCueSettings {
@@ -7,6 +9,7 @@ export class VttCueSettings {
   line?: number | string;
   size?: string;
   align?: 'start' | 'center' | 'end';
+
   constructor({
     vertical,
     size,
@@ -24,7 +27,10 @@ export class VttCueSettings {
     this.align = align;
   }
 
-  toString(): string {
+  toString(format: SubtitleFormat): string {
+    if (format == 'srt') {
+      return '';
+    }
     return Object.entries(this)
       .filter(([_, v]) => v !== undefined)
       .map(([k, v]) => `${k}:${v}`)
@@ -48,12 +54,14 @@ export function formattedTime(sec: number): string {
 
   return `${hours}:${minutes}:${seconds}.${subseconds}`;
 }
+
 export class VttCue implements VttElement {
   identifier?: string;
   startTime: number;
   endTime: number;
   settings?: VttCueSettings;
   payload: string;
+
   constructor({
     startTime,
     endTime,
@@ -87,11 +95,11 @@ export class VttCue implements VttElement {
     this.settings = settings;
   }
 
-  toString(): string {
+  toString(format: SubtitleFormat): string {
     return (
       (this.identifier ? `${this.identifier}\n` : '') +
       `${formattedTime(this.startTime)} --> ${formattedTime(this.endTime)} ${
-        this.settings?.toString() || ''
+        this.settings?.toString(format) || ''
       }`.trim() +
       '\n' +
       this.payload
@@ -101,6 +109,7 @@ export class VttCue implements VttElement {
 
 export class VttComment implements VttElement {
   commentText: string;
+
   constructor(text: string, escaped = false) {
     if (!escaped) {
       text = escapeVttString(text);
@@ -110,7 +119,11 @@ export class VttComment implements VttElement {
     }
     this.commentText = text;
   }
-  toString(): string {
+
+  toString(format: SubtitleFormat): string {
+    if (format != 'vtt') {
+      return '';
+    }
     return `NOTE ${this.commentText}`;
   }
 }
@@ -135,13 +148,18 @@ class VttHeader implements VttElement {
     }
     this.headerText = text;
   }
-  toString(): string {
+
+  toString(format: SubtitleFormat): string {
+    if (format != 'vtt') {
+      return '';
+    }
     return `WEBVTT ${this.headerText}`;
   }
 }
 
 export class WebVtt {
   elements: VttElement[];
+
   constructor(header = '') {
     this.elements = [new VttHeader(header)];
   }
@@ -149,7 +167,11 @@ export class WebVtt {
   add(element: VttElement): void {
     this.elements.push(element);
   }
-  toString(): string {
-    return this.elements.map((x) => x.toString()).join('\n\n');
+
+  toString(format: SubtitleFormat = 'vtt'): string {
+    return this.elements
+      .map((x) => x.toString(format))
+      .filter((x) => x)
+      .join('\n\n');
   }
 }

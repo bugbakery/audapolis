@@ -1,5 +1,5 @@
 import { Paragraph, DocumentGenerator, TimedParagraphItem } from './document';
-import { escapeVttString, formattedTime, VttCue, WebVtt } from '../util/WebVtt';
+import { escapeVttString, formattedTime, SubtitleFormat, VttCue, WebVtt } from '../util/WebVtt';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -81,14 +81,15 @@ export async function exportWebVTT(
   outputPath: string,
   wordTimings: boolean,
   includeSpeakerNames: boolean,
-  limitLineLength: number | null
+  limitLineLength: number | null,
+  format: SubtitleFormat
 ): Promise<void> {
   const vttString = contentToVtt(
     content,
     wordTimings,
     includeSpeakerNames,
     limitLineLength
-  ).toString();
+  ).toString(format);
   console.log(vttString);
   fs.writeFileSync(outputPath, vttString);
 }

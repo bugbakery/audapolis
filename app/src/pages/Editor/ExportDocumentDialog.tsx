@@ -12,7 +12,7 @@ import { exportDefinition as audioExportDefinition } from './ExportOptions/Audio
 import { exportDefinition as videoExportDefinition } from './ExportOptions/Video';
 import { exportDefinition as otioExportDefinition } from './ExportOptions/Otio';
 import { exportDefinition as subtitleExportDefinition } from './ExportOptions/Subtitles';
-import { getHomePath } from '../../../main_process/ipc/ipc_client';
+import { getHomePath } from '../../../ipc/ipc_renderer';
 import { ExportType } from './ExportOptions';
 
 const exportValues: ExportType[] = [

@@ -1,7 +1,7 @@
 import { FileFilter } from 'electron';
 import React from 'react';
 import { FolderOpenIcon, Group, IconButton, TextInput, Tooltip } from 'evergreen-ui';
-import { openFile, saveFile } from '../../main_process/ipc/ipc_client';
+import { openFile, saveFile } from '../../ipc/ipc_renderer';
 
 export function FilePicker({
   value,

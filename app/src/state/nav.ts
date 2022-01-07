@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { fetchModelState } from './models';
 import { RootState, store } from './index';
-import { subscribeOpenAbout } from '../../main_process/ipc/ipc_client';
+import { subscribeOpenAbout } from '../../ipc/ipc_renderer';
 
 export enum Page {
   Landing,

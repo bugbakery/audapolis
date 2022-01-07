@@ -1,11 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import { assertSome } from '../../src/util';
+import { assertSome } from '../src/util';
 import path from 'path';
 import fs from 'fs';
-import { menuMap, setMenu } from '../menu';
-import { sendAll } from './windowList';
-import { serverInfo } from '../server';
-import { ServerInfo } from '../types';
+import { menuMap, setMenu } from '../main_process/menu';
+import { sendAll } from '../main_process/windowList';
+import { serverInfo } from '../main_process/server';
+import { ServerInfo } from '../main_process/types';
 
 ipcMain.handle('open-file', (event, options) => {
   const win = BrowserWindow.fromWebContents(event.sender);

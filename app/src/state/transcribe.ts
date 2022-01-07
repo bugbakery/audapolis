@@ -10,13 +10,13 @@ import { fetchModelState, Model } from './models';
 import { getServer } from './server';
 import { createHash } from 'crypto';
 import { convertToWav } from '../core/ffmpeg';
-import { openFile } from '../../main_process/ipc/ipc_client';
 import {
   deleteTask,
   getTask,
   startTranscription as startTranscriptionApiCall,
   TranscriptionState,
 } from '../server_api/api';
+import { openFile } from '../../ipc/ipc_renderer';
 
 export interface TranscribeState {
   file?: string;

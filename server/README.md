@@ -14,25 +14,6 @@ This can either be run on the same host as the app or hosted somewhere else.
 
 ## Installation & Usage
 
-<!--
-### Docker
-
-We provide a Dockerfile for easy setup.
-
-To build the container, simply run
-```sh
-docker build --tag audapolis-server .
-```
-
-After that you can start the container using
-```sh
-docker run -p 80:80 audapolis-server
-```
-
-
-### Manually
--->
-
 We use [poetry](https://python-poetry.org/) for dependency management.
 Either install poetry using your system package manager or by running
 

@@ -1,5 +1,11 @@
 import { Paragraph, DocumentGenerator, TimedParagraphItem } from './document';
-import { escapeVttString, formattedTime, SubtitleFormat, VttCue, WebVtt } from '../util/WebVtt';
+import {
+  escapeVttString,
+  formattedTime,
+  SubtitleFormat,
+  VttCue,
+  WebVtt,
+} from '@audapolis/webvtt-writer';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 

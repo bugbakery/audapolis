@@ -21,7 +21,7 @@
     "dist": "electron-builder build --config electron-builder.config.js",
     "test": "jest",
     "start": "node scripts/dev.js",
-    "check": "npm-run-all --continue-on-error lint:*",
+    "check": "npm-run-all --continue-on-error check:*",
     "check:tsc": "tsc --noEmit --incremental",
     "check:eslint": "eslint --ext .ts,.tsx . --cache",
     "fmt": "prettier --write '{src,main_process}/**/*'"

@@ -17,7 +17,7 @@ function getSubtitleCodec(outputPath: string): string {
   } else if (outputPath.endsWith('.mkv')) {
     return 'srt';
   }
-  throw Error('subtitles not supported for this file ending');
+  throw Error('subtitles not supported for this file extension');
 }
 
 function addSubtitles(
@@ -109,7 +109,12 @@ function filterSource(filter: string, options: Record<string, string | number>) 
 }
 
 export function isSeperateSubtitleTrackSupported(outputPath: string): boolean {
-  return outputPath.endsWith('.mp4') || outputPath.endsWith('.mkv');
+  try {
+    getSubtitleCodec(outputPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function exportVideo(
@@ -130,7 +135,7 @@ export async function exportVideo(
   const files = content.map((part, i) => {
     const blackSource = filterSource('color', {
       color: 'black',
-      rate: subtitles ? 30 : 0, // ffmpeg only burns in the subtitles which exist at the beginning of the frame. With 1fps, subtitles appear delayed or are skipped completely
+      rate: subtitles ? 30 : 1, // ffmpeg only burns in the subtitles which exist at the beginning of the frame. With 1fps, subtitles appear delayed or are skipped completely
       duration: part.length,
       size: `${targetResolution.x}x${targetResolution.y}`,
     });

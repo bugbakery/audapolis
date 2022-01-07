@@ -51,25 +51,25 @@ export function contentToVtt(
   );
   let docGenerator = DocumentGenerator.fromParagraphs(content);
   if (limitLineLength !== null) {
-    let last_uuid = '';
-    let current_length = 0;
-    let current_uuid = '';
+    let lastUuid = '';
+    let currentCharacterLength = 0;
+    let currentUuid = '';
     docGenerator = docGenerator.itemMap((item) => {
-      if (last_uuid != item.paragraphUuid) {
-        last_uuid = item.paragraphUuid;
-        current_length = item.type == 'word' ? item.word.length + 1 : 0;
-        current_uuid = item.paragraphUuid;
+      if (lastUuid != item.paragraphUuid) {
+        lastUuid = item.paragraphUuid;
+        currentCharacterLength = item.type == 'word' ? item.word.length + 1 : 0;
+        currentUuid = item.paragraphUuid;
         return item;
       }
       if (item.type != 'word') {
-        return { ...item, paragraphUuid: current_uuid };
+        return { ...item, paragraphUuid: currentUuid };
       }
-      if (current_length + item.word.length > limitLineLength) {
-        current_uuid = uuidv4();
-        current_length = item.word.length;
+      if (currentCharacterLength + item.word.length > limitLineLength) {
+        currentUuid = uuidv4();
+        currentCharacterLength = item.word.length;
       }
-      current_length += 1 + item.word.length;
-      return { ...item, paragraphUuid: current_uuid };
+      currentCharacterLength += 1 + item.word.length;
+      return { ...item, paragraphUuid: currentUuid };
     });
   }
   const timedParagraphs = docGenerator.toTimedParagraphs();
@@ -96,6 +96,5 @@ export async function exportWebVTT(
     includeSpeakerNames,
     limitLineLength
   ).toString(format);
-  console.log(vttString);
   fs.writeFileSync(outputPath, vttString);
 }

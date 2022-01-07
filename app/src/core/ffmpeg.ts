@@ -130,7 +130,7 @@ export async function exportVideo(
   const files = content.map((part, i) => {
     const blackSource = filterSource('color', {
       color: 'black',
-      rate: 1,
+      rate: subtitles ? 30 : 0, // ffmpeg only burns in the subtitles which exist at the beginning of the frame. With 1fps, subtitles appear delayed or are skipped completely
       duration: part.length,
       size: `${targetResolution.x}x${targetResolution.y}`,
     });

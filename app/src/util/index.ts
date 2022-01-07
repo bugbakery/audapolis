@@ -1,3 +1,5 @@
+import path from 'path';
+
 export function sleep(time: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, time * 1000));
 }
@@ -15,4 +17,14 @@ export function roughEq(a?: number, b?: number): boolean {
     return a === b;
   }
   return Math.abs(a - b) < EPSILON;
+}
+
+export function switchExtension(pathName: string, extension: string): string {
+  const current_extension = path.extname(pathName);
+  const dirname = path.dirname(pathName);
+  let basename = path.basename(pathName, current_extension);
+  if (path.extname(basename) != extension) {
+    basename += extension;
+  }
+  return path.join(dirname, basename);
 }

@@ -67,3 +67,7 @@ ipcMain.on('local-server-request', () => {
 export function openAbout(window: BrowserWindow): void {
   window.webContents.send('open-about');
 }
+
+ipcMain.handle('get-home-path', () => {
+  return app.getPath('home');
+});

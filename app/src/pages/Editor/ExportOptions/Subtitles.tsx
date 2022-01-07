@@ -4,18 +4,8 @@ import { exportWebVTT } from '../../../core/webvtt';
 import { Button, Checkbox, FormField, Group, majorScale, TextInput } from 'evergreen-ui';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../state';
-import * as path from 'path';
 import { SubtitleFormat } from '../../../util/WebVtt';
-
-function switchExtension(pathName: string, extension: string) {
-  const current_extension = path.extname(pathName);
-  const dirname = path.dirname(pathName);
-  let basename = path.basename(pathName, current_extension);
-  if (path.extname(basename) != extension) {
-    basename += extension;
-  }
-  return path.join(dirname, basename);
-}
+import { switchExtension } from '../../../util';
 
 export function Subtitles({
   exportCallbackRef,

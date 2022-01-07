@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import { useEffect, useState } from 'react';
 import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
 import { Heading, Link, majorScale, Paragraph } from 'evergreen-ui';
-import { getAbout, openTextInSystem } from '../../main_process/ipc/ipc_client';
+import { getAbout, openTextInSystem } from '../../ipc/ipc_renderer';
 
 function openLicenses() {
   const data = fs.readFileSync('generated/licenses.zip');

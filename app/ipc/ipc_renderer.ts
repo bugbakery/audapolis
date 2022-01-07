@@ -9,7 +9,7 @@ import {
   SaveDialogOptions,
   SaveDialogReturnValue,
 } from 'electron';
-import { MenuItemConstructorOptionsIpc, ServerInfo } from '../types';
+import { MenuItemConstructorOptionsIpc, ServerInfo } from '../main_process/types';
 
 export function saveFile(options: SaveDialogOptions): Promise<SaveDialogReturnValue> {
   return ipcRenderer.invoke('save-file', options);

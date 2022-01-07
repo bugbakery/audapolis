@@ -3,7 +3,7 @@ import process from 'process';
 import fs from 'fs';
 import { spawn } from 'child_process';
 import { app, dialog } from 'electron';
-import { publishServerInfo, publishServerStderr } from './ipc/ipc';
+import { publishServerInfo, publishServerStderr } from '../ipc/ipc_main';
 import { ServerInfo } from './types';
 
 function findServer() {

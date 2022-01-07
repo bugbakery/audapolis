@@ -5,7 +5,7 @@ import {
   requestLocalServerInfo,
   subscribeLocalServerInfo,
   subscribeLocalServerStderr,
-} from '../../main_process/ipc/ipc_client';
+} from '../../ipc/ipc_renderer';
 import { assertSome } from '../util';
 
 export interface ServerState {

@@ -45,7 +45,9 @@ export const createWindow = (): void => {
     })();
   } else {
     (async () => {
-      await window.loadURL(new URL('../build/src/index.html', 'file://' + __dirname).toString());
+      await window.loadURL(
+        new URL('../build/renderer_process/index.html', 'file://' + __dirname).toString()
+      );
     })();
   }
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

@@ -7,33 +7,22 @@ import { sleep } from '../util';
 import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { fetchModelState, Model } from './models';
-import { getAuthHeader, getServer, getServerName } from './server';
+import { getServer } from './server';
 import { createHash } from 'crypto';
 import { convertToWav } from '../core/ffmpeg';
 import { openFile } from '../../main_process/ipc/ipc_client';
+import {
+  deleteTask,
+  getTask,
+  startTranscription as startTranscriptionApiCall,
+  TranscriptionState,
+} from '../server_api/api';
 
 export interface TranscribeState {
   file?: string;
   processed: number;
   total: number;
   state?: TranscriptionState;
-}
-
-export enum TranscriptionState {
-  QUEUED = 'queued',
-  LOADING = 'loading',
-  TRANSCRIBING = 'transcribing',
-  POST_PROCESSING = 'post_processing',
-  DONE = 'done',
-}
-
-export interface Task {
-  uuid: string;
-  filename: string;
-  state: TranscriptionState;
-  total: number;
-  processed: number;
-  content?: Record<any, any>;
 }
 
 export const transcribeFile = createAsyncThunk<string | undefined, void, { state: RootState }>(
@@ -69,40 +58,35 @@ export const startTranscription = createAsyncThunk<
   { model: Model; diarize: boolean },
   { state: RootState }
 >('transcribing/upload', async ({ model, diarize }, { dispatch, getState }) => {
-  const formData = new FormData();
   const state = getState();
   const server = getServer(state);
-  const serverName = getServerName(server);
   const path = state?.transcribe?.file;
   if (path === undefined) {
     throw Error('Failed to start transcription: No file for transcription given.');
   }
   dispatch(openTranscribing());
+
   const fileName = basename(path);
   const wavFileContent = await convertToWav(path);
   const file = new File([wavFileContent], 'input.wav');
-  formData.append('file', file); // TODO: Error handling
-  formData.append('fileName', fileName);
-  const result = (await fetch(
-    `${serverName}/tasks/start_transcription/` +
-      `?lang=${encodeURIComponent(model.lang)}` +
-      `&model=${encodeURIComponent(model.name)}` +
-      `&diarize=${diarize}`,
-    {
-      method: 'POST',
-      body: formData,
-      headers: { Authorization: getAuthHeader(server) },
-    }
-  ).then((x) => x.json())) as Task;
-  dispatch(setState(result.state));
-  const { uuid } = result;
+  const task = await startTranscriptionApiCall(
+    server,
+    model.lang,
+    model.name,
+    diarize,
+    file,
+    fileName
+  );
+
+  dispatch(setState(task.state));
+
   while (true) {
-    const { content, state, processed, total } = (await fetch(`${serverName}/tasks/${uuid}/`, {
-      headers: { Authorization: getAuthHeader(server) },
-    }).then((x) => x.json())) as Task;
+    const { content, state, processed, total } = await getTask(server, task);
+
     dispatch(setProgress({ processed, total }));
     dispatch(setState(state));
-    if (state == TranscriptionState.DONE) {
+
+    if (state == 'done') {
       const fileContent = readFileSync(path);
       const fileContents = fileContent.buffer;
       const objectUrl = URL.createObjectURL(new Blob([fileContents]));
@@ -131,10 +115,7 @@ export const startTranscription = createAsyncThunk<
         openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
       );
       // Once the task is finished, try to delete it but ignore any errors
-      fetch(`${serverName}/tasks/${uuid}/`, {
-        headers: { Authorization: getAuthHeader(server) },
-        method: 'DELETE',
-      });
+      await deleteTask(server, task);
       break;
     }
     await sleep(0.1);

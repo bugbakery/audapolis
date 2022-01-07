@@ -4,7 +4,7 @@ export function sleep(time: number): Promise<void> {
 
 export function assertSome<T>(x: T | null | undefined | void): asserts x is T {
   if (x === undefined || x === null) {
-    throw Error(`x is not loaded (it is '${x}')`);
+    throw Error(`x is '${x}' while it is asserted that it is some`);
   }
 }
 
@@ -15,10 +15,4 @@ export function roughEq(a?: number, b?: number): boolean {
     return a === b;
   }
   return Math.abs(a - b) < EPSILON;
-}
-
-export function encodeGetParams(params: Record<string, string | number>): string {
-  return Object.entries(params)
-    .map((kv) => kv.map(encodeURIComponent).join('='))
-    .join('&');
 }

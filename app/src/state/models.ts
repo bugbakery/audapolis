@@ -1,7 +1,15 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { assertSome, sleep } from '../util';
 import { RootState } from './index';
-import { getAuthHeader, getServer, getServerName } from './server';
+import { getServer } from './server';
+import {
+  getAvailableModels,
+  getDownloadedModels,
+  downloadModel as downloadModelApiCall,
+  deleteModel as deleteModelApiCall,
+  getTask,
+  DownloadingModelState,
+} from '../server_api/api';
 
 export interface Model {
   lang: string;
@@ -12,25 +20,10 @@ export interface Model {
   wer_speed: string;
 }
 
-export enum DownloadingModelState {
-  QUEUED = 'queued',
-  DOWNLOADING = 'downloading',
-  EXTRACTING = 'extracting',
-  DONE = 'done',
-}
-
 export type DownloadingModel = Model & {
   progress: number;
   state: DownloadingModelState;
 };
-
-export interface DownloadModelTask {
-  lang: string;
-  name: string;
-  state: DownloadingModelState;
-  total: number;
-  processed: number;
-}
 
 export interface ModelsState {
   downloaded: Model[];
@@ -45,15 +38,8 @@ export const fetchModelState = createAsyncThunk<
 >('models/fetchModelState', async (_, { getState }) => {
   const server = getServer(getState());
   assertSome(server);
-  const all: Record<string, Model> = await fetch(`${getServerName(server)}/models/available`, {
-    headers: { Authorization: getAuthHeader(server) },
-  }).then((x) => x.json());
-  const downloaded: Record<string, Model> = await fetch(
-    `${getServerName(server)}/models/downloaded`,
-    {
-      headers: { Authorization: getAuthHeader(server) },
-    }
-  ).then((x) => x.json());
+  const all = await getAvailableModels(server);
+  const downloaded = await getDownloadedModels(server);
 
   const flatten = (x: Record<string, Model>) => Object.values(x).flatMap((x) => x);
 
@@ -65,17 +51,11 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
   async (model, { dispatch, getState }) => {
     const server = getServer(getState());
     assertSome(server);
-    const { uuid } = await fetch(
-      `${getServerName(server)}/tasks/download_model/` +
-        `?lang=${encodeURIComponent(model.lang)}` +
-        `&model=${encodeURIComponent(model.name)}`,
-      { method: 'POST', headers: { Authorization: getAuthHeader(server) } }
-    ).then((x) => x.json());
+    const task = await downloadModelApiCall(server, model.lang, model.name);
 
     while (true) {
-      const { state, processed, total } = (await fetch(`${getServerName(server)}/tasks/${uuid}/`, {
-        headers: { Authorization: getAuthHeader(server) },
-      }).then((x) => x.json())) as DownloadModelTask;
+      const { state, processed, total } = await getTask(server, task);
+
       dispatch(setProgress({ model, state, progress: processed / total }));
       if (state == DownloadingModelState.DONE) {
         dispatch(setProgress({ model, state, progress: processed / total }));
@@ -92,12 +72,7 @@ export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
   async (model, { dispatch, getState }) => {
     const server = getServer(getState());
     assertSome(server);
-    await fetch(
-      `${getServerName(server)}/models/delete/` +
-        `?lang=${encodeURIComponent(model.lang)}` +
-        `&model=${encodeURIComponent(model.name)}`,
-      { method: 'POST', headers: { Authorization: getAuthHeader(server) } }
-    );
+    await deleteModelApiCall(server, model.lang, model.name);
     dispatch(fetchModelState());
   }
 );

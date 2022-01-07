@@ -1,22 +1,14 @@
 import { RenderItem, Source } from './document';
 import path from 'path';
 import fs from 'fs';
-import { assertSome, encodeGetParams } from '../util';
+import { assertSome } from '../util';
 import { player } from './player';
-import { getAuthHeader, getServerName, ServerConfig } from '../state/server';
+import { ServerConfig } from '../state/server';
+import { convertOtio, OtioSegment } from '../server_api/api';
 
 /**
  * helpers for export to opentimelineIO with the help of the python backend.
  */
-
-interface Segment {
-  speaker: string;
-  source_file: string;
-  source_length: number;
-  has_video: boolean;
-  source_start: number;
-  length: number;
-}
 
 export async function exportOtio(
   name: string,
@@ -31,7 +23,7 @@ export async function exportOtio(
   fs.mkdirSync(outputPath);
   fs.mkdirSync(path.join(outputPath, 'media'));
 
-  const timeline: Segment[] = content.map((x) => {
+  const timeline: OtioSegment[] = content.map((x) => {
     if (!('speaker' in x)) {
       console.debug(x);
       throw Error('not implemented');
@@ -52,22 +44,7 @@ export async function exportOtio(
   });
 
   console.log(timeline);
-
-  const otioOutput = await fetch(
-    `${getServerName(server)}/util/otio/convert?` +
-      encodeGetParams({
-        name,
-        adapter,
-      }),
-    {
-      method: 'POST',
-      body: JSON.stringify(timeline),
-      headers: {
-        Authorization: getAuthHeader(server),
-        'content-type': 'application/json',
-      },
-    }
-  ).then((x) => x.arrayBuffer());
+  const otioOutput = await convertOtio(server, name, adapter, timeline);
 
   for (const name of Object.keys(sources)) {
     console.log(Object.keys(sources), name, sources[name]);

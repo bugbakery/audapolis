@@ -60,14 +60,6 @@ export const serverSlice = createSlice({
 const { setLocalServer, selectServer } = serverSlice.actions;
 export default serverSlice.reducer;
 
-export const getServerName = (server: ServerConfig): string => {
-  return `${server.hostname}:${server.port}`;
-};
-
-export const getAuthHeader = (server: ServerConfig): string => {
-  return `Bearer ${server.token}`;
-};
-
 export const getServer = (state: RootState): ServerConfig => {
   return state.server.servers[state.server.selectedServer];
 };

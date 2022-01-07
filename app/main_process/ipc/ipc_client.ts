@@ -27,6 +27,10 @@ export function getAbout(): Promise<{ version: string }> {
   return ipcRenderer.invoke('get-about');
 }
 
+export function getHomePath(callback: (path: string) => void): void {
+  ipcRenderer.invoke('get-home-path').then(callback);
+}
+
 export function setMenu(contents: MenuItemConstructorOptionsIpc[]): void {
   ipcRenderer.send('set-menu', contents);
 }

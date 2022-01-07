@@ -1,4 +1,4 @@
-import React, { MutableRefObject, useRef, useState } from 'react';
+import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
 import { RootState } from '../../state';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { setExportPopup } from '../../state/editor';
@@ -7,16 +7,17 @@ import { FilePickerWithText } from '../../components/FilePicker';
 import { FileFilter } from 'electron';
 import { toast } from 'react-hot-toast';
 import { Document } from '../../core/document';
-import { assertSome } from '../../util';
+import { assertSome, switchExtension } from '../../util';
 import { Button, Combobox, Dialog, FormField, majorScale } from 'evergreen-ui';
 import { Video } from './ExportOptions/Video';
 import { Otio } from './ExportOptions/Otio';
 import { Audio } from './ExportOptions/Audio';
 import { Subtitles } from './ExportOptions/Subtitles';
+import { getHomePath } from '../../../main_process/ipc/ipc_client';
 
 type ExportType = {
   type: string;
-  path: string;
+  defaultExtension: string;
   filters: FileFilter[];
   // We pass a ref as onExport which the function will set to its export function
   component: (props: {
@@ -26,10 +27,44 @@ type ExportType = {
   }) => JSX.Element;
 };
 
+const exportValues: (ExportType & { filters: FileFilter[] })[] = [
+  {
+    type: 'audio',
+    defaultExtension: '.mp3',
+    filters: [{ name: 'Audio Files', extensions: ['mp3', 'wav', 'ogg', 'wma', 'aac'] }],
+    component: Audio,
+  },
+  {
+    type: 'video',
+    defaultExtension: '.mp4',
+    filters: [{ name: 'Video Files', extensions: ['mp4', 'mkv', 'gif'] }],
+    component: Video,
+  },
+  {
+    type: 'OpenTimelineIO',
+    defaultExtension: '_proj',
+    filters: [],
+    component: Otio,
+  },
+  {
+    type: 'Subtitles',
+    defaultExtension: '.vtt',
+    filters: [
+      { name: 'WebVTT Files', extensions: ['vtt'] },
+      { name: 'SRT Files', extensions: ['srt'] },
+    ],
+    component: Subtitles,
+  },
+];
+
 export function ExportDocumentDialog(): JSX.Element {
   const dispatch = useDispatch();
   const store = useStore();
-  const documentPath = useSelector((state: RootState) => state.editor.present?.path || '');
+  const [home, setHome] = useState('');
+  getHomePath(setHome);
+  const documentPath = useSelector(
+    (state: RootState) => state.editor.present?.path || path.join(home, 'Untitled.audapolis')
+  );
   const documentBaseName = path.basename(documentPath, '.audapolis');
   const documentBasePath = path.join(path.dirname(documentPath), documentBaseName);
   const exportFnRef = useRef((_a: Document, _b: string) => {
@@ -37,37 +72,15 @@ export function ExportDocumentDialog(): JSX.Element {
       resolve();
     });
   });
-  const exportValues: (ExportType & { filters: FileFilter[] })[] = [
-    {
-      type: 'audio',
-      path: documentBasePath + '.mp3',
-      filters: [{ name: 'Audio Files', extensions: ['mp3', 'wav', 'ogg', 'wma', 'aac'] }],
-      component: Audio,
-    },
-    {
-      type: 'video',
-      path: documentBasePath + '.mp4',
-      filters: [{ name: 'Video Files', extensions: ['mp4', 'mkv', 'gif'] }],
-      component: Video,
-    },
-    {
-      type: 'OpenTimelineIO',
-      path: documentBasePath + '_proj',
-      filters: [],
-      component: Otio,
-    },
-    {
-      type: 'Subtitles',
-      path: documentBasePath + '.vtt',
-      filters: [
-        { name: 'WebVTT Files', extensions: ['vtt'] },
-        { name: 'SRT Files', extensions: ['srt'] },
-      ],
-      component: Subtitles,
-    },
-  ];
 
-  const [formState, setFormState] = useState(exportValues[0]);
+  const [formState, setFormState] = useState({
+    ...exportValues[0],
+    path: documentBasePath + exportValues[0].defaultExtension,
+  });
+
+  useEffect(() => {
+    setFormState((state) => ({ ...state, path: documentBasePath + state.defaultExtension }));
+  }, [documentBasePath]);
 
   const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
   const exportFn = (close: () => void) => {
@@ -107,7 +120,12 @@ export function ExportDocumentDialog(): JSX.Element {
           initialSelectedItem={formState}
           items={exportValues}
           itemToString={(x) => x.type}
-          onChange={(selected) => setFormState(selected)}
+          onChange={(selected) =>
+            setFormState((state) => ({
+              ...selected,
+              path: switchExtension(state.path, selected.defaultExtension),
+            }))
+          }
         />
       </FormField>
       <FormField label="Export Path" marginBottom={majorScale(3)}>

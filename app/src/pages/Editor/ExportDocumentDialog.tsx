@@ -12,7 +12,7 @@ import { Button, Combobox, Dialog, FormField, majorScale } from 'evergreen-ui';
 import { Video } from './ExportOptions/Video';
 import { Otio } from './ExportOptions/Otio';
 import { Audio } from './ExportOptions/Audio';
-import { WebVtt } from './ExportOptions/WebVtt';
+import { Subtitles } from './ExportOptions/Subtitles';
 
 type ExportType = {
   type: string;
@@ -22,6 +22,7 @@ type ExportType = {
   component: (props: {
     exportCallbackRef: MutableRefObject<(document: Document, path: string) => Promise<void>>;
     outputPath: string;
+    setOutputPath: (path: string) => void;
   }) => JSX.Element;
 };
 
@@ -56,10 +57,13 @@ export function ExportDocumentDialog(): JSX.Element {
       component: Otio,
     },
     {
-      type: 'WebVTT',
+      type: 'Subtitles',
       path: documentBasePath + '.vtt',
-      filters: [{ name: 'WebVTT Files', extensions: ['vtt'] }],
-      component: WebVtt,
+      filters: [
+        { name: 'WebVTT Files', extensions: ['vtt'] },
+        { name: 'SRT Files', extensions: ['srt'] },
+      ],
+      component: Subtitles,
     },
   ];
 
@@ -115,7 +119,11 @@ export function ExportDocumentDialog(): JSX.Element {
         />
       </FormField>
 
-      <ExportOptionComponent exportCallbackRef={exportFnRef} outputPath={formState.path} />
+      <ExportOptionComponent
+        exportCallbackRef={exportFnRef}
+        outputPath={formState.path}
+        setOutputPath={(path) => setFormState((state) => ({ ...state, path }))}
+      />
     </Dialog>
   );
 }

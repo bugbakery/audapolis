@@ -6,6 +6,17 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../state';
 import { SubtitleFormat } from '@audapolis/webvtt-writer';
 import { switchExtension } from '../../../util';
+import { ExportType } from './index';
+
+export const exportDefinition: ExportType = {
+  type: 'Subtitles',
+  defaultExtension: '.vtt',
+  filters: [
+    { name: 'WebVTT Files', extensions: ['vtt'] },
+    { name: 'SRT Files', extensions: ['srt'] },
+  ],
+  component: Subtitles,
+};
 
 export function Subtitles({
   exportCallbackRef,

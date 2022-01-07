@@ -63,6 +63,7 @@
     "vite-plugin-commonjs-externals": "^0.1.1"
   },
   "dependencies": {
+    "@audapolis/webvtt-writer": "^1.0.3",
     "@emotion/react": "^11.7.1",
     "@reactour/mask": "^0.4.0",
     "@reactour/utils": "^0.2.1",

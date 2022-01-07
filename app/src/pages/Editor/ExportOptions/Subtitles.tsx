@@ -4,7 +4,7 @@ import { exportWebVTT } from '../../../core/webvtt';
 import { Button, Checkbox, FormField, Group, majorScale, TextInput } from 'evergreen-ui';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../state';
-import { SubtitleFormat } from '../../../util/WebVtt';
+import { SubtitleFormat } from '@audapolis/webvtt-writer';
 import { switchExtension } from '../../../util';
 
 export function Subtitles({

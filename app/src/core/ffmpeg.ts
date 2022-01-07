@@ -5,7 +5,7 @@ import Fessonia from '@tedconf/fessonia';
 import ffmpegPath from 'ffmpeg-static';
 import AppDirectory from 'appdirectory';
 import { player } from './player';
-import { WebVtt } from '../util/WebVtt';
+import { WebVtt } from '@audapolis/webvtt-writer';
 
 const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fessonia({
   ffmpeg_bin: ffmpegPath,

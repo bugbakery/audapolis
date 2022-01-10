@@ -14,18 +14,16 @@ import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
 import { SelectionMenu } from './SelectionMenu';
 import { EPSILON } from '../../util';
+import { Heading, majorScale, Pane, useTheme } from 'evergreen-ui';
+import styled from 'styled-components';
 import {
-  deleteSomething,
-  goLeft,
-  goRight,
   selectionIncludeFully,
   selectLeft,
   selectRight,
   setSelection,
-  setTime,
-} from '../../state/editor';
-import { Heading, majorScale, Pane, useTheme } from 'evergreen-ui';
-import styled from 'styled-components';
+} from '../../state/editor/selection';
+import { goLeft, goRight, setTime } from '../../state/editor/play';
+import { deleteSomething } from '../../state/editor/edit';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;

@@ -4,7 +4,6 @@ import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
 import { sleep } from '../util';
-import { openDocumentFromMemory } from './editor';
 import { Paragraph } from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getServer } from './server';
@@ -17,6 +16,7 @@ import {
   TranscriptionState,
 } from '../server_api/api';
 import { openFile } from '../../ipc/ipc_renderer';
+import { openDocumentFromMemory } from './editor/io';
 
 export interface TranscribeState {
   file?: string;

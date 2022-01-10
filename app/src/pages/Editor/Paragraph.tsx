@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { setWord, reassignParagraph, renameSpeaker } from '../../state/editor';
 import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
 import { assertSome } from '../../util';
 import {
@@ -14,6 +13,7 @@ import {
   Text,
   TextInput,
 } from 'evergreen-ui';
+import { reassignParagraph, renameSpeaker, setWord } from '../../state/editor/edit';
 
 export function Paragraph({
   speaker,

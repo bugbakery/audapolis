@@ -43,6 +43,11 @@ export interface Document<S = Source, I = ParagraphItem> {
   content: Paragraph<I>[];
 }
 
+export const emptyDocument: Document = {
+  sources: {},
+  content: [],
+};
+
 /**
  * The file versions of audapolis are not the same as the actual release versions of the app.
  * They should be changed any time a breaking update to the file structure happens but it is not necessary to bump them

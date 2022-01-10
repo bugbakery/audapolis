@@ -5,10 +5,11 @@ import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { openModelManager } from '../state/nav';
-import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor';
 import { resetTour } from '../components/Tour';
 import { Button, CommentIcon, IconButton, SettingsIcon, Tooltip } from 'evergreen-ui';
 import { LandingTour } from '../tour/LandingTour';
+import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor/io';
+import { emptyDocument } from '../core/document';
 
 const BottomRightContainer = styled.div`
   position: absolute;
@@ -48,7 +49,7 @@ export function LandingPage(): JSX.Element {
           Open Existing
         </Button>
         <Button
-          onClick={() => dispatch(openDocumentFromMemory({ sources: {}, content: [] }))}
+          onClick={() => dispatch(openDocumentFromMemory(emptyDocument))}
           size={'large'}
           marginY={20}
           width={300}

@@ -3,15 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { TitleBar, TitleBarGroup, TitleBarSection } from '../../components/TitleBar';
 import { ActionCreators } from 'redux-undo';
-import {
-  ExportState,
-  saveDocument,
-  toggleDisplaySpeakerNames,
-  play,
-  toggleDisplayVideo,
-  setExportPopup,
-  pause,
-} from '../../state/editor';
 import { DocumentGenerator } from '../../core/document';
 import {
   ExportIcon,
@@ -33,6 +24,14 @@ import {
   useTheme,
 } from 'evergreen-ui';
 import { ForwardedRef } from 'react';
+import { ExportState } from '../../state/editor/types';
+import {
+  setExportPopup,
+  toggleDisplaySpeakerNames,
+  toggleDisplayVideo,
+} from '../../state/editor/display';
+import { saveDocument } from '../../state/editor/io';
+import { pause, play } from '../../state/editor/play';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();

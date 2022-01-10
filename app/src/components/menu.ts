@@ -1,20 +1,13 @@
 import { ipcRenderer, MenuItemConstructorOptions } from 'electron';
 import { store } from '../state';
-import {
-  closeDocument,
-  copy,
-  cut,
-  selectAll,
-  openDocumentFromDisk,
-  paste,
-  saveDocument,
-  toggleDisplaySpeakerNames,
-  toggleDisplayVideo,
-} from '../state/editor';
 import { transcribeFile } from '../state/transcribe';
 import { ActionCreators } from 'redux-undo';
 import { v4 as uuidv4 } from 'uuid';
 import { MenuItemConstructorOptionsIpc } from '../../main_process/types';
+import { closeDocument, openDocumentFromDisk, saveDocument } from '../state/editor/io';
+import { copy, cut, paste } from '../state/editor/edit';
+import { selectAll } from '../state/editor/selection';
+import { toggleDisplaySpeakerNames, toggleDisplayVideo } from '../state/editor/display';
 
 export function setMenu(menu: MenuItemConstructorOptions[]): void {
   const listeners: Record<string, () => void> = {};

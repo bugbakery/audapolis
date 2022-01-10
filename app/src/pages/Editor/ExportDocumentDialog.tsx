@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { RootState } from '../../state';
 import { useDispatch, useSelector, useStore } from 'react-redux';
-import { setExportPopup } from '../../state/editor';
 import path from 'path';
 import { FilePickerWithText } from '../../components/FilePicker';
 import { toast } from 'react-hot-toast';
@@ -14,6 +13,7 @@ import { exportDefinition as otioExportDefinition } from './ExportOptions/Otio';
 import { exportDefinition as subtitleExportDefinition } from './ExportOptions/Subtitles';
 import { getHomePath } from '../../../main_process/ipc/ipc_client';
 import { ExportType } from './ExportOptions';
+import { setExportPopup } from '../../state/editor/display';
 
 const exportValues: ExportType[] = [
   audioExportDefinition,

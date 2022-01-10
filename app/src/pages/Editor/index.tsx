@@ -5,10 +5,11 @@ import { EditorTitleBar } from './TitleBar';
 import { Document } from './Document';
 import { Player } from './Player';
 import { KeyboardEventHandler } from 'react';
-import { insertParagraphBreak, togglePlaying } from '../../state/editor';
 import { useDispatch } from 'react-redux';
 import { ExportDocumentDialog } from './ExportDocumentDialog';
 import { EditorTour } from '../../tour/EditorTour';
+import { togglePlaying } from '../../state/editor/play';
+import { insertParagraphBreak } from '../../state/editor/edit';
 
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;

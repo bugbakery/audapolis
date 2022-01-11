@@ -62,14 +62,23 @@ type DocumentJson = DocumentV1Json | DocumentPreV1Json;
 
 export async function deserializeDocumentFromFile(
   path: string,
-  onNoSourceLoad?: (noSourceDocument: Document) => void
+  onSourcesLoad?: (sources: Record<string, Source>) => void
 ): Promise<Document> {
   const zipBinary = readFileSync(path);
-  return await deserializeDocument(zipBinary, onNoSourceLoad);
+  return await deserializeDocument(zipBinary, onSourcesLoad);
 }
+
+/**
+ * Deserializes a given audapolis zip file. If a onSourcesLoad callback is provided, the promise this returns will be
+ * resolved as soon as the index is read with an empty record for the sources. This means the callback must manually
+ * set the sources when they are fully loaded.
+ *
+ * @param zipBinary the zip that is the audapolis file
+ * @param onSourcesLoad the callback that receives the sources oncy they are loaded. Optional: if not given the future this function returns will take longer to be resolved.
+ */
 export async function deserializeDocument(
   zipBinary: Buffer,
-  onNoSourceLoad?: (noSourceDocument: Document) => void
+  onSourcesLoad?: (sources: Record<string, Source>) => void
 ): Promise<Document> {
   const zip = await JSZip.loadAsync(zipBinary);
   const documentFile = zip.file('document.json');
@@ -77,7 +86,7 @@ export async function deserializeDocument(
     throw Error('document.json missing in audapolis file');
   }
   const parsed = JSON.parse(await documentFile.async('text')) as DocumentJson;
-  let content;
+  let content: Paragraph[];
   if (!('version' in parsed)) {
     throw new Error(
       'Unversioned audapolis files are not supported anymore.\nProbably your audapolis file is corrupt.'
@@ -90,32 +99,40 @@ export async function deserializeDocument(
     );
   }
 
-  if (onNoSourceLoad) {
-    onNoSourceLoad({ content, sources: {} });
-  }
-  const sourceFiles = zip.file(/^sources\//);
-  console.log(sourceFiles);
-  const sources = Object.fromEntries(
-    await Promise.all(
-      sourceFiles.map(async (file) => {
-        console.log('namefile', file.name);
-        const fileContents = await file.async('arraybuffer');
-        console.log('filecontent', fileContents);
-        const objectUrl = URL.createObjectURL(new Blob([fileContents]));
-        return [basename(file.name), { fileContents, objectUrl }];
-      })
-    )
-  );
+  const loadSources = async (): Promise<Record<string, Source>> => {
+    const sourceFiles = zip.file(/^sources\//);
+    console.log(sourceFiles);
+    const sources = Object.fromEntries(
+      await Promise.all(
+        sourceFiles.map(async (file) => {
+          console.log('namefile', file.name);
+          const fileContents = await file.async('arraybuffer');
+          console.log('filecontent', fileContents);
+          const objectUrl = URL.createObjectURL(new Blob([fileContents]));
+          return [basename(file.name), { fileContents, objectUrl }];
+        })
+      )
+    );
 
-  for (const v of DocumentGenerator.fromParagraphs(content)) {
-    if ('source' in v && sources[v.source] === undefined) {
-      throw new Error(
-        `Source ${v.source} is referenced in audapolis file but not present. Your Audapolis file is corrupt :(`
-      );
+    for (const v of DocumentGenerator.fromParagraphs(content)) {
+      if ('source' in v && sources[v.source] === undefined) {
+        throw new Error(
+          `Source ${v.source} is referenced in audapolis file but not present. Your Audapolis file is corrupt :(`
+        );
+      }
     }
-  }
+    return sources;
+  };
 
-  return { content, sources };
+  if (onSourcesLoad) {
+    setTimeout(async () => {
+      onSourcesLoad(await loadSources());
+    });
+    return { content, sources: {} };
+  } else {
+    const sources = await loadSources();
+    return { content, sources };
+  }
 }
 
 export function serializeDocument(document: Document): JSZip {

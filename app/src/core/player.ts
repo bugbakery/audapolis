@@ -45,7 +45,7 @@ class Player {
         await sleep(renderItem.length);
       };
 
-      if ('source' in renderItem) {
+      if ('source' in renderItem && renderItem.source) {
         const source = this.sources[renderItem.source];
         source.currentTime = renderItem.sourceStart;
         await source.play();
@@ -62,7 +62,7 @@ class Player {
       .exactFrom(time)
       .toRenderItems()
       .next().value;
-    if (renderItem && 'source' in renderItem) {
+    if ('source' in renderItem && renderItem.source) {
       const source = this.sources[renderItem.source];
       source.currentTime = renderItem.sourceStart;
     }

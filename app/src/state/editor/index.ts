@@ -18,7 +18,6 @@ import * as editReducers from './edit';
 import * as ioReducers from './io';
 import * as playReducers from './play';
 import * as selectionReducers from './selection';
-import { emptyDocument } from '../../core/document';
 
 const reducers: (
   | ActionWithReducers<EditorState, any>
@@ -33,11 +32,7 @@ const reducers: (
 
 function editorReducer(state: EditorState | undefined, action: AnyAction): EditorState {
   if (!state) {
-    return {
-      ...editorDefaults,
-      path: null,
-      document: emptyDocument,
-    };
+    return editorDefaults;
   }
 
   return produce(state, (draft) => {

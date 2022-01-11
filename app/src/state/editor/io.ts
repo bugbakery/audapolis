@@ -4,13 +4,14 @@ import {
   DocumentGenerator,
   DocumentGeneratorItem,
   serializeDocumentToFile,
+  Source,
 } from '../../core/document';
 import { ipcRenderer } from 'electron';
 import { openEditor, openLanding } from '../nav';
 import { assertSome } from '../../util';
 import * as ffmpeg_exporter from '../../core/ffmpeg';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
-import { editorDefaults, EditorState, NoFileSelectedError } from './types';
+import { EditorState, NoFileSelectedError } from './types';
 import { pause } from './play';
 
 export const saveDocument = createAsyncActionWithReducer<
@@ -64,16 +65,15 @@ export const closeDocument = createAsyncActionWithReducer<EditorState>(
   }
 );
 
-export const setState = createActionWithReducer<EditorState, EditorState>(
+export const setSources = createActionWithReducer<EditorState, Record<string, Source>>(
   'editor/setState',
-  (state, newState) => {
-    Object.assign(state, newState);
+  (state, sources) => {
+    state.document.sources = sources;
   }
 );
-
-export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState>(
+export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState, void, Document>(
   'editor/openDocumentFromDisk',
-  async (_, { dispatch }): Promise<void> => {
+  async (_, { dispatch }) => {
     const file = await ipcRenderer.invoke('open-file', {
       title: 'Open audapolis document...',
       properties: ['openFile'],
@@ -91,30 +91,18 @@ export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState>(
 
     dispatch(openEditor());
     try {
-      const document = await deserializeDocumentFromFile(path, (noSourceDocument) => {
-        dispatch(
-          setState({
-            path,
-            document: noSourceDocument,
-            ...editorDefaults,
-            lastSavedDocument: noSourceDocument,
-          })
-        );
+      return await deserializeDocumentFromFile(path, (sources) => {
+        dispatch(setSources(sources));
       });
-      dispatch(
-        setState({
-          path,
-          document,
-          ...editorDefaults,
-          lastSavedDocument: document,
-        })
-      );
     } catch (e) {
       dispatch(openLanding());
       throw e;
     }
   },
   {
+    fulfilled: (state, document) => {
+      state.document = document;
+    },
     rejected: (state, error) => {
       if (error.name == 'NoFileSelectedError') return;
       console.error(`an error occurred while trying to open the file`, error);
@@ -123,19 +111,16 @@ export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState>(
   }
 );
 
-export const openDocumentFromMemory = createAsyncActionWithReducer<EditorState, Document>(
+export const openDocumentFromMemory = createAsyncActionWithReducer<EditorState, Document, Document>(
   'editor/openDocumentFromMemory',
   async (document, { dispatch }) => {
     await dispatch(openEditor());
-    dispatch(
-      setState({
-        path: null,
-        document,
-        ...editorDefaults,
-      })
-    );
+    return document;
   },
   {
+    fulfilled: (state, document) => {
+      state.document = document;
+    },
     rejected: (state, error) => {
       console.error('an error occurred while trying to load the document from memory', error);
       alert(`an error occurred while trying to open the file:\n${error.message}`);

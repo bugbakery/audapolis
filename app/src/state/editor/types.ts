@@ -1,4 +1,4 @@
-import { Document, TimedParagraphItem } from '../../core/document';
+import { Document, emptyDocument, TimedParagraphItem } from '../../core/document';
 
 export interface Range {
   start: number;
@@ -38,17 +38,17 @@ export class NoFileSelectedError extends Error {
   }
 }
 
-export const editorDefaults = {
+export const editorDefaults: EditorState = {
+  path: null,
+  document: emptyDocument,
   lastSavedDocument: null,
   exportState: ExportState.NotRunning,
 
   currentTime: 0,
   playing: false,
+  selection: null,
+
   displaySpeakerNames: false,
   displayVideo: false,
-
-  selection: null,
-  selectionStartItem: null,
-
   exportPopup: false,
 };

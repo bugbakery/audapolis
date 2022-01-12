@@ -190,7 +190,7 @@ export function computeTimed(content: Paragraph[], offset = 0): Paragraph<TimedP
 
 export type DocumentGeneratorItem = TimedParagraphItem & {
   paragraphUuid: string;
-  itemIdx: number;
+  itemIdx: number; // the index within the containing paragraph. 0 for the first word in a paragraph.
 
   speaker: string;
 };

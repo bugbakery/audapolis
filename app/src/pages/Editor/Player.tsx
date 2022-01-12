@@ -30,7 +30,7 @@ export function Player(): JSX.Element {
     const currentItem =
       state.editor.present &&
       DocumentGenerator.fromParagraphs(state.editor.present.document.content).getItemsAtTime(
-        state.editor.present.currentTime
+        state.editor.present.currentTimePlayer
       )[0];
     return currentItem && 'source' in currentItem ? currentItem.source : null;
   });

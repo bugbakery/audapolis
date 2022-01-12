@@ -31,7 +31,7 @@ import {
   toggleDisplayVideo,
 } from '../../state/editor/display';
 import { saveDocument } from '../../state/editor/io';
-import { pause, play } from '../../state/editor/play';
+import { setPlay } from '../../state/editor/play';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
@@ -126,7 +126,7 @@ const TitleBarButton = React.forwardRef(function titleBarButton(
 });
 
 function PlayerControls(props: PaneProps) {
-  const time = useSelector((state: RootState) => state.editor.present?.currentTime) || 0;
+  const time = useSelector((state: RootState) => state.editor.present?.currentTimePlayer) || 0;
   const formatInt = (x: number) => {
     const str = Math.floor(x).toString();
     return (str.length == 1 ? '0' + str : str).substr(0, 2);
@@ -154,12 +154,12 @@ function PlayerControls(props: PaneProps) {
       </Text>
       <PlayIcon
         color={playing ? theme.colors.playAccent : 'default'}
-        onClick={() => dispatch(play())}
+        onClick={() => dispatch(setPlay(true))}
         size={19}
       />
       <PauseIcon
         color={playing ? 'default' : theme.colors.playAccent}
-        onClick={() => dispatch(pause())}
+        onClick={() => dispatch(setPlay(false))}
         size={19}
       />
     </Pane>

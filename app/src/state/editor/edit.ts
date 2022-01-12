@@ -20,9 +20,9 @@ export const insertParagraphBreak = createActionWithReducer<EditorState>(
     const newUuid = uuidv4();
     let prevUuid = '';
     const splitParagraphs = (item: DocumentGeneratorItem): DocumentGeneratorItem => {
-      if (item.paragraphUuid == prevUuid && item.absoluteStart >= state.currentTime) {
+      if (item.paragraphUuid == prevUuid && item.absoluteStart >= state.currentTimePlayer) {
         item.paragraphUuid = newUuid;
-      } else if (item.absoluteStart < state.currentTime) {
+      } else if (item.absoluteStart < state.currentTimePlayer) {
         prevUuid = item.paragraphUuid;
       }
       return item;
@@ -40,7 +40,7 @@ export const deleteParagraphBreak = createActionWithReducer<EditorState>(
     let parUuid: string | null = null;
     let prevUuid = '';
     const mergeParagraphs = (item: DocumentGeneratorItem): DocumentGeneratorItem => {
-      if (item.absoluteStart < state.currentTime) {
+      if (item.absoluteStart < state.currentTimePlayer) {
         prevUuid = item.paragraphUuid;
       } else if (parUuid === null || item.paragraphUuid === parUuid) {
         parUuid = item.paragraphUuid;
@@ -70,7 +70,7 @@ export const deleteSelection = createActionWithReducer<EditorState>(
     state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
       .filter(isNotSelected)
       .toParagraphs();
-    state.currentTime = selection.range.start;
+    state.currentTimeUserSet = selection.range.start;
     state.selection = null;
   }
 );
@@ -125,7 +125,7 @@ export const deleteSomething = createActionWithReducer<EditorState>(
       deleteSelection.reducer(state);
     } else {
       const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(
-        state.currentTime
+        state.currentTimePlayer
       );
       if (items[items.length - 1].itemIdx == 0) {
         deleteParagraphBreak.reducer(state);
@@ -191,11 +191,11 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
       state.selection = null;
       state.document.sources = { ...state.document.sources, ...payload.sources };
       const beforeSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
-        (item) => item.absoluteStart + item.length <= state.currentTime
+        (item) => item.absoluteStart + item.length <= state.currentTimePlayer
       );
       const pastedSlice = DocumentGenerator.fromParagraphs(payload.content);
       const afterSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
-        (item) => item.absoluteStart + item.length > state.currentTime
+        (item) => item.absoluteStart + item.length > state.currentTimePlayer
       );
 
       state.document.content = beforeSlice.chain(pastedSlice).chain(afterSlice).toParagraphs();

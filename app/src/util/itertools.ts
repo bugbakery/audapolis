@@ -119,13 +119,13 @@ function* dropwhile<T>(predicate: (x: T) => boolean, input: Generator<T>): Gener
 }
 
 function* dropuntil<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {
+  let dropping = true;
   for (const item of input) {
-    if (predicate(item)) {
+    dropping = dropping && !predicate(item);
+    if (!dropping) {
       yield item;
-      break;
     }
   }
-  yield* input;
 }
 
 function* takewhile<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {

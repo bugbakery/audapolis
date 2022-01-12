@@ -1,4 +1,4 @@
-import { DocumentGenerator, Paragraph, RenderItem } from './document';
+import { DocumentGenerator, getItemsAtTime, Paragraph, RenderItem } from './document';
 
 test('rawExactFrom behaves correctly', () => {
   const defaultWord = {
@@ -55,7 +55,7 @@ test('rawExactFrom behaves correctly', () => {
     },
   ];
   const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.exactFrom(1.5).toParagraphs()).toEqual(expectedOutput);
+  expect(documentGenerator.exactFrom(1.5).toParagraphs()).toMatchObject(expectedOutput);
 });
 
 test('rawExactFrom behaves correctly on edge cases', () => {
@@ -113,7 +113,7 @@ test('rawExactFrom behaves correctly on edge cases', () => {
     },
   ];
   const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.exactFrom(1).toParagraphs()).toEqual(expectedOutput);
+  expect(documentGenerator.exactFrom(1).toParagraphs()).toMatchObject(expectedOutput);
 });
 
 test('rawExactUntil behaves correctly', () => {
@@ -171,7 +171,7 @@ test('rawExactUntil behaves correctly', () => {
     },
   ];
   const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.exactUntil(1.5).toParagraphs()).toEqual(expectedOutput);
+  expect(documentGenerator.exactUntil(1.5).toParagraphs()).toMatchObject(expectedOutput);
 });
 
 test('renderItemsFromDocumentGenerator behaves correctly', () => {
@@ -241,5 +241,63 @@ test('renderItemsFromDocumentGenerator behaves correctly', () => {
     },
   ];
   const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.toRenderItems().collect()).toEqual(expectedOutput);
+  expect(documentGenerator.toRenderItems().collect()).toMatchObject(expectedOutput);
+});
+
+test('getItemsAtTime', () => {
+  const testContent: Paragraph[] = [
+    {
+      speaker: 'paragraph_01',
+      content: [
+        { type: 'artificial_silence', length: 1 },
+        { type: 'artificial_silence', length: 1 },
+        { type: 'artificial_silence', length: 1 },
+      ],
+    },
+    {
+      speaker: 'paragraph_02',
+      content: [
+        { type: 'artificial_silence', length: 1 },
+        { type: 'artificial_silence', length: 1 },
+        { type: 'artificial_silence', length: 1 },
+      ],
+    },
+  ];
+
+  expect(getItemsAtTime(DocumentGenerator.fromParagraphs(testContent), 0.5)).toMatchObject([
+    {
+      absoluteStart: 0,
+      itemIdx: 0,
+      length: 1,
+      speaker: 'paragraph_01',
+      type: 'artificial_silence',
+    },
+  ]);
+
+  expect(getItemsAtTime(DocumentGenerator.fromParagraphs(testContent), 1.5)).toMatchObject([
+    {
+      absoluteStart: 1,
+      itemIdx: 1,
+      length: 1,
+      speaker: 'paragraph_01',
+      type: 'artificial_silence',
+    },
+  ]);
+
+  expect(getItemsAtTime(DocumentGenerator.fromParagraphs(testContent), 3.0)).toMatchObject([
+    {
+      absoluteStart: 2,
+      itemIdx: 2,
+      length: 1,
+      speaker: 'paragraph_01',
+      type: 'artificial_silence',
+    },
+    {
+      absoluteStart: 3,
+      itemIdx: 0,
+      length: 1,
+      speaker: 'paragraph_02',
+      type: 'artificial_silence',
+    },
+  ]);
 });

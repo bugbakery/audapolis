@@ -1,6 +1,7 @@
 import { editorDefaults, EditorState } from './types';
 import { emptyDocument, Paragraph } from '../../core/document';
-import { goLeft } from './play';
+import { goLeft, goRight } from './play';
+import { EPSILON } from '../../util';
 
 const testContent: Paragraph[] = [
   {
@@ -29,16 +30,38 @@ const testState: EditorState = {
   },
 };
 
-test('goLeft trivial', () => {
+const testLeft = (before: number, after: number) => {
   const state = testState;
-  state.currentTime = 3.0;
-
+  state.currentTimePlayer = before;
   goLeft.reducer(state);
-  expect(state.currentTime).toBe(2.0);
+  expect(state.currentTimeUserSet).toBe(after);
+};
+test('goLeft trivial', () => {
+  testLeft(2.0, 1.0);
+  testLeft(1.0, 0.0);
+  testLeft(0.0, 0.0);
+});
+test('goLeft start of paragraph', () => {
+  testLeft(4.0, 3.0);
+  testLeft(3.0, 3.0 - 2 * EPSILON);
+  testLeft(3.0 - 2 * EPSILON, 2.0);
+});
 
-  goLeft.reducer(state);
-  expect(state.currentTime).toBe(1.0);
+const testRight = (before: number, after: number) => {
+  const state = testState;
+  state.currentTimePlayer = before;
+  goRight.reducer(state);
+  expect(state.currentTimeUserSet).toBe(after);
+};
+test('goRight trivial', () => {
+  testRight(0.0, 1.0);
+  testRight(1.0, 2.0);
+  testRight(1.5, 2.0);
+  testRight(3.0, 4.0);
+  testRight(6.0, 6.0);
+});
 
-  goLeft.reducer(state);
-  expect(state.currentTime).toBe(0.0);
+test('goRight end of paragraph', () => {
+  testRight(2.0, 3.0 - 2 * EPSILON);
+  testRight(3.0 - 2 * EPSILON, 3.0);
 });

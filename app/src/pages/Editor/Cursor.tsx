@@ -56,7 +56,7 @@ function useComputeCursorPosition(parentElement: HTMLElement | null | undefined)
   top: number;
 } | null {
   const content = useSelector((state: RootState) => state.editor.present?.document?.content);
-  const time = useSelector((state: RootState) => state.editor.present?.currentTime);
+  const time = useSelector((state: RootState) => state.editor.present?.currentTimePlayer);
 
   // we use caching here because we have to calculate the cursor position every frame
   const last = useRef<null | {

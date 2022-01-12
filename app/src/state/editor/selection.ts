@@ -15,7 +15,7 @@ export const selectLeft = createActionWithReducer<EditorState>('editor/selectLef
   const getItemLeft = (time: number) =>
     DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time)[0];
   if (!selectionInfo || !state.selection) {
-    const item = getItemLeft(state.currentTime);
+    const item = getItemLeft(state.currentTimePlayer);
     assertSome(item);
     state.selection = {
       range: { start: item.absoluteStart, length: item.length },
@@ -43,7 +43,7 @@ export const selectRight = createActionWithReducer<EditorState>('editor/selectRi
     return items[items.length - 1];
   };
   if (!selectionInfo || !state.selection) {
-    const item = getItemRight(state.currentTime);
+    const item = getItemRight(state.currentTimePlayer);
     state.selection = {
       range: { start: item.absoluteStart, length: item.length },
       startItem: item,

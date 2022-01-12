@@ -22,7 +22,7 @@ import {
   selectRight,
   setSelection,
 } from '../../state/editor/selection';
-import { goLeft, goRight, setTime } from '../../state/editor/play';
+import { goLeft, goRight, setUserSetTime } from '../../state/editor/play';
 import { deleteSomething } from '../../state/editor/edit';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
@@ -116,7 +116,7 @@ export function Document(): JSX.Element {
           : 0;
 
         const timeAdd = selectionRange.startOffset == nodeLength ? item.length : 0;
-        dispatch(setTime(item.absoluteStart + timeAdd - timeSubtract));
+        dispatch(setUserSetTime(item.absoluteStart + timeAdd - timeSubtract));
       }
     } else {
       const startItem = itemFromNode(selectionRange.startContainer, selectionRange.startOffset);

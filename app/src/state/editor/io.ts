@@ -12,7 +12,7 @@ import { assertSome } from '../../util';
 import * as ffmpeg_exporter from '../../core/ffmpeg';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState, NoFileSelectedError } from './types';
-import { pause } from './play';
+import { setPlay } from './play';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
@@ -60,7 +60,7 @@ export const saveDocument = createAsyncActionWithReducer<
 export const closeDocument = createAsyncActionWithReducer<EditorState>(
   'editor/delete',
   async (arg, { dispatch }) => {
-    dispatch(pause());
+    dispatch(setPlay(false));
     dispatch(openLanding());
   }
 );

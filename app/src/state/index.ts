@@ -4,6 +4,7 @@ import transcribe from './transcribe';
 import editor from './editor';
 import models from './models';
 import server from './server';
+import { player } from '../core/player';
 
 export const store = configureStore({
   reducer: {
@@ -19,5 +20,6 @@ export const store = configureStore({
 });
 
 (window as any).store = store;
+player.setStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;

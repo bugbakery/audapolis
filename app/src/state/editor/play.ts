@@ -1,4 +1,4 @@
-import { assertSome } from '../../util';
+import { assertSome, EPSILON } from '../../util';
 import { DocumentGenerator, getItemsAtTime } from '../../core/document';
 import { createActionWithReducer } from '../util';
 import { EditorState } from './types';
@@ -32,12 +32,21 @@ export const togglePlaying = createActionWithReducer<EditorState>(
 );
 
 export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (state) => {
-  const item = getItemsAtTime(
+  const items = getItemsAtTime(
     DocumentGenerator.fromParagraphs(state.document.content),
     state.currentTimePlayer
-  )[0];
-  assertSome(item);
-  state.currentTimeUserSet = item.absoluteStart;
+  );
+  const firstItem = items[0];
+  const secondItem = items[items.length - 1];
+  assertSome(firstItem);
+  assertSome(secondItem);
+
+  // if we are at the beginning of a paragraph, we should put the cursor at the end of the previous paragraph
+  if (items.length == 2 && secondItem.firstInParagraph) {
+    state.currentTimeUserSet = firstItem.absoluteStart + firstItem.length - 2 * EPSILON;
+  } else {
+    state.currentTimeUserSet = firstItem.absoluteStart;
+  }
   state.selection = null;
 });
 
@@ -46,7 +55,14 @@ export const goRight = createActionWithReducer<EditorState>('editor/goRight', (s
     DocumentGenerator.fromParagraphs(state.document.content),
     state.currentTimePlayer
   );
-  const item = items[items.length - 1];
-  state.currentTimeUserSet = item.absoluteStart + item.length;
+
+  const secondItem = items[items.length - 1];
+  assertSome(secondItem);
+
+  if (items.length == 2 && secondItem.lastInParagraph) {
+    state.currentTimeUserSet = secondItem.absoluteStart + secondItem.length - 2 * EPSILON;
+  } else {
+    state.currentTimeUserSet = secondItem.absoluteStart + secondItem.length;
+  }
   state.selection = null;
 });

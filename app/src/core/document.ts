@@ -191,6 +191,8 @@ export function computeTimed(content: Paragraph[], offset = 0): Paragraph<TimedP
 export type DocumentGeneratorItem = TimedParagraphItem & {
   paragraphUuid: string;
   itemIdx: number; // the index within the containing paragraph. 0 for the first word in a paragraph.
+  firstInParagraph: boolean;
+  lastInParagraph: boolean;
 
   speaker: string;
 };
@@ -300,6 +302,8 @@ function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGenerator
         paragraphUuid,
         itemIdx: i,
         speaker: paragraph.speaker,
+        firstInParagraph: i == 0,
+        lastInParagraph: i == paragraph.content.length - 1,
       };
       accumulatedTime += item.length;
     }

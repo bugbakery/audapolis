@@ -1,8 +1,16 @@
 export class GeneratorBox<T> implements Generator<T> {
   generator: Generator<T>;
 
-  constructor(generator: Generator<T>) {
-    this.generator = generator;
+  constructor(generator: Generator<T> | T[]) {
+    if (Array.isArray(generator)) {
+      this.generator = (function* () {
+        for (const v of generator) {
+          yield v;
+        }
+      })();
+    } else {
+      this.generator = generator;
+    }
   }
 
   chain(iter: GeneratorBox<T>): this {
@@ -101,13 +109,13 @@ function* filter<T>(predicate: (x: T) => boolean, input: Generator<T>): Generato
 }
 
 function* dropwhile<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {
+  let dropping = true;
   for (const item of input) {
-    if (!predicate(item)) {
+    dropping = dropping && predicate(item);
+    if (!dropping) {
       yield item;
-      break;
     }
   }
-  yield* input;
 }
 
 function* dropuntil<T>(predicate: (x: T) => boolean, input: Generator<T>): Generator<T> {

@@ -8,8 +8,9 @@ import {
   getItemsAtTime,
   Paragraph,
 } from '../../core/document';
-import { Pane, useTheme } from 'evergreen-ui';
+import { Pane } from 'evergreen-ui';
 import { useElementSize } from '../../components/useElementSize';
+import { useTheme } from '../../components/theme';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();

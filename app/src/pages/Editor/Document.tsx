@@ -24,6 +24,7 @@ import {
 } from '../../state/editor/selection';
 import { goLeft, goRight, setUserSetTime } from '../../state/editor/play';
 import { deleteSomething } from '../../state/editor/edit';
+import { Theme } from '../../components/theme';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -54,7 +55,7 @@ export function Document(): JSX.Element {
     Array.from(new Set(content.map((p) => p.speaker))).map((name, i) => [name, i])
   );
   const ref = useRef<HTMLDivElement>(null);
-  const theme = useTheme();
+  const theme: Theme = useTheme();
   const setCaret = useRef(false);
 
   useEffect(() => {

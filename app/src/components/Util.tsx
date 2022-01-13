@@ -1,16 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import {
-  ArrowLeftIcon,
-  Button,
-  ButtonProps,
-  IconProps,
-  majorScale,
-  Pane,
-  useTheme,
-} from 'evergreen-ui';
+import { ArrowLeftIcon, Button, ButtonProps, IconProps, majorScale, Pane } from 'evergreen-ui';
 import { openLanding } from '../state/nav';
 import { useDispatch } from 'react-redux';
+import { useTheme } from './theme';
 
 export const AppContainer = styled.div`
   width: 100%;
@@ -80,7 +73,10 @@ export function CrossedOutIcon({
   icon,
   color = 'default',
   ...props
-}: IconProps & { icon: React.ElementType }): JSX.Element {
+}: IconProps & {
+  icon: React.ElementType;
+  color: 'default' | 'muted' | 'disabled' | 'selected';
+}): JSX.Element {
   const Icon = icon;
   const gapPercent = 10;
   const linePercent = 6;

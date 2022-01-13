@@ -1,15 +1,25 @@
-import { defaultTheme as defaultThemeWrongType, Theme } from 'evergreen-ui';
-import { DefaultTheme } from '../types/theme';
+import {
+  defaultTheme,
+  DefaultTheme,
+  mergeTheme,
+  useTheme as useEvergreenTheme,
+} from 'evergreen-ui';
 
-const defaultTheme = defaultThemeWrongType as unknown as DefaultTheme;
+export interface AudapolisThemeExtension {
+  colors: {
+    speakers: Record<string, string>;
+    playAccent: string;
+  };
+}
+
+export type Theme = DefaultTheme & AudapolisThemeExtension;
+export const useTheme = (): Theme => useEvergreenTheme<Theme>();
 
 //TODO do theming of evergreen:
 //  * darker gray for active buttons
-export const lightTheme: Theme = {
-  ...defaultTheme,
+export const lightTheme: Theme = mergeTheme(defaultTheme, {
   colors: {
-    ...defaultTheme.colors,
     playAccent: '#ed6a5e',
-    speakers: ['#0f4880', '#1d781d', '#db0a5b', '#8d6708', '#d43900'],
+    speakers: { 0: '#0f4880', 1: '#1d781d', 2: '#db0a5b', 3: '#8d6708', 4: '#d43900' },
   },
-};
+});

@@ -21,7 +21,6 @@ import {
   PauseIcon,
   majorScale,
   PaneProps,
-  useTheme,
 } from 'evergreen-ui';
 import { ForwardedRef } from 'react';
 import { ExportState } from '../../state/editor/types';
@@ -32,6 +31,7 @@ import {
 } from '../../state/editor/display';
 import { saveDocument } from '../../state/editor/io';
 import { setPlay } from '../../state/editor/play';
+import { useTheme } from '../../components/theme';
 
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();

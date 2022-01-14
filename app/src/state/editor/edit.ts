@@ -13,6 +13,7 @@ import { clipboard } from 'electron';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState } from './types';
 import { selectLeft } from './selection';
+import { setUserSetTime } from './play';
 
 export const insertParagraphBreak = createActionWithReducer<EditorState>(
   'editor/insertParagraphBreak',
@@ -70,7 +71,7 @@ export const deleteSelection = createActionWithReducer<EditorState>(
     state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
       .filter(isNotSelected)
       .toParagraphs();
-    state.currentTimeUserSet = selection.range.start;
+    setUserSetTime.reducer(state, selection.range.start);
     state.selection = null;
   }
 );

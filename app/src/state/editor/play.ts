@@ -14,6 +14,10 @@ export const setUserSetTime = createActionWithReducer<EditorState, number>(
   'editor/setTimeUserSet',
   (state, newTime) => {
     state.currentTimeUserSet = newTime;
+
+    // we also set the player time here (instead of in the player) because this way we cannot come into an
+    // inconsistent state when fast events are fired (e.g. key repeat of the backspace key)
+    state.currentTimePlayer = newTime;
   }
 );
 
@@ -43,9 +47,9 @@ export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (sta
 
   // if we are at the beginning of a paragraph, we should put the cursor at the end of the previous paragraph
   if (items.length == 2 && secondItem.firstInParagraph) {
-    state.currentTimeUserSet = firstItem.absoluteStart + firstItem.length - 2 * EPSILON;
+    setUserSetTime.reducer(state, firstItem.absoluteStart + firstItem.length - 2 * EPSILON);
   } else {
-    state.currentTimeUserSet = firstItem.absoluteStart;
+    setUserSetTime.reducer(state, firstItem.absoluteStart);
   }
   state.selection = null;
 });
@@ -60,9 +64,9 @@ export const goRight = createActionWithReducer<EditorState>('editor/goRight', (s
   assertSome(secondItem);
 
   if (items.length == 2 && secondItem.lastInParagraph) {
-    state.currentTimeUserSet = secondItem.absoluteStart + secondItem.length - 2 * EPSILON;
+    setUserSetTime.reducer(state, secondItem.absoluteStart + secondItem.length - 2 * EPSILON);
   } else {
-    state.currentTimeUserSet = secondItem.absoluteStart + secondItem.length;
+    setUserSetTime.reducer(state, secondItem.absoluteStart + secondItem.length);
   }
   state.selection = null;
 });

@@ -45,7 +45,11 @@ export class Player {
       (state: EditorState) => state.currentTimeUserSet,
       (time) => {
         this.pause();
-        this.updateCurrentTime(time);
+
+        // we don't notify redux here of the state change because we already set the player time for user set events in the
+        // setUserSetTime action. This avoids having inconsistencies in the key repeat of the delete key.
+        this.currentTime = time;
+
         const currentRenderItem = this.getCurrentRenderItem();
 
         // we need to update this even if we are not playing because the video might be shown
@@ -132,7 +136,9 @@ export class Player {
   ): void {
     const lastRenderItem = this.renderItems[this.renderItems.length - 1];
     const callback = () => {
-      const time = getTime();
+      // we clamp the result of getTime to the end of the currently played Item.
+      // this helps to produce the expected end-state if the playing is not stopped in time.
+      const time = Math.min(getTime(), renderItem.absoluteStart + renderItem.length);
       this.updateCurrentTime(time);
       if (!this.playing) {
         onRenderItemDone();

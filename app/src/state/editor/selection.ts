@@ -43,7 +43,14 @@ export const selectRight = createActionWithReducer<EditorState>('editor/selectRi
     return items[items.length - 1];
   };
   if (!selectionInfo || !state.selection) {
-    const item = getItemRight(state.currentTimePlayer);
+    let item = getItemRight(state.currentTimePlayer);
+
+    // this is special handling for the case where we are at the end of a paragraph
+    // and position the cursor -EPSILON from the end of the item
+    if (item.absoluteStart + item.length - state.currentTimePlayer < 2 * EPSILON) {
+      item = getItemRight(item.absoluteStart + item.length);
+    }
+
     state.selection = {
       range: { start: item.absoluteStart, length: item.length },
       startItem: item,

@@ -156,6 +156,9 @@ export function Document(): JSX.Element {
       dispatch(goLeft());
     } else if (e.key == 'ArrowRight') {
       dispatch(goRight());
+    } else if (e.key == 'ArrowUp' || e.key == 'ArrowDown') {
+      // TODO: handle properly (see: https://github.com/audapolis/audapolis/issues/228)
+      e.preventDefault();
     }
   };
   function getSpeakerColor(speaker: string) {

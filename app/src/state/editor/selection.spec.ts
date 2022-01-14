@@ -1,6 +1,6 @@
 import { editorDefaults, EditorState, Range } from './types';
 import { DocumentGenerator, emptyDocument, getItemsAtTime, Paragraph } from '../../core/document';
-import { selectLeft, selectRight } from './selection';
+import { selectionIncludeFully, selectLeft, selectRight } from './selection';
 import { EPSILON } from '../../util';
 
 const testContent: Paragraph[] = [
@@ -116,4 +116,35 @@ test('selectLeft shrink ltr selection', () => {
 });
 test('selectRight convert ltr to non-ltr', () => {
   testLeft({ start: 1, length: 1, ltr: true }, { start: 0, length: 2, ltr: false });
+});
+
+const testSelectionIncludeFully = (
+  before: DirectionalRange | number,
+  itemIndex: number,
+  after: DirectionalRange
+) => {
+  const state = JSON.parse(JSON.stringify(testState));
+  if (typeof before == 'number') {
+    state.currentTimePlayer = before;
+  } else {
+    state.selection = directionalRangeToSelection(before);
+  }
+  const item = DocumentGenerator.fromParagraphs(testContent).collect()[itemIndex];
+
+  selectionIncludeFully.reducer(state, item);
+  expect(state.selection).toMatchObject(directionalRangeToSelection(after));
+};
+test('selectionIncludeFully ltr', () => {
+  testSelectionIncludeFully({ start: 1, length: 1, ltr: true }, 3, {
+    start: 1,
+    length: 3,
+    ltr: true,
+  });
+});
+test('selectionIncludeFully non-ltr', () => {
+  testSelectionIncludeFully({ start: 2, length: 1, ltr: false }, 0, {
+    start: 0,
+    length: 3,
+    ltr: false,
+  });
 });

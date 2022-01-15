@@ -13,6 +13,7 @@ export enum TranscriptionState {
   TRANSCRIBING = 'transcribing',
   POST_PROCESSING = 'post_processing',
   DONE = 'done',
+  CONVERTING = 'converting',
 }
 
 export interface TranscriptionTask extends Task {

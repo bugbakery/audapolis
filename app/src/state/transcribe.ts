@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { openTranscribe, openTranscribing, openModelManager } from './nav';
+import { openLanding, openModelManager, openTranscribe, openTranscribing } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
@@ -65,8 +65,19 @@ export const startTranscription = createAsyncThunk<
   }
   dispatch(openTranscribing());
 
+  dispatch(setProgress(0));
+  dispatch(setState(TranscriptionState.CONVERTING));
+
   const fileName = basename(path);
-  const wavFileContent = await convertToWav(path);
+  let wavFileContent;
+  try {
+    wavFileContent = await convertToWav(path, (p) => dispatch(setProgress(p)));
+  } catch (err) {
+    alert(err);
+    dispatch(openLanding());
+    return;
+  }
+
   const file = new File([wavFileContent], 'input.wav');
   const task = await startTranscriptionApiCall(
     server,

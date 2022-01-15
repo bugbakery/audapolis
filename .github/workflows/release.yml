@@ -13,20 +13,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - '*'
-      - '!.github/workflows/release.yml'
-      - '!app/package.json'
-      - '!app/package-lock.json'
-      - '!app/electron-builder.config.js'
-      - '!app/src/vite_main.config.js'
-      - '!app/src/vite_renderer.config.js'
-      - '!app/src/scripts/*'
-      - '!server/build_server.sh'
-      - '!server/poetry.lock'
-      - '!server/pyoxidizer.bzl'
-      - '!server/pyproject.toml'
-      - '!server/requirements.txt'
 
 
 concurrency:
@@ -40,9 +26,22 @@ defaults:
 
 
 jobs:
+  pre_job:
+    # continue-on-error: true # Uncomment once integration is finished
+    runs-on: ubuntu-latest
+    # Map a step output to a job output
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          paths: '[".github/workflows/release.yml","app/package.json","app/package-lock.json","app/electron-builder.config.js","app/src/vite_main.config.js","app/src/vite_renderer.config.js","app/src/scripts/*","server/build_server.sh","server/poetry.lock","server/pyoxidizer.bzl","server/pyproject.toml","server/requirements.txt"]'
 
   get_version:
     runs-on: ubuntu-latest
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' || github.event_name == 'push' }}
     outputs:
       version: ${{ steps.version.outputs.build-version }}
       branch: ${{ steps.extract_branch.outputs.branch }}
@@ -71,7 +70,7 @@ jobs:
 
   upload_artifacts:
     name: Build
-    needs: [ get_version ]
+    needs: [ get_version, pre_job ]
 
     strategy:
       matrix:
@@ -177,11 +176,12 @@ jobs:
 
   finalize:
     needs: [ upload_artifacts ]
-    if: ${{ needs.upload_artifacts.result == 'skipped' || needs.upload_artifacts.result == 'success' }}
+    if: always()
+    # && ${{ needs.upload_artifacts.result == 'skipped' || needs.upload_artifacts.result == 'success' }}
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: No-op to pass
+      - name: Check that build succeeded or was skipped
         shell: bash
-        run: echo "Build succeeded"
+        run: "[[ '${{needs.upload_artifacts.result}}' == 'success'  || '${{needs.upload_artifacts.result}}' == 'skipped' ]]"

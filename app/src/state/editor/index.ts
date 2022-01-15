@@ -37,17 +37,7 @@ function editorReducer(state: EditorState | undefined, action: AnyAction): Edito
 
   return produce(state, (draft) => {
     reducers.forEach((reducer) => {
-      if ('reducer' in reducer) {
-        if (reducer.type == action.type) {
-          reducer.reducer(draft, action.payload);
-        }
-      } else {
-        Object.entries(reducer.reducers).forEach(([actionType, reducer]) => {
-          if (actionType == action.type) {
-            reducer(draft, action.payload);
-          }
-        });
-      }
+      reducer.handleAction(draft, action);
     });
   });
 }

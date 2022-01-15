@@ -14,6 +14,8 @@ import { exportDefinition as subtitleExportDefinition } from './ExportOptions/Su
 import { getHomePath } from '../../../ipc/ipc_renderer';
 import { ExportType } from './ExportOptions';
 import { setExportPopup } from '../../state/editor/display';
+import { setExportState } from '../../state/editor/io';
+import { ProgressCallback } from '../../core/ffmpeg';
 
 const exportValues: ExportType[] = [
   audioExportDefinition,
@@ -32,7 +34,7 @@ export function ExportDocumentDialog(): JSX.Element {
   );
   const documentBaseName = path.basename(documentPath, '.audapolis');
   const documentBasePath = path.join(path.dirname(documentPath), documentBaseName);
-  const exportFnRef = useRef((_a: Document, _b: string) => {
+  const exportFnRef = useRef((_a: Document, _b: string, _c: ProgressCallback) => {
     return new Promise<void>((resolve, _) => {
       resolve();
     });
@@ -52,16 +54,24 @@ export function ExportDocumentDialog(): JSX.Element {
     const action = async () => {
       close();
       const state: RootState = store.getState();
+      dispatch(setExportState({ running: true, progress: 0 }));
       assertSome(state.editor.present);
-      await exportFnRef.current(state.editor.present.document, formState.path);
+      await exportFnRef.current(state.editor.present.document, formState.path, (p) => {
+        dispatch(setExportState({ running: true, progress: p }));
+      });
     };
 
     toast
-      .promise(action(), {
-        loading: 'Exporting...',
-        success: <b>Export successful!</b>,
-        error: <b>Export failed.</b>,
-      })
+      .promise(
+        action().then(() => {
+          dispatch(setExportState({ running: false, progress: 1 }));
+        }),
+        {
+          loading: `Exporting...`,
+          success: <b>Export successful!</b>,
+          error: <b>Export failed.</b>,
+        }
+      )
       .catch((e) => console.log(e));
   };
   const ExportOptionComponent = formState.component;

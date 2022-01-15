@@ -12,7 +12,11 @@ import {
 import React, { ChangeEvent, MutableRefObject, useState } from 'react';
 import { player } from '../../../core/player';
 import { DocumentGenerator, Document } from '../../../core/document';
-import { exportVideo, isSeperateSubtitleTrackSupported } from '../../../core/ffmpeg';
+import {
+  exportVideo,
+  isSeperateSubtitleTrackSupported,
+  ProgressCallback,
+} from '../../../core/ffmpeg';
 import { contentToVtt } from '../../../core/webvtt';
 import { ExportType } from './index';
 
@@ -27,7 +31,9 @@ export function Video({
   exportCallbackRef,
   outputPath,
 }: {
-  exportCallbackRef: MutableRefObject<(document: Document, path: string) => Promise<void>>;
+  exportCallbackRef: MutableRefObject<
+    (document: Document, path: string, progressCallback: ProgressCallback) => Promise<void>
+  >;
   outputPath: string;
 }): JSX.Element {
   const targetResolution = player.getTargetResolution();
@@ -36,7 +42,7 @@ export function Video({
   const [subtitleType, setSubtitleType] = useState('off');
   const [limitLineLength, setLimitLineLength] = useState(false);
   const [lineLimit, setLineLimit] = useState(60);
-  exportCallbackRef.current = async (document, path) => {
+  exportCallbackRef.current = async (document, path, progressCallback) => {
     const renderItems = DocumentGenerator.fromParagraphs(document.content)
       .toRenderItems()
       .collect();
@@ -52,7 +58,8 @@ export function Video({
       },
       subtitleType == 'burn_in' || subtitleType == 'seperate_track'
         ? { type: subtitleType, vtt: vtt }
-        : null
+        : null,
+      progressCallback
     );
   };
 

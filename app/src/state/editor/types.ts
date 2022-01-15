@@ -5,9 +5,9 @@ export interface Range {
   length: number;
 }
 
-export enum ExportState {
-  NotRunning,
-  Running,
+export interface ExportState {
+  running: boolean;
+  progress: number;
 }
 
 export interface Selection {
@@ -45,7 +45,7 @@ export const editorDefaults: EditorState = {
   path: null,
   document: emptyDocument,
   lastSavedDocument: null,
-  exportState: ExportState.NotRunning,
+  exportState: { running: false, progress: 0 },
 
   currentTimePlayer: 0,
   currentTimeUserSet: 0,

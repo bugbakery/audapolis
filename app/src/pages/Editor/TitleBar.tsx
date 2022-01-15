@@ -13,7 +13,6 @@ import {
   Pane,
   PersonIcon,
   RedoIcon,
-  TimeIcon,
   Tooltip,
   UndoIcon,
   Text,
@@ -21,9 +20,9 @@ import {
   PauseIcon,
   majorScale,
   PaneProps,
+  Button,
 } from 'evergreen-ui';
 import { ForwardedRef } from 'react';
-import { ExportState } from '../../state/editor/types';
 import {
   setExportPopup,
   toggleDisplaySpeakerNames,
@@ -32,7 +31,34 @@ import {
 import { saveDocument } from '../../state/editor/io';
 import { setPlay } from '../../state/editor/play';
 import { useTheme } from '../../components/theme';
+import { Circle } from 'rc-progress';
 
+function ProgressButton({
+  progress,
+  disabled,
+  tooltip = '',
+}: {
+  progress: number;
+  disabled: boolean;
+  tooltip?: string;
+}) {
+  if (tooltip == null) {
+    tooltip = `${Math.round(progress * 100)}%`;
+  }
+  return (
+    <Tooltip content={tooltip}>
+      <Button padding={0} appearance={'minimal'} disabled={disabled}>
+        <Circle
+          style={{ height: majorScale(3) }}
+          percent={progress * 100}
+          strokeWidth={50}
+          trailWidth={0}
+          strokeLinecap={'butt'}
+        />
+      </Button>
+    </Tooltip>
+  );
+}
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
   const displaySpeakerNames =
@@ -51,10 +77,10 @@ export function EditorTitleBar(): JSX.Element {
       !DocumentGenerator.fromParagraphs(state.editor.present?.document.content).next().done
   );
 
-  const exportRunning = useSelector(
-    (state: RootState) => state.editor.present?.exportState == ExportState.Running
+  const exportState = useSelector(
+    (state: RootState) => state.editor.present?.exportState || { running: false, progress: 0 }
   );
-
+  const exportDisabled = exportState.running || !canExport;
   return (
     <TitleBar>
       <TitleBarSection>
@@ -103,15 +129,17 @@ export function EditorTitleBar(): JSX.Element {
               onClick={() => dispatch(saveDocument(false))}
             />
           </Tooltip>
-
-          <Tooltip content={'export document'}>
-            {/* TODO: add circular progressbar here */}
-            <TitleBarButton
-              icon={exportRunning ? TimeIcon : ExportIcon}
-              disabled={exportRunning && canExport}
-              onClick={() => dispatch(setExportPopup(true))}
-            />
-          </Tooltip>
+          {exportState.running ? (
+            <ProgressButton progress={exportState.progress} disabled={exportDisabled} />
+          ) : (
+            <Tooltip content={'export document'}>
+              <TitleBarButton
+                icon={ExportIcon}
+                disabled={exportDisabled}
+                onClick={() => dispatch(setExportPopup(true))}
+              />
+            </Tooltip>
+          )}
         </TitleBarGroup>
       </TitleBarSection>
     </TitleBar>

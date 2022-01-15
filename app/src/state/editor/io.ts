@@ -162,3 +162,10 @@ export const exportSelection = createAsyncActionWithReducer<EditorState>(
     await ffmpeg_exporter.exportAudio(render_items, state.document.sources, path);
   }
 );
+
+export const setExportState = createActionWithReducer<
+  EditorState,
+  { running: boolean; progress: number }
+>('editor/setExportState', (state, exportState) => {
+  state.exportState = exportState;
+});

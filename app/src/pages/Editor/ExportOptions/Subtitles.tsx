@@ -7,6 +7,7 @@ import { RootState } from '../../../state';
 import { SubtitleFormat } from '@audapolis/webvtt-writer';
 import { switchExtension } from '../../../util';
 import { ExportType } from './index';
+import { ProgressCallback } from '../../../core/ffmpeg';
 
 export const exportDefinition: ExportType = {
   type: 'Subtitles',
@@ -23,7 +24,9 @@ export function Subtitles({
   outputPath,
   setOutputPath,
 }: {
-  exportCallbackRef: MutableRefObject<(document: Document, path: string) => Promise<void>>;
+  exportCallbackRef: MutableRefObject<
+    (document: Document, path: string, progressCallback: ProgressCallback) => Promise<void>
+  >;
   outputPath: string;
   setOutputPath: (path: string) => void;
 }): JSX.Element {

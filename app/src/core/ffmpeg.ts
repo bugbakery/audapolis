@@ -41,7 +41,8 @@ async function combineVideoParts(
   parts: { v: Fessonia.FFmpegInput; a: Fessonia.FFmpegInput }[],
   subtitles: { path: string; type: 'burn_in' | 'seperate_track' } | null,
   targetResolution: { x: number; y: number },
-  output: string
+  output: string,
+  onTimeProgress: ProgressCallback
 ): Promise<unknown> {
   const cmd = new FFmpegCommand({ y: undefined });
   const partSpecifiers = parts.map((p) => {
@@ -88,17 +89,7 @@ async function combineVideoParts(
   outputObj.addOptions({ vsync: 'vfr' });
 
   cmd.addOutput(outputObj);
-
-  console.debug('ffmpeg commandline: ', getFfmpegComandLine(cmd));
-  cmd.on('update', (data) => {
-    console.debug(`Received update on ffmpeg process:`, data);
-  });
-  const promise = new Promise((resolve, reject) => {
-    cmd.on('success', resolve);
-    cmd.on('error', reject);
-  });
-  cmd.spawn(true);
-  return promise;
+  return runFfmpegWithProgress(cmd, onTimeProgress);
 }
 
 function filterSource(filter: string, options: Record<string, string | number>) {
@@ -122,7 +113,8 @@ export async function exportVideo(
   sources: Record<string, Source>,
   outputPath: string,
   targetResolution: { x: number; y: number },
-  subtitles: { vtt: WebVtt; type: 'burn_in' | 'seperate_track' } | null
+  subtitles: { vtt: WebVtt; type: 'burn_in' | 'seperate_track' } | null,
+  progressCallback: ProgressCallback = () => {}
 ): Promise<void> {
   const tempdir = await getTempDir();
 
@@ -132,7 +124,9 @@ export async function exportVideo(
     diskSubtitles = { path: path.join(tempdir, 'subtitles.vtt').toString(), type: subtitles.type };
   }
 
+  let total = 0;
   const files = content.map((part, i) => {
+    total += part.length;
     const blackSource = filterSource('color', {
       color: 'black',
       rate: subtitles ? 30 : 1, // ffmpeg only burns in the subtitles which exist at the beginning of the frame. With 1fps, subtitles appear delayed or are skipped completely
@@ -160,11 +154,35 @@ export async function exportVideo(
     }
   });
 
-  await combineVideoParts(files, diskSubtitles, targetResolution, outputPath);
+  await combineVideoParts(files, diskSubtitles, targetResolution, outputPath, (p) =>
+    progressCallback(p / total)
+  );
   fs.rmdirSync(tempdir, { recursive: true });
 }
 
-async function combineAudioParts(parts: Fessonia.FFmpegInput[], output: string): Promise<unknown> {
+export type ProgressCallback = (progress: number) => void;
+
+async function runFfmpegWithProgress(
+  cmd: Fessonia.FFmpegCommand,
+  onTimeProgress: ProgressCallback
+) {
+  console.debug('ffmpeg commandline: ', getFfmpegComandLine(cmd));
+  cmd.on('update', (data: { out_time_ms: number }) => {
+    onTimeProgress(data.out_time_ms / 1000);
+  });
+  const promise = new Promise((resolve, reject) => {
+    cmd.on('success', resolve);
+    cmd.on('error', reject);
+  });
+  cmd.spawn(true);
+  return promise;
+}
+
+async function combineAudioParts(
+  parts: Fessonia.FFmpegInput[],
+  output: string,
+  onTimeProgress: ProgressCallback
+): Promise<unknown> {
   const cmd = new FFmpegCommand({ y: undefined });
   const concat = new FilterChain([
     new FilterNode('concat', { n: parts.length.toString(), v: '0', a: '1' }),
@@ -177,26 +195,21 @@ async function combineAudioParts(parts: Fessonia.FFmpegInput[], output: string):
   const outputObj = new FFmpegOutput(output);
   outputObj.addStream(concat.streamSpecifier());
   cmd.addOutput(outputObj);
-  console.debug('ffmpeg commandline: ', getFfmpegComandLine(cmd));
-  cmd.on('update', (data) => {
-    console.debug(`Received update on ffmpeg process:`, data);
-  });
-  const promise = new Promise((resolve, reject) => {
-    cmd.on('success', resolve);
-    cmd.on('error', reject);
-  });
-  cmd.spawn(true);
-  return promise;
+  return runFfmpegWithProgress(cmd, onTimeProgress);
 }
 
 export async function exportAudio(
   content: RenderItem[],
   sources: Record<string, Source>,
-  outputPath: string
+  outputPath: string,
+  progressCallback: ProgressCallback = () => {}
 ): Promise<void> {
   const tempdir = await getTempDir();
 
+  let total = 0;
+
   const files = content.map((part, i) => {
+    total += part.length;
     if ('source' in part) {
       const source = sources[part.source];
       const source_path = path.join(tempdir, `part${i}-source`);
@@ -212,7 +225,7 @@ export async function exportAudio(
     }
   });
 
-  await combineAudioParts(files, outputPath);
+  await combineAudioParts(files, outputPath, (p) => progressCallback(p / total));
   fs.rmdirSync(tempdir, { recursive: true });
 }
 

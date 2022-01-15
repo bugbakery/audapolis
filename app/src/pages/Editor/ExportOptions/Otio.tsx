@@ -7,6 +7,7 @@ import { useSelector, useStore } from 'react-redux';
 import { exportOtio } from '../../../core/otio';
 import path from 'path';
 import { ExportType } from './index';
+import { ProgressCallback } from '../../../core/ffmpeg';
 
 export const exportDefinition: ExportType = {
   type: 'OpenTimelineIO',
@@ -18,7 +19,9 @@ export const exportDefinition: ExportType = {
 export function Otio({
   exportCallbackRef,
 }: {
-  exportCallbackRef: MutableRefObject<(document: Document, path: string) => Promise<void>>;
+  exportCallbackRef: MutableRefObject<
+    (document: Document, path: string, progressCallback: ProgressCallback) => Promise<void>
+  >;
 }): JSX.Element {
   const store = useStore();
   const documentPath = useSelector((state: RootState) => state.editor.present?.path || '');

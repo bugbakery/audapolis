@@ -216,7 +216,30 @@ export async function exportAudio(
   fs.rmdirSync(tempdir, { recursive: true });
 }
 
-export async function convertToWav(input_path: string): Promise<Buffer> {
+function getFileDuration(filePath: string): Promise<number> {
+  const elem = document.createElement('video');
+  const fileContents = fs.readFileSync(filePath);
+  const objectUrl = URL.createObjectURL(new Blob([fileContents]));
+
+  const promise = new Promise<number>((resolve, reject) => {
+    elem.onloadeddata = () => {
+      resolve(elem.duration * 1000);
+      elem.remove();
+      URL.revokeObjectURL(objectUrl);
+    };
+    elem.onerror = (err) => {
+      console.error('failed to get file duration', err);
+      reject(Error('failed to file duration'));
+    };
+  });
+  elem.setAttribute('src', objectUrl);
+  return promise;
+}
+
+export async function convertToWav(
+  input_path: string,
+  progressCallback: (progress: number) => void
+): Promise<Buffer> {
   const cmd = new FFmpegCommand({ y: undefined });
 
   cmd.addInput(new FFmpegInput(input_path));
@@ -225,7 +248,17 @@ export async function convertToWav(input_path: string): Promise<Buffer> {
   const outputFile = path.join(tempdir, 'output.wav');
   cmd.addOutput(new FFmpegOutput(outputFile));
 
-  console.debug(await cmd.execute());
+  const duration = await getFileDuration(input_path);
+
+  cmd.on('update', (data) => {
+    progressCallback(data.out_time_ms / duration);
+  });
+  const promise = new Promise((resolve, reject) => {
+    cmd.on('success', resolve);
+    cmd.on('error', reject);
+  });
+  cmd.spawn(true);
+  console.log('ffmpeg result', await promise);
 
   const fileData = fs.readFileSync(outputFile);
   fs.rmdirSync(tempdir, { recursive: true });

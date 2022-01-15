@@ -158,6 +158,10 @@ export function Document(): JSX.Element {
       dispatch(goRight());
     }
   };
+  function getSpeakerColor(speaker: string) {
+    const color_idx = speakerIndices[speaker] % Object.keys(theme.colors.speakers).length;
+    return theme.colors.speakers[color_idx];
+  }
 
   return (
     <DocumentContainer
@@ -186,7 +190,7 @@ export function Document(): JSX.Element {
 
       {content.length > 0 ? (
         content.map((p, i) => {
-          const speakerColor = theme.colors.speakers[speakerIndices[p.speaker]];
+          const speakerColor = getSpeakerColor(p.speaker);
           return (
             <Paragraph
               key={i}

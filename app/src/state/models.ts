@@ -54,11 +54,10 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
     const task = await downloadModelApiCall(server, model.lang, model.name);
 
     while (true) {
-      const { state, processed, total } = await getTask(server, task);
+      const { state, progress } = await getTask(server, task);
 
-      dispatch(setProgress({ model, state, progress: processed / total }));
+      dispatch(setProgress({ model, state, progress }));
       if (state == DownloadingModelState.DONE) {
-        dispatch(setProgress({ model, state, progress: processed / total }));
         dispatch(fetchModelState());
         break;
       }

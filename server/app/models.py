@@ -102,7 +102,8 @@ class Models:
                 for data in response.iter_content(
                     chunk_size=max(int(task.total / 1000), 1024 * 1024)
                 ):
-                    task.processed += len(data)
+                    task.add_progress(len(data))
+
                     f.write(data)
 
             task.state = DownloadModelState.EXTRACTING
@@ -146,3 +147,8 @@ class DownloadModelTask(Task):
     state: DownloadModelState = DownloadModelState.QUEUED
     total: float = 0
     processed: float = 0
+    progress: float = 0
+
+    def add_progress(self, added):
+        self.processed += added
+        self.progress = self.processed / self.total

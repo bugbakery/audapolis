@@ -20,8 +20,7 @@ import { openDocumentFromMemory } from './editor/io';
 
 export interface TranscribeState {
   file?: string;
-  processed: number;
-  total: number;
+  progress: number;
   state?: TranscriptionState;
 }
 
@@ -81,9 +80,9 @@ export const startTranscription = createAsyncThunk<
   dispatch(setState(task.state));
 
   while (true) {
-    const { content, state, processed, total } = await getTask(server, task);
+    const { content, state, progress } = await getTask(server, task);
 
-    dispatch(setProgress({ processed, total }));
+    dispatch(setProgress(progress));
     dispatch(setState(state));
 
     if (state == 'done') {
@@ -124,14 +123,13 @@ export const startTranscription = createAsyncThunk<
 
 export const importSlice = createSlice({
   name: 'nav',
-  initialState: { processed: 0, total: 1 } as TranscribeState,
+  initialState: { progress: 0 } as TranscribeState,
   reducers: {
     setState: (state, args: PayloadAction<TranscriptionState>) => {
       state.state = args.payload;
     },
-    setProgress: (state, args: PayloadAction<{ total: number; processed: number }>) => {
-      state.processed = args.payload.processed;
-      state.total = args.payload.total;
+    setProgress: (state, args: PayloadAction<number>) => {
+      state.progress = args.payload;
     },
   },
   extraReducers: (builder) => {

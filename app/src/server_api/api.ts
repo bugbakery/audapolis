@@ -16,8 +16,7 @@ export enum TranscriptionState {
 }
 
 export interface TranscriptionTask extends Task {
-  processed: number;
-  total: number;
+  progress: number;
   state: TranscriptionState;
   content?: Paragraph<Omit<ParagraphItem, 'source'>>[];
 }
@@ -33,8 +32,7 @@ export interface DownloadModelTask extends Task {
   lang: string;
   name: string;
   state: DownloadingModelState;
-  total: number;
-  processed: number;
+  progress: number;
 }
 
 export function startTranscription(

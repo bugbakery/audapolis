@@ -66,7 +66,7 @@ export const closeDocument = createAsyncActionWithReducer<EditorState>(
 );
 
 export const setSources = createActionWithReducer<EditorState, Record<string, Source>>(
-  'editor/setState',
+  'editor/setSources',
   (state, sources) => {
     state.document.sources = sources;
   }

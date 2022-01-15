@@ -1,5 +1,6 @@
 import enum
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Optional
 
@@ -37,7 +38,7 @@ class TranscriptionTask(Task):
     content: Optional[dict] = None
 
     def set_progress(self, processed, state):
-        self.processed = processed
+        self.processed += processed
         self.state = state
 
 
@@ -56,8 +57,8 @@ def transcribe_raw_data(model: Model, name, audio, offset, duration, process_cal
         data = audio[block_start * 1000 : block_end * 1000]
         rec.AcceptWaveform(data.get_array_of_samples().tobytes())
         processed = block_end
-        process_callback(processed, TranscriptionState.TRANSCRIBING)
-    process_callback(processed, TranscriptionState.POST_PROCESSING)
+        process_callback(processed - block_start, TranscriptionState.TRANSCRIBING)
+
     vosk_result = json.loads(rec.FinalResult())
     return transform_vosk_result(name, vosk_result, duration, offset)
 
@@ -102,17 +103,21 @@ def process_audio(
             SAMPLE_RATE, np.array(audio.get_array_of_samples())
         )
         optimized_segments = optimize_segments(segments)
-        task.content = [
-            transcribe_raw_data(
-                model,
-                f"Speaker {int(segment.speaker_id)} ({fileName})",
-                audio,
-                segment.start,
-                segment.length,
-                task.set_progress,
+        with ThreadPoolExecutor() as executor:
+            task.content = list(
+                executor.map(
+                    lambda segment: transcribe_raw_data(
+                        model,
+                        f"Speaker {int(segment.speaker_id)} ({fileName})",
+                        audio,
+                        segment.start,
+                        segment.length,
+                        task.set_progress,
+                    ),
+                    optimized_segments,
+                )
             )
-            for segment in optimized_segments
-        ]
+
         task.state = TranscriptionState.DONE
 
 

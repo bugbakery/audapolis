@@ -36,10 +36,12 @@ class TranscriptionTask(Task):
     total: float = 0
     processed: float = 0
     content: Optional[dict] = None
+    progress: float = 0
 
     def set_progress(self, processed, state):
         self.processed += processed
         self.state = state
+        self.progress = self.processed / self.total
 
 
 def transcribe_raw_data(model: Model, name, audio, offset, duration, process_callback):

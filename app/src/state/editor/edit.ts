@@ -1,10 +1,11 @@
-import { assertSome } from '../../util';
+import { assertSome, EPSILON } from '../../util';
 import { v4 as uuidv4 } from 'uuid';
 import {
   deserializeDocument,
   Document,
   DocumentGenerator,
   DocumentGeneratorItem,
+  getItemsAtTime,
   serializeDocument,
   TimedParagraphItem,
   Word,
@@ -14,6 +15,7 @@ import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState } from './types';
 import { selectLeft } from './selection';
 import { setUserSetTime } from './play';
+import { GeneratorBox } from '../../util/itertools';
 
 export const insertParagraphBreak = createActionWithReducer<EditorState>(
   'editor/insertParagraphBreak',
@@ -168,7 +170,7 @@ export const cut = createAsyncActionWithReducer<EditorState>(
   'editor/cut',
   async (arg, { dispatch }) => {
     await dispatch(copy());
-    await dispatch(deleteSelection());
+    dispatch(deleteSelection());
   }
 );
 
@@ -191,15 +193,73 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
     fulfilled: (state, payload) => {
       state.selection = null;
       state.document.sources = { ...state.document.sources, ...payload.sources };
-      const beforeSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
-        (item) => item.absoluteStart + item.length <= state.currentTimePlayer
+
+      let time = state.currentTimePlayer;
+      let items = getItemsAtTime(DocumentGenerator.fromParagraphs(state.document.content), time);
+      let endOfParagraph = false;
+
+      // if we are at the end of a paragraph
+      const firstItemEnd = items[0].absoluteStart + items[0].length;
+      if (firstItemEnd - 2 * EPSILON <= time && firstItemEnd > time) {
+        time = items[0].absoluteStart + items[0].length;
+        items = getItemsAtTime(DocumentGenerator.fromParagraphs(state.document.content), time);
+        endOfParagraph = true;
+      }
+
+      const documentGenerator = DocumentGenerator.fromParagraphs(state.document.content).collect();
+      const beforeSlice = new GeneratorBox(documentGenerator).takewhile(
+        (item) => item.absoluteStart + item.length <= time
+      );
+      const afterSlice = new GeneratorBox(documentGenerator).dropwhile(
+        (item) => item.absoluteStart + item.length <= time
       );
       const pastedSlice = DocumentGenerator.fromParagraphs(payload.content);
-      const afterSlice = DocumentGenerator.fromParagraphs(state.document.content).filter(
-        (item) => item.absoluteStart + item.length > state.currentTimePlayer
-      );
 
-      state.document.content = beforeSlice.chain(pastedSlice).chain(afterSlice).toParagraphs();
+      if (!endOfParagraph && items[items.length - 1].firstInParagraph) {
+        // we paste to the beginning of a paragrpaph
+        let renameDict = { [items[0].speaker]: null as null | string };
+        const chained = beforeSlice.chain(
+          pastedSlice
+            .map((x) => {
+              if (x.speaker in renameDict) {
+                renameDict[x.speaker] = x.paragraphUuid;
+              }
+              return x;
+            })
+            .chain(
+              afterSlice.map((x) => {
+                if (x.speaker in renameDict) {
+                  return { ...x, paragraphUuid: renameDict[x.speaker] || x.paragraphUuid };
+                } else {
+                  renameDict = {};
+                  return x;
+                }
+              })
+            )
+        );
+        state.document.content = new DocumentGenerator(chained).toParagraphs();
+      } else {
+        let renameDict = { [items[0].speaker]: null as null | string };
+        const chained = beforeSlice
+          .map((x) => {
+            if (x.speaker in renameDict) {
+              renameDict[x.speaker] = x.paragraphUuid;
+            }
+            return x;
+          })
+          .chain(
+            pastedSlice.map((x) => {
+              if (x.speaker in renameDict) {
+                return { ...x, paragraphUuid: renameDict[x.speaker] || x.paragraphUuid };
+              } else {
+                renameDict = {};
+                return x;
+              }
+            })
+          )
+          .chain(afterSlice);
+        state.document.content = new DocumentGenerator(chained).toParagraphs();
+      }
     },
     rejected: (state, payload) => {
       console.error('paste rejected:', payload);

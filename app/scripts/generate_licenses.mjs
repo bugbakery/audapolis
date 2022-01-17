@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
-import nlf from "nlf";
-import fs from "fs";
+import nlf from 'nlf';
+import fs from 'fs';
 
 const args = process.argv.slice(2);
 
@@ -48,8 +48,8 @@ nlf.find({}, function (err, data) {
   }
   let total = license_parts.join('\n\n');
   const zip = new JSZip();
-  zip.file("licenses.txt", total);
-  zip.generateAsync({type:"nodebuffer"}).then((buf) => {
-    fs.writeFileSync(args[0], buf)
+  zip.file('licenses.txt', total);
+  zip.generateAsync({ type: 'nodebuffer' }).then((buf) => {
+    fs.writeFileSync(args[0], buf);
   });
 });

@@ -24,7 +24,7 @@
     "check": "npm-run-all --continue-on-error check:*",
     "check:tsc": "tsc --noEmit --incremental",
     "check:eslint": "eslint --ext .ts,.tsx . --cache",
-    "fmt": "prettier --write '{src,main_process}/**/*'"
+    "fmt": "prettier --write \"{src,main_process}/**/*\""
   },
   "keywords": [],
   "license": "AGPL-3.0",

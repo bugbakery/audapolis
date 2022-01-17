@@ -82,7 +82,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Import and trust codesigning cert
-        if: startsWith(matrix.os, 'macos')
+        if: startsWith(matrix.os, 'macos') && (github.ref_name == 'main' || github.ref_type == 'tag')
         shell: bash
         run: ./.github/workflows/import_cert.sh
         env:

@@ -223,9 +223,7 @@ export class DocumentGenerator<
     let lastParagraph = null;
     for (const item of this) {
       const generatorItemToParagraphItem = (item: DocumentGeneratorItem): ParagraphItem => {
-        // eslint-disable-next-line unused-imports/no-unused-vars
-        const { absoluteStart, paragraphUuid, itemIdx, speaker, ...rest } = item;
-        return rest;
+        return stripParagraphItemFields(item);
       };
 
       if (lastParagraph != item.paragraphUuid) {
@@ -248,9 +246,7 @@ export class DocumentGenerator<
     let lastParagraph = null;
     for (const item of this) {
       const generatorItemToParagraphItem = (item: DocumentGeneratorItem): TimedParagraphItem => {
-        // eslint-disable-next-line unused-imports/no-unused-vars
-        const { paragraphUuid, itemIdx, speaker, ...rest } = item;
-        return rest;
+        return { ...stripParagraphItemFields(item), absoluteStart: item.absoluteStart };
       };
 
       if (lastParagraph != item.paragraphUuid) {
@@ -271,6 +267,24 @@ export class DocumentGenerator<
 
   getItemsAtTime(time: number): DocumentGeneratorItem[] {
     return getItemsAtTime(this, time);
+  }
+}
+
+function stripParagraphItemFields<T extends ParagraphItem>(x: T): ParagraphItem {
+  switch (x.type) {
+    case 'artificial_silence':
+      return { type: 'artificial_silence', length: x.length };
+    case 'silence':
+      return { type: 'silence', length: x.length, source: x.source, sourceStart: x.sourceStart };
+    case 'word':
+      return {
+        type: 'word',
+        length: x.length,
+        source: x.source,
+        sourceStart: x.sourceStart,
+        word: x.word,
+        conf: x.conf,
+      };
   }
 }
 

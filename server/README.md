@@ -16,8 +16,13 @@ This can either be run on the same host as the app or hosted somewhere else.
 
 You need to install the server dependencies even if you dont want hack on the python side of things.
 
+The server-component of audapolis is written in `python3` so you need to have that [installed](https://wiki.python.org/moin/BeginnersGuide/Download).
+It depends on `numpy` which does not provide official 32-bit python-3.10 wheels for windows. Try to avoid that combination.
+
+
 We use [poetry](https://python-poetry.org/) for dependency management.
 Either install poetry using your system package manager or by running:
+
 
 ```sh
 pip install poetry

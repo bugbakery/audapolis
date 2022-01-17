@@ -1,5 +1,6 @@
 import enum
 import json
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Optional
@@ -82,7 +83,11 @@ def process_audio(
     task = tasks.get(task_uuid)
     task.state = TranscriptionState.LOADING
 
-    audio = AudioSegment.from_wav(file)
+    with warnings.catch_warnings():
+        # we ignore the warning that ffmpeg is not found as we
+        # don't need ffmpeg to decode wav files
+        warnings.filterwarnings("ignore", ".*ffmpeg.*")
+        audio = AudioSegment.from_wav(file)
     audio = audio.set_frame_rate(SAMPLE_RATE)
     audio = audio.set_channels(1)
 

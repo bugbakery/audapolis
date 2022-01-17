@@ -14,8 +14,10 @@ This can either be run on the same host as the app or hosted somewhere else.
 
 ## Installation & Usage
 
+You need to install the server dependencies even if you dont want hack on the python side of things.
+
 We use [poetry](https://python-poetry.org/) for dependency management.
-Either install poetry using your system package manager or by running
+Either install poetry using your system package manager or by running:
 
 ```sh
 pip install poetry
@@ -27,19 +29,11 @@ After that you can install the required dependencies by running
 poetry install
 ```
 
-After installing the dependencies you can start the server by running
 
+Normally the server should be automatically started by the app.
+If you want to start the server on its own anyway for a laugh, run the following:
 ```sh
 poetry run uvicorn app.main:app --reload
-```
-## Models
-
-You need to download a model for speech recognition into the `../data/` directory from [here](https://alphacephei.com/vosk/models) or by running the `download_models.sh` script
-
-```sh
-cd ../data
-./download_models.sh
-cd ../server
 ```
 
 ## Code checks & tests

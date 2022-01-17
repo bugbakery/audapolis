@@ -70,10 +70,15 @@ export const deleteSelection = createActionWithReducer<EditorState>(
         item.absoluteStart + item.length <= selection.range.start + selection.range.length
       );
     };
+    const items = getItemsAtTime(
+      DocumentGenerator.fromParagraphs(state.document.content),
+      selection.range.start + selection.range.length
+    );
     state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
       .filter(isNotSelected)
       .toParagraphs();
-    setUserSetTime.reducer(state, selection.range.start);
+
+    setUserSetTime.reducer(state, selection.range.start - (items[0].lastInParagraph ? EPSILON : 0));
     state.selection = null;
   }
 );

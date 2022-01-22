@@ -38,9 +38,9 @@ export interface Source {
   fileContents: ArrayBuffer;
   objectUrl: string;
 }
-export interface Document<S = Source, I = ParagraphItem> {
+export interface Document<S = Source, I = DocumentItem> {
   sources: Record<string, S>;
-  content: Paragraph<I>[];
+  content: I[];
 }
 
 export const emptyDocument: Document = {
@@ -48,6 +48,31 @@ export const emptyDocument: Document = {
   content: [],
 };
 
+export interface ParagraphBreakItem {
+  type: 'paragraph_break';
+  speaker: string;
+}
+
+type HeadingLevel = 1 | 2 | 3;
+export interface HeadingItem {
+  type: 'heading';
+  text: string;
+  level: HeadingLevel;
+}
+export interface JCutTransition extends TransitionItemBase {
+  transition_type: 'j_cut';
+  transition_length: number;
+}
+export interface LCutTransition extends TransitionItemBase {
+  transition_type: 'l_cut';
+  transition_length: number;
+}
+export interface TransitionItemBase {
+  type: 'transition';
+}
+export type TransitionItem = LCutTransition | JCutTransition;
+
+export type DocumentItem = ParagraphItem | ParagraphBreakItem | HeadingItem | TransitionItem;
 /**
  * The file versions of audapolis are not the same as the actual release versions of the app.
  * They should be changed any time a breaking update to the file structure happens but it is not necessary to bump them
@@ -58,7 +83,11 @@ interface DocumentV1Json {
   version: 1;
   content: Paragraph[];
 }
-type DocumentJson = DocumentV1Json | DocumentPreV1Json;
+interface DocumentV2Json {
+  version: 2;
+  content: DocumentItem[];
+}
+type DocumentJson = DocumentV2Json | DocumentV1Json | DocumentPreV1Json;
 
 export async function deserializeDocumentFromFile(
   path: string,
@@ -93,7 +122,8 @@ export async function deserializeDocument(
     );
   } else if (parsed.version == 1) {
     content = parsed.content;
-  } else {
+  } // TODO: V2, convert v1 to v2
+  else {
     throw new Error(
       `Cant open document with version ${parsed.version} with current audapolis version.\nMaybe try updating audapolis?`
     );

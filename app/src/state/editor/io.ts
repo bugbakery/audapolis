@@ -6,18 +6,18 @@ import {
   serializeDocumentToFile,
   Source,
 } from '../../core/document';
-import { ipcRenderer } from 'electron';
 import { openEditor, openLanding } from '../nav';
 import { assertSome } from '../../util';
 import * as ffmpeg_exporter from '../../core/ffmpeg';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState, NoFileSelectedError } from './types';
 import { setPlay } from './play';
+import { openFile, saveFile } from '../../../ipc/ipc_renderer';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
   boolean,
-  { document: Document; path?: string }
+  { document: Document; path?: string } | undefined
 >(
   'editor/saveDocument',
   async (saveAsNew, { getState }) => {
@@ -31,23 +31,24 @@ export const saveDocument = createAsyncActionWithReducer<
       return { document };
     } else {
       console.log('opening save dialog');
-      const path = await ipcRenderer
-        .invoke('save-file', {
-          title: 'Save file as...',
-          properties: ['saveFile'],
-          filters: [
-            { name: 'Audapolis Project Files', extensions: ['audapolis'] },
-            { name: 'All Files', extensions: ['*'] },
-          ],
-        })
-        .then((x) => x.filePath);
+      const path = await saveFile({
+        title: 'Save file as...',
+        properties: ['showOverwriteConfirmation', 'createDirectory'],
+        filters: [
+          { name: 'Audapolis Project Files', extensions: ['audapolis'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      }).then((x) => x.filePath);
+      if (!path) return;
       console.log('saving to ', path);
       await serializeDocumentToFile(document, path);
       return { document, path };
     }
   },
   {
-    fulfilled: (state, { document, path }) => {
+    fulfilled: (state, payload) => {
+      if (!payload) return;
+      const { document, path } = payload;
       state.lastSavedDocument = document;
       if (path) state.path = path;
     },
@@ -74,11 +75,9 @@ export const setSources = createActionWithReducer<EditorState, Record<string, So
 export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState, void, Document>(
   'editor/openDocumentFromDisk',
   async (_, { dispatch }) => {
-    const file = await ipcRenderer.invoke('open-file', {
+    const file = await openFile({
       title: 'Open audapolis document...',
-      properties: ['openFile'],
-      promptToCreate: true,
-      createDirectory: true,
+      properties: ['openFile', 'promptToCreate', 'createDirectory'],
       filters: [
         { name: 'Audapolis Project Files', extensions: ['audapolis'] },
         { name: 'All Files', extensions: ['*'] },
@@ -147,17 +146,16 @@ export const exportSelection = createAsyncActionWithReducer<EditorState>(
       .toRenderItems()
       .collect();
 
-    const path = await ipcRenderer
-      .invoke('save-file', {
-        title: 'Export selection',
-        properties: ['saveFile'],
-        filters: [
-          { name: 'mp3 Files', extensions: ['mp3'] },
-          { name: 'wav Files', extensions: ['wav'] },
-          { name: 'All Files', extensions: ['*'] },
-        ],
-      })
-      .then((x) => x.filePath);
+    const path = await saveFile({
+      title: 'Export selection',
+      properties: ['showOverwriteConfirmation', 'createDirectory'],
+      filters: [
+        { name: 'mp3 Files', extensions: ['mp3'] },
+        { name: 'wav Files', extensions: ['wav'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    }).then((x) => x.filePath);
+    if (!path) return;
     console.log('exporting to', path);
     await ffmpeg_exporter.exportAudio(render_items, state.document.sources, path);
   }

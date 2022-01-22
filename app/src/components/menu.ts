@@ -1,4 +1,4 @@
-import { ipcRenderer, MenuItemConstructorOptions } from 'electron';
+import { MenuItemConstructorOptions } from 'electron';
 import { store } from '../state';
 import { transcribeFile } from '../state/transcribe';
 import { ActionCreators } from 'redux-undo';
@@ -8,6 +8,11 @@ import { closeDocument, openDocumentFromDisk, saveDocument } from '../state/edit
 import { copy, cut, paste } from '../state/editor/edit';
 import { selectAll } from '../state/editor/selection';
 import { toggleDisplaySpeakerNames, toggleDisplayVideo } from '../state/editor/display';
+import {
+  subscribeMenuClick,
+  unsubscribeAllMenuClick,
+  setMenu as setMenuIpc,
+} from '../../ipc/ipc_renderer';
 
 export function setMenu(menu: MenuItemConstructorOptions[]): void {
   const listeners: Record<string, () => void> = {};
@@ -30,11 +35,11 @@ export function setMenu(menu: MenuItemConstructorOptions[]): void {
   };
   const transformed = transformMenuTemplate(menu);
 
-  ipcRenderer.removeAllListeners('menu-click');
-  ipcRenderer.on('menu-click', (e, payload) => {
-    listeners[payload]();
+  unsubscribeAllMenuClick();
+  subscribeMenuClick((uuid) => {
+    listeners[uuid]();
   });
-  ipcRenderer.send('set-menu', transformed);
+  setMenuIpc(transformed);
 }
 
 export const editorMenu: MenuItemConstructorOptions[] = [

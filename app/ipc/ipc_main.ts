@@ -47,6 +47,10 @@ ipcMain.on('show-menu', (event) => {
   });
 });
 
+export function menuClick(window: BrowserWindow, uuid: string): void {
+  window.webContents.send('menu-click', uuid);
+}
+
 export function publishServerInfo(update?: Partial<ServerInfo>): void {
   if (update) {
     Object.keys(update).forEach((k: keyof typeof update) => {

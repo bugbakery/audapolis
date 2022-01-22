@@ -39,6 +39,16 @@ export function showMenu(): void {
   ipcRenderer.send('show-menu');
 }
 
+export function subscribeMenuClick(callback: (uuid: string) => void): void {
+  ipcRenderer.on('menu-click', (e, payload) => {
+    callback(payload);
+  });
+}
+
+export function unsubscribeAllMenuClick(): void {
+  ipcRenderer.removeAllListeners('menu-click');
+}
+
 export function requestLocalServerInfo(): void {
   ipcRenderer.send('local-server-request');
 }

@@ -1,7 +1,7 @@
 import { BrowserWindow, globalShortcut, Menu, MenuItemConstructorOptions, shell } from 'electron';
 import { createWindow } from './index';
 import { MenuItemConstructorOptionsIpc } from './types';
-import { openAbout } from '../ipc/ipc_main';
+import { menuClick, openAbout } from '../ipc/ipc_main';
 
 type ShortcutMap = Record<string, string>;
 export const menuMap: Record<number, { menu: Menu; accelerators: ShortcutMap }> = {};
@@ -29,7 +29,7 @@ export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsI
         return {
           ...x,
           click: () => {
-            x.click && window.webContents.send('menu-click', x.click);
+            x.click && menuClick(window, x.click);
           },
           registerAccelerator: false,
           submenu: x.submenu && transformMenuTemplateInner(x.submenu),
@@ -110,7 +110,7 @@ export function applyMenu(window: BrowserWindow): void {
     unregisterAccelerators();
     Object.entries(menu.accelerators).forEach(([accelerator, uuid]) => {
       globalShortcut.register(accelerator, () => {
-        window.webContents.send('menu-click', uuid);
+        menuClick(window, uuid);
       });
     });
   }

@@ -4,11 +4,18 @@ export function sleep(time: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, time * 1000));
 }
 
+// *** START: Things to please the almighty typescript gods
 export function assertSome<T>(x: T | null | undefined | void): asserts x is T {
   if (x === undefined || x === null) {
     throw Error(`x is '${x}' while it is asserted that it is some`);
   }
 }
+
+export function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here");
+}
+
+// *** END: Things to please the almighty typescript gods
 
 export const EPSILON = 0.00001;
 

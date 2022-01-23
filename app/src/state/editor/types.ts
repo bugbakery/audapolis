@@ -56,7 +56,7 @@ export class NoFileSelectedError extends Error {
   }
 }
 
-export const editorDefaults: EditorState = {
+export const defaultEditorState: EditorState = {
   path: null,
   document: emptyDocument,
   lastSavedDocument: null,

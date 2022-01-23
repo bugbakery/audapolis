@@ -4,8 +4,8 @@ import {
   computeTimed,
   DocumentGenerator,
   getItemsAtTime,
-  Paragraph as ParagraphType,
-  TimedParagraphItem,
+  V1Paragraph as ParagraphType,
+  TimedV1ParagraphItem,
 } from '../../core/document';
 import * as React from 'react';
 import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef } from 'react';
@@ -69,7 +69,7 @@ export function Document(): JSX.Element {
 
   const getParagraphItemIdx = (element: HTMLElement | null) =>
     element?.dataset?.item?.split('-').map((x) => parseInt(x)) || [];
-  const getItem = (element: HTMLElement | null): TimedParagraphItem | null => {
+  const getItem = (element: HTMLElement | null): TimedV1ParagraphItem | null => {
     const [paragraphIdx, itemIdx] = getParagraphItemIdx(element);
     return content[paragraphIdx]?.content[itemIdx];
   };

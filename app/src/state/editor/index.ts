@@ -1,4 +1,4 @@
-import { editorDefaults, EditorState } from './types';
+import { defaultEditorState, EditorState } from './types';
 import { AnyAction, Reducer } from '@reduxjs/toolkit';
 import { produce } from 'immer';
 import { ActionWithReducers, AsyncActionWithReducers } from '../util';
@@ -32,7 +32,7 @@ const reducers: (
 
 function editorReducer(state: EditorState | undefined, action: AnyAction): EditorState {
   if (!state) {
-    return editorDefaults;
+    return defaultEditorState;
   }
 
   return produce(state, (draft) => {

@@ -7,7 +7,7 @@ import {
   DocumentGeneratorItem,
   getItemsAtTime,
   serializeDocument,
-  TimedParagraphItem,
+  TimedV1ParagraphItem,
   Word,
 } from '../../core/document';
 import { clipboard } from 'electron';
@@ -64,7 +64,7 @@ export const deleteSelection = createActionWithReducer<EditorState>(
     if (!selection) {
       throw new Error('selection is null');
     }
-    const isNotSelected = (item: TimedParagraphItem) => {
+    const isNotSelected = (item: TimedV1ParagraphItem) => {
       return !(
         item.absoluteStart >= selection.range.start &&
         item.absoluteStart + item.length <= selection.range.start + selection.range.length

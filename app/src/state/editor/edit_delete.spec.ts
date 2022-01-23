@@ -1,9 +1,9 @@
-import { emptyDocument, Paragraph } from '../../core/document';
-import { editorDefaults, EditorState } from './types';
+import { emptyDocument, V1Paragraph } from '../../core/document';
+import { defaultEditorState, EditorState } from './types';
 import { deleteSelection, deleteSomething } from './edit';
 import { EPSILON } from '../../util';
 
-const testContent: Paragraph[] = [
+const testContent: V1Paragraph[] = [
   {
     speaker: 'paragraph_01',
     content: [
@@ -24,7 +24,7 @@ const testContent: Paragraph[] = [
 
 test('deleteSelection basic', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: { ...emptyDocument, content: JSON.parse(JSON.stringify(testContent)) },
     selection: {
       startItem: { type: 'silence', length: 1, source: '', sourceStart: 1, absoluteStart: 1 },
@@ -56,7 +56,7 @@ test('deleteSelection basic', () => {
 });
 test('deleteSelection end of paragraph', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: { ...emptyDocument, content: JSON.parse(JSON.stringify(testContent)) },
     currentTimePlayer: 2.0,
     selection: {
@@ -89,7 +89,7 @@ test('deleteSelection end of paragraph', () => {
 });
 test('deleteSomething end of paragraph', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: { ...emptyDocument, content: JSON.parse(JSON.stringify(testContent)) },
     currentTimePlayer: 3.0 - EPSILON,
   };

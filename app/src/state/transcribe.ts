@@ -4,7 +4,7 @@ import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
 import { sleep } from '../util';
-import { Paragraph } from '../core/document';
+import { V1Paragraph } from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getServer } from './server';
 import { createHash } from 'crypto';
@@ -125,7 +125,7 @@ export const startTranscription = createAsyncThunk<
           return paragraph;
         });
         dispatch(
-          openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
+          openDocumentFromMemory({ sources: sources, content: contentWithSource as V1Paragraph[] })
         );
         // Once the task is finished, try to delete it but ignore any errors
         await deleteTask(server, task);

@@ -4,6 +4,10 @@ import { basename } from 'path';
 import { GeneratorBox, map } from '../util/itertools';
 import { v4 as uuidv4 } from 'uuid';
 import { EPSILON, roughEq } from '../util';
+
+export type TimedItemExtension = { absoluteStart: number; absoluteIndex: number };
+export type TimedDocumentItem = DocumentItem & TimedItemExtension;
+
 export interface Word {
   type: 'word';
   word: string;
@@ -27,10 +31,17 @@ export interface ArtificialSilence {
   length: number;
 }
 
-export type ParagraphItem = Word | Silence | ArtificialSilence;
+export type V1ParagraphItem = Word | Silence | ArtificialSilence;
 
-export interface Paragraph<I = ParagraphItem> {
+export interface V1Paragraph<I = V1ParagraphItem> {
   speaker: string;
+  content: I[];
+}
+type MacroItem = HeadingItem | Paragraph;
+export type TimedMacroItem = MacroItem & TimedItemExtension;
+export type TimedParagraphItem = ParagraphItem & TimedItemExtension;
+export interface Paragraph<I = TimedParagraphItem> {
+  speaker: string | null;
   content: I[];
 }
 
@@ -50,7 +61,7 @@ export const emptyDocument: Document = {
 
 export interface ParagraphBreakItem {
   type: 'paragraph_break';
-  speaker: string;
+  speaker: string | null;
 }
 
 type HeadingLevel = 1 | 2 | 3;
@@ -59,29 +70,18 @@ export interface HeadingItem {
   text: string;
   level: HeadingLevel;
 }
-export interface JCutTransition extends TransitionItemBase {
-  transition_type: 'j_cut';
-  transition_length: number;
-}
-export interface LCutTransition extends TransitionItemBase {
-  transition_type: 'l_cut';
-  transition_length: number;
-}
-export interface TransitionItemBase {
-  type: 'transition';
-}
-export type TransitionItem = LCutTransition | JCutTransition;
 
-export type DocumentItem = ParagraphItem | ParagraphBreakItem | HeadingItem | TransitionItem;
+export type ParagraphItem = Word | Silence | ArtificialSilence;
+export type DocumentItem = ParagraphItem | ParagraphBreakItem | HeadingItem;
 /**
  * The file versions of audapolis are not the same as the actual release versions of the app.
  * They should be changed any time a breaking update to the file structure happens but it is not necessary to bump them
  * when a new audapolis version is released.
  */
-type DocumentPreV1Json = Paragraph[];
+type DocumentPreV1Json = V1Paragraph[];
 interface DocumentV1Json {
   version: 1;
-  content: Paragraph[];
+  content: V1Paragraph[];
 }
 interface DocumentV2Json {
   version: 2;
@@ -115,7 +115,7 @@ export async function deserializeDocument(
     throw Error('document.json missing in audapolis file');
   }
   const parsed = JSON.parse(await documentFile.async('text')) as DocumentJson;
-  let content: Paragraph[];
+  let content: V1Paragraph[];
   if (!('version' in parsed)) {
     throw new Error(
       'Unversioned audapolis files are not supported anymore.\nProbably your audapolis file is corrupt.'
@@ -200,8 +200,11 @@ export async function serializeDocumentToFile(document: Document, path: string):
   });
 }
 
-export type TimedParagraphItem = ParagraphItem & { absoluteStart: number };
-export function computeTimed(content: Paragraph[], offset = 0): Paragraph<TimedParagraphItem>[] {
+export type TimedV1ParagraphItem = V1ParagraphItem & { absoluteStart: number };
+export function computeTimed(
+  content: V1Paragraph[],
+  offset = 0
+): V1Paragraph<TimedV1ParagraphItem>[] {
   let accumulatedTime = offset;
   return content.map((paragraph) => {
     return {
@@ -218,7 +221,7 @@ export function computeTimed(content: Paragraph[], offset = 0): Paragraph<TimedP
   });
 }
 
-export type DocumentGeneratorItem = TimedParagraphItem & {
+export type DocumentGeneratorItem = TimedV1ParagraphItem & {
   paragraphUuid: string;
   itemIdx: number; // the index within the containing paragraph. 0 for the first word in a paragraph.
   firstInParagraph: boolean;
@@ -230,7 +233,7 @@ export type DocumentGeneratorItem = TimedParagraphItem & {
 export class DocumentGenerator<
   T extends DocumentGeneratorItem = DocumentGeneratorItem
 > extends GeneratorBox<T> {
-  static fromParagraphs(content: Paragraph[]): DocumentGenerator {
+  static fromParagraphs(content: V1Paragraph[]): DocumentGenerator {
     return new DocumentGenerator(rawDocumentIterator(content));
   }
 
@@ -248,11 +251,11 @@ export class DocumentGenerator<
     return new C.constructor(map(mapper, this));
   }
 
-  toParagraphs(): Paragraph[] {
-    const paragraphs: Paragraph[] = [];
+  toParagraphs(): V1Paragraph[] {
+    const paragraphs: V1Paragraph[] = [];
     let lastParagraph = null;
     for (const item of this) {
-      const generatorItemToParagraphItem = (item: DocumentGeneratorItem): ParagraphItem => {
+      const generatorItemToParagraphItem = (item: DocumentGeneratorItem): V1ParagraphItem => {
         return stripParagraphItemFields(item);
       };
 
@@ -271,11 +274,11 @@ export class DocumentGenerator<
     return new GeneratorBox(renderItemsFromDocumentGenerator(this));
   }
 
-  toTimedParagraphs(): Paragraph<TimedParagraphItem>[] {
+  toTimedParagraphs(): V1Paragraph<TimedV1ParagraphItem>[] {
     const timedParagraphs = [];
     let lastParagraph = null;
     for (const item of this) {
-      const generatorItemToParagraphItem = (item: DocumentGeneratorItem): TimedParagraphItem => {
+      const generatorItemToParagraphItem = (item: DocumentGeneratorItem): TimedV1ParagraphItem => {
         return { ...stripParagraphItemFields(item), absoluteStart: item.absoluteStart };
       };
 
@@ -300,7 +303,7 @@ export class DocumentGenerator<
   }
 }
 
-function stripParagraphItemFields<T extends ParagraphItem>(x: T): ParagraphItem {
+function stripParagraphItemFields<T extends V1ParagraphItem>(x: T): V1ParagraphItem {
   switch (x.type) {
     case 'artificial_silence':
       return { type: 'artificial_silence', length: x.length };
@@ -318,7 +321,7 @@ function stripParagraphItemFields<T extends ParagraphItem>(x: T): ParagraphItem 
   }
 }
 
-export function getDocumentDuration(content: Paragraph[]): number {
+export function getDocumentDuration(content: V1Paragraph[]): number {
   let accumulatedTime = 0;
   for (let p = 0; p < content.length; p++) {
     const paragraph = content[p];
@@ -330,7 +333,7 @@ export function getDocumentDuration(content: Paragraph[]): number {
   return accumulatedTime;
 }
 
-function* rawDocumentIterator(content: Paragraph[]): Generator<DocumentGeneratorItem> {
+function* rawDocumentIterator(content: V1Paragraph[]): Generator<DocumentGeneratorItem> {
   let accumulatedTime = 0;
   for (let p = 0; p < content.length; p++) {
     const paragraph = content[p];
@@ -392,11 +395,15 @@ export function* rawExactUntil<I extends DocumentGeneratorItem>(
   }
 }
 
-export interface NonSourceRenderItem {
+export interface SilenceRenderItem {
+  type: 'silence';
+
   absoluteStart: number;
   length: number;
 }
 export interface SourceRenderItem {
+  type: 'media';
+
   absoluteStart: number;
   length: number;
 
@@ -404,7 +411,7 @@ export interface SourceRenderItem {
   sourceStart: number;
   speaker: string;
 }
-export type RenderItem = NonSourceRenderItem | SourceRenderItem;
+export type RenderItem = SilenceRenderItem | SourceRenderItem;
 export function* renderItemsFromDocumentGenerator(gen: DocumentGenerator): Generator<RenderItem> {
   type Current = {
     absoluteStart?: number;

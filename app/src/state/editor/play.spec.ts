@@ -1,9 +1,9 @@
-import { editorDefaults, EditorState } from './types';
-import { emptyDocument, Paragraph } from '../../core/document';
+import { defaultEditorState, EditorState } from './types';
+import { emptyDocument, V1Paragraph } from '../../core/document';
 import { goLeft, goRight } from './play';
 import { EPSILON } from '../../util';
 
-const testContent: Paragraph[] = [
+const testContent: V1Paragraph[] = [
   {
     speaker: 'paragraph_01',
     content: [
@@ -23,7 +23,7 @@ const testContent: Paragraph[] = [
 ];
 
 const testState: EditorState = {
-  ...editorDefaults,
+  ...defaultEditorState,
   document: {
     ...emptyDocument,
     content: testContent,

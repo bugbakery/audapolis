@@ -1,11 +1,11 @@
-import { DocumentGenerator, getItemsAtTime, Paragraph, RenderItem } from './document';
+import { DocumentGenerator, getItemsAtTime, V1Paragraph, RenderItem } from './document';
 
 test('rawExactFrom behaves correctly', () => {
   const defaultWord = {
     conf: 1,
     source: 'some_source',
   };
-  const input: Paragraph[] = [
+  const input: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -33,7 +33,7 @@ test('rawExactFrom behaves correctly', () => {
       ],
     },
   ];
-  const expectedOutput: Paragraph[] = [
+  const expectedOutput: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -63,7 +63,7 @@ test('rawExactFrom behaves correctly on edge cases', () => {
     conf: 1,
     source: 'some_source',
   };
-  const input: Paragraph[] = [
+  const input: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -91,7 +91,7 @@ test('rawExactFrom behaves correctly on edge cases', () => {
       ],
     },
   ];
-  const expectedOutput: Paragraph[] = [
+  const expectedOutput: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -121,7 +121,7 @@ test('rawExactUntil behaves correctly', () => {
     conf: 1,
     source: 'some_source',
   };
-  const input: Paragraph[] = [
+  const input: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -149,7 +149,7 @@ test('rawExactUntil behaves correctly', () => {
       ],
     },
   ];
-  const expectedOutput: Paragraph[] = [
+  const expectedOutput: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -179,7 +179,7 @@ test('renderItemsFromDocumentGenerator behaves correctly', () => {
     conf: 1,
     word: 'some_word',
   };
-  const input: Paragraph[] = [
+  const input: V1Paragraph[] = [
     {
       speaker: 'someone',
       content: [
@@ -245,7 +245,7 @@ test('renderItemsFromDocumentGenerator behaves correctly', () => {
 });
 
 test('getItemsAtTime', () => {
-  const testContent: Paragraph[] = [
+  const testContent: V1Paragraph[] = [
     {
       speaker: 'paragraph_01',
       content: [

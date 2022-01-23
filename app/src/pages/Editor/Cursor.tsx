@@ -6,7 +6,7 @@ import {
   DocumentGenerator,
   DocumentGeneratorItem,
   getItemsAtTime,
-  Paragraph,
+  V1Paragraph,
 } from '../../core/document';
 import { Pane } from 'evergreen-ui';
 import { useElementSize } from '../../components/useElementSize';
@@ -61,7 +61,7 @@ function useComputeCursorPosition(parentElement: HTMLElement | null | undefined)
 
   // we use caching here because we have to calculate the cursor position every frame
   const last = useRef<null | {
-    content: Paragraph[];
+    content: V1Paragraph[];
     parentElement: HTMLElement;
     item: DocumentGeneratorItem;
     itemElement: HTMLDivElement;

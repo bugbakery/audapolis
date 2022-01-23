@@ -1,9 +1,9 @@
-import { editorDefaults, EditorState, Range } from './types';
-import { DocumentGenerator, emptyDocument, getItemsAtTime, Paragraph } from '../../core/document';
+import { defaultEditorState, EditorState, Range } from './types';
+import { DocumentGenerator, emptyDocument, getItemsAtTime, V1Paragraph } from '../../core/document';
 import { selectionIncludeFully, selectLeft, selectRight } from './selection';
 import { EPSILON } from '../../util';
 
-const testContent: Paragraph[] = [
+const testContent: V1Paragraph[] = [
   {
     speaker: 'paragraph_01',
     content: [
@@ -23,7 +23,7 @@ const testContent: Paragraph[] = [
 ];
 
 const testState: EditorState = {
-  ...editorDefaults,
+  ...defaultEditorState,
   document: {
     ...emptyDocument,
     content: testContent,

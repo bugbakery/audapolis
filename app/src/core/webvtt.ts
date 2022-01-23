@@ -1,4 +1,4 @@
-import { Paragraph, DocumentGenerator, TimedParagraphItem } from './document';
+import { V1Paragraph, DocumentGenerator, TimedV1ParagraphItem } from './document';
 import {
   escapeVttString,
   formattedTime,
@@ -10,7 +10,7 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 
 function paragraphToCue(
-  paragraph: Paragraph<TimedParagraphItem>,
+  paragraph: V1Paragraph<TimedV1ParagraphItem>,
   wordTimings: boolean,
   includeSpeakerNames: boolean
 ): VttCue | null {
@@ -19,7 +19,7 @@ function paragraphToCue(
   }
   const firstItem = paragraph.content[0];
   const lastItem = paragraph.content[paragraph.content.length - 1];
-  const itemToString = (item: TimedParagraphItem & { type: 'word' }): string => {
+  const itemToString = (item: TimedV1ParagraphItem & { type: 'word' }): string => {
     if (wordTimings) {
       return `<${formattedTime(item.absoluteStart)}><c>${escapeVttString(item.word)}</c>`;
     } else {
@@ -41,7 +41,7 @@ function paragraphToCue(
 }
 
 export function contentToVtt(
-  content: Paragraph[],
+  content: V1Paragraph[],
   wordTimings: boolean,
   includeSpeakerNames: boolean,
   limitLineLength: number | null
@@ -83,7 +83,7 @@ export function contentToVtt(
 }
 
 export async function exportWebVTT(
-  content: Paragraph[],
+  content: V1Paragraph[],
   outputPath: string,
   wordTimings: boolean,
   includeSpeakerNames: boolean,

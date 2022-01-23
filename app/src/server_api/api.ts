@@ -1,7 +1,7 @@
 import { fetchFromServer } from './index';
 import { ServerConfig } from '../state/server';
 import { Model } from '../state/models';
-import { Paragraph, ParagraphItem } from '../core/document';
+import { V1Paragraph, V1ParagraphItem } from '../core/document';
 
 export interface Task {
   uuid: string;
@@ -19,7 +19,7 @@ export enum TranscriptionState {
 export interface TranscriptionTask extends Task {
   progress: number;
   state: TranscriptionState;
-  content?: Paragraph<Omit<ParagraphItem, 'source'>>[];
+  content?: V1Paragraph<Omit<V1ParagraphItem, 'source'>>[];
 }
 
 export enum DownloadingModelState {

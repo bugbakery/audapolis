@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { Paragraph as ParagraphType, TimedParagraphItem } from '../../core/document';
+import { V1Paragraph as ParagraphType, TimedV1ParagraphItem } from '../../core/document';
 import { assertSome } from '../../util';
 import {
   Button,
@@ -21,7 +21,7 @@ export function Paragraph({
   paragraphIdx,
   color,
   displaySpeakerNames,
-}: ParagraphType<TimedParagraphItem> & {
+}: ParagraphType<TimedV1ParagraphItem> & {
   paragraphIdx: number;
   color: string;
   displaySpeakerNames: boolean;

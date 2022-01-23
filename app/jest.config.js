@@ -1,7 +1,16 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
+// /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
+// module.exports = {
+//   transform: {
+//     '^.+\\.tsx?$': 'esbuild-jest',
+//   },
+//   testEnvironment: 'jsdom',
+// };
 module.exports = {
   transform: {
-    '^.+\\.tsx?$': 'esbuild-jest',
+    '^.+\\.(t|j)sx?$': '@swc/jest',
   },
-  testEnvironment: 'jsdom',
+  moduleNameMapper: {
+    '^proxy-memoize$': '<rootDir>/node_modules/proxy-memoize/dist/index.modern.js',
+  },
+  transformIgnorePatterns: ['/node_modules/(?!proxy-memoize)'],
 };

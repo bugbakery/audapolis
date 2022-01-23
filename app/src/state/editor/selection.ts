@@ -1,5 +1,5 @@
 import { assertSome, EPSILON } from '../../util';
-import { DocumentGenerator, getDocumentDuration, TimedParagraphItem } from '../../core/document';
+import { DocumentGenerator, getDocumentDuration, TimedV1ParagraphItem } from '../../core/document';
 import { createActionWithReducer } from '../util';
 import { EditorState, Selection } from './types';
 
@@ -80,7 +80,7 @@ export const selectAll = createActionWithReducer<EditorState>('editor/selectAll'
   };
 });
 
-export const selectionIncludeFully = createActionWithReducer<EditorState, TimedParagraphItem>(
+export const selectionIncludeFully = createActionWithReducer<EditorState, TimedV1ParagraphItem>(
   'editor/selectionIncludeFully',
   (state, payload) => {
     assertSome(state);

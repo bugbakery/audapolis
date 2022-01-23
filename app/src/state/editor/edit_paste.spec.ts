@@ -1,9 +1,9 @@
 import { paste } from './edit';
-import { emptyDocument, Paragraph } from '../../core/document';
-import { editorDefaults, EditorState } from './types';
+import { emptyDocument, V1Paragraph } from '../../core/document';
+import { defaultEditorState, EditorState } from './types';
 import { assertSome, EPSILON } from '../../util';
 
-const testContent: Paragraph[] = [
+const testContent: V1Paragraph[] = [
   {
     speaker: 'paragraph_01',
     content: [
@@ -24,7 +24,7 @@ const testContent: Paragraph[] = [
 
 test('test paste merge', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: { ...emptyDocument, content: JSON.parse(JSON.stringify(testContent)) },
     currentTimePlayer: 1.0,
   };
@@ -67,7 +67,7 @@ test('test paste merge', () => {
 });
 test('test paste non-merge', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: { ...emptyDocument, content: JSON.parse(JSON.stringify(testContent)) },
     currentTimePlayer: 1.0,
   };
@@ -119,7 +119,7 @@ test('test paste non-merge', () => {
 
 test('test paste merge end of paragraph', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: {
       ...emptyDocument,
       content: [
@@ -176,7 +176,7 @@ test('test paste merge end of paragraph', () => {
 });
 test('test paste merge start of paragraph', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: {
       ...emptyDocument,
       content: [
@@ -234,7 +234,7 @@ test('test paste merge start of paragraph', () => {
 
 test('test paste beginning', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: {
       ...emptyDocument,
       content: [
@@ -275,7 +275,7 @@ test('test paste beginning', () => {
 });
 test('test paste end', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: {
       ...emptyDocument,
       content: [
@@ -317,7 +317,7 @@ test('test paste end', () => {
 
 test('test paste empty', () => {
   const state: EditorState = {
-    ...editorDefaults,
+    ...defaultEditorState,
     document: {
       ...emptyDocument,
       content: JSON.parse(JSON.stringify(testContent)),

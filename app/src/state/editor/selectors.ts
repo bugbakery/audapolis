@@ -208,3 +208,15 @@ export const macroItems = memoize((content: DocumentItem[]): TimedMacroItem[] =>
     });
   return macroItems;
 });
+
+export const currentSpeaker = memoize((state: EditorState): string | null => {
+  const curItem = currentItem(state);
+  const timedItems = timedDocumentItems(state.document.content);
+  for (let idx = curItem.absoluteIndex - 1; idx >= 0; idx--) {
+    const idxItem = timedItems[idx];
+    if (idxItem.type == 'paragraph_break') {
+      return idxItem.speaker;
+    }
+  }
+  return null;
+});

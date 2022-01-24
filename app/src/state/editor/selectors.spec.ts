@@ -1,15 +1,17 @@
-import { DocumentGenerator, DocumentItem, RenderItem, V1Paragraph } from '../../core/document';
+import { DocumentItem } from '../../core/document';
 import { defaultEditorState } from './types';
 import _ from 'lodash';
 import {
   currentCursorTime,
   currentItem,
-  paragraphItems,
+  currentSpeaker,
   macroItems,
+  paragraphItems,
   renderItems,
   selectedItems,
   timedDocumentItems,
 } from './selectors';
+import { produce } from 'immer';
 
 const testContent: DocumentItem[] = [
   { type: 'heading', level: 1, text: 'First big heading' },
@@ -372,6 +374,32 @@ test('current item skips through zero-length items', () => {
     conf: 1,
     absoluteStart: 4,
     absoluteIndex: 9,
+  });
+});
+
+test('current item skips through zero-length items', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep([
+    { type: 'heading', text: 'H1', level: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+  ]);
+  state.cursor.current = 'player';
+  state.cursor.playerTime = 4;
+  expect(currentItem(state)).toStrictEqual({
+    type: 'paragraph_break',
+    speaker: 'Speaker One',
+    absoluteStart: 0,
+    absoluteIndex: 1,
+  });
+});
+
+test('current item for empty document', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  expect(currentItem(state)).toStrictEqual({
+    type: 'paragraph_break',
+    speaker: null,
+    absoluteStart: 0,
+    absoluteIndex: 0,
   });
 });
 
@@ -747,4 +775,103 @@ test('render items: word after silence', () => {
       speaker: 'Speaker One',
     },
   ]);
+});
+
+test('currentSpeaker: player cursor', () => {
+  let state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'player';
+  state.cursor.playerTime = 0;
+  expect(currentSpeaker(state)).toBe('Speaker One');
+  state.cursor.playerTime = 1.1;
+  expect(currentSpeaker(state)).toBe('Speaker One');
+  state = produce(state, (state) => {
+    state.cursor.playerTime = 4;
+  });
+  expect(currentSpeaker(state)).toBe('Speaker Two');
+});
+
+test('currentSpeaker: user cursor', () => {
+  let state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 0;
+  expect(currentSpeaker(state)).toBe(null);
+  state = produce(state, (state) => {
+    state.cursor.userIndex = 2;
+  });
+  expect(currentSpeaker(state)).toBe('Speaker One');
+  state = produce(state, (state) => {
+    state.cursor.userIndex = 8;
+  });
+  expect(currentSpeaker(state)).toBe(null);
+  state = produce(state, (state) => {
+    state.cursor.userIndex = 9;
+  });
+  expect(currentSpeaker(state)).toBe('Speaker Two');
+});
+
+test('currentSpeaker with 0-len para: player cursor', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'paragraph_break', speaker: 'Speaker Three' },
+    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+  ]);
+  state.cursor.current = 'player';
+  state.cursor.playerTime = 1;
+  expect(currentSpeaker(state)).toBe('Speaker Three');
+});
+
+test('currentSpeaker with 0-len para: user cursor', () => {
+  let state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'paragraph_break', speaker: 'Speaker Three' },
+    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+  ]);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  expect(currentSpeaker(state)).toBe('Speaker One');
+  state = produce(state, (state) => {
+    state.cursor.userIndex = 3;
+  });
+  expect(currentSpeaker(state)).toBe('Speaker Two');
+  state = produce(state, (state) => {
+    state.cursor.userIndex = 4;
+  });
+  expect(currentSpeaker(state)).toBe('Speaker Three');
+});
+
+test('currentSpeaker before first para break', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'paragraph_break', speaker: 'Speaker Three' },
+    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+  ]);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 0;
+  expect(currentSpeaker(state)).toBe(null);
+});
+
+test('current item at t=4', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'player';
+  state.cursor.playerTime = 4;
+  expect(currentItem(state)).toMatchObject({
+    type: 'word',
+    source: 'source-2',
+    sourceStart: 2,
+    length: 1,
+    word: 'One',
+    conf: 1,
+  });
 });

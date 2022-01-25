@@ -56,7 +56,7 @@ export interface Document<S = Source, I = DocumentItem> {
 
 export const emptyDocument: Document = {
   sources: {},
-  content: [],
+  content: [{ type: 'paragraph_break', speaker: null }],
 };
 
 export interface ParagraphBreakItem {

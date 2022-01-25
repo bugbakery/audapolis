@@ -239,6 +239,13 @@ test('selected items', () => {
   ]);
 });
 
+test('selected items: empty selection', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+
+  expect(selectedItems(state)).toStrictEqual([]);
+});
+
 test('current user cursor time at zero-length item', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
@@ -604,6 +611,25 @@ test('renderItems', () => {
       speaker: 'Speaker Two',
     },
     { type: 'silence', length: 10, absoluteStart: 8 },
+  ]);
+});
+
+test('render items: source silence', () => {
+  expect(
+    renderItems([
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
+      { type: 'silence', source: 'source-1', sourceStart: 3, length: 1 },
+    ])
+  ).toStrictEqual([
+    {
+      type: 'media',
+      absoluteStart: 0,
+      length: 2,
+      source: 'source-1',
+      sourceStart: 2,
+      speaker: 'Speaker One',
+    },
   ]);
 });
 

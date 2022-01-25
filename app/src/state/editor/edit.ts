@@ -16,44 +16,25 @@ import { EditorState } from './types';
 import { selectLeft } from './selection';
 import { setUserSetTime } from './play';
 import { GeneratorBox } from '../../util/itertools';
+import { currentCursorTime, currentItem, currentSpeaker } from './selectors';
+import _ from 'lodash';
+import { dispatch } from 'react-hot-toast/dist/core/store';
 
 export const insertParagraphBreak = createActionWithReducer<EditorState>(
   'editor/insertParagraphBreak',
   (state) => {
-    const newUuid = uuidv4();
-    let prevUuid = '';
-    const splitParagraphs = (item: DocumentGeneratorItem): DocumentGeneratorItem => {
-      if (item.paragraphUuid == prevUuid && item.absoluteStart >= state.currentTimePlayer) {
-        item.paragraphUuid = newUuid;
-      } else if (item.absoluteStart < state.currentTimePlayer) {
-        prevUuid = item.paragraphUuid;
-      }
-      return item;
-    };
-
-    state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
-      .itemMap(splitParagraphs)
-      .toParagraphs();
-  }
-);
-
-export const deleteParagraphBreak = createActionWithReducer<EditorState>(
-  'editor/deleteParagraphBreak',
-  (state) => {
-    let parUuid: string | null = null;
-    let prevUuid = '';
-    const mergeParagraphs = (item: DocumentGeneratorItem): DocumentGeneratorItem => {
-      if (item.absoluteStart < state.currentTimePlayer) {
-        prevUuid = item.paragraphUuid;
-      } else if (parUuid === null || item.paragraphUuid === parUuid) {
-        parUuid = item.paragraphUuid;
-        item.paragraphUuid = prevUuid;
-      }
-      return item;
-    };
-    state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
-      .itemMap(mergeParagraphs)
-      .toParagraphs();
+    const item = currentItem(state);
+    const curPos = currentCursorTime(state);
+    const itemLength = 'length' in item ? item.length : 0;
+    const itemMiddle = item.absoluteStart + itemLength / 2;
+    const insertPos = curPos <= itemMiddle ? item.absoluteIndex : item.absoluteIndex + 1;
+    const speaker = currentSpeaker(state);
+    state.document.content.splice(insertPos, 0, {
+      type: 'paragraph_break',
+      speaker: speaker,
+    });
+    state.cursor.current = 'user';
+    state.cursor.userIndex = insertPos + 1;
   }
 );
 
@@ -61,54 +42,36 @@ export const deleteSelection = createActionWithReducer<EditorState>(
   'editor/deleteSelection',
   (state) => {
     const selection = state.selection;
-    if (!selection) {
-      throw new Error('selection is null');
+    if (selection) {
+      state.document.content.splice(selection.startIndex, selection.length);
+      state.cursor.current = 'user';
+      state.cursor.userIndex = selection.startIndex;
     }
-    const isNotSelected = (item: TimedV1ParagraphItem) => {
-      return !(
-        item.absoluteStart >= selection.range.start &&
-        item.absoluteStart + item.length <= selection.range.start + selection.range.length
-      );
-    };
-    const items = getItemsAtTime(
-      DocumentGenerator.fromParagraphs(state.document.content),
-      selection.range.start + selection.range.length
-    );
-    state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
-      .filter(isNotSelected)
-      .toParagraphs();
-
-    setUserSetTime.reducer(state, selection.range.start - (items[0].lastInParagraph ? EPSILON : 0));
     state.selection = null;
   }
 );
 
 export const setWord = createActionWithReducer<
   EditorState,
-  { absoluteStart: number; text: string }
+  { absoluteIndex: number; text: string }
 >('editor/setWord', (state, payload) => {
-  state.document.content = DocumentGenerator.fromParagraphs(state.document.content)
-    .itemMap((item) =>
-      item.absoluteStart == payload.absoluteStart && item.type == 'word'
-        ? { ...item, word: payload.text }
-        : item
-    )
-    .toParagraphs();
+  const item = state.document.content[payload.absoluteIndex];
+  if (item.type !== 'word') {
+    throw new Error('setWord called on item that is not a word');
+  }
+  item.word = payload.text;
 });
 
 export const reassignParagraph = createActionWithReducer<
   EditorState,
-  { paragraphIdx: number; newSpeaker: string }
+  { absoluteIndex: number; newSpeaker: string }
 >('editor/reassignParagraph', (state, payload) => {
-  const { paragraphIdx, newSpeaker } = payload;
-
-  state.document.content = state.document.content.map((paragraph, i) => {
-    if (i === paragraphIdx) {
-      return { ...paragraph, speaker: newSpeaker };
-    } else {
-      return paragraph;
-    }
-  });
+  const { absoluteIndex, newSpeaker } = payload;
+  const item = state.document.content[absoluteIndex];
+  if (item.type !== 'paragraph_break') {
+    throw new Error('reassignParagraph called on item that is not a paragraph_break');
+  }
+  item.speaker = newSpeaker;
 });
 
 export const renameSpeaker = createActionWithReducer<
@@ -117,29 +80,68 @@ export const renameSpeaker = createActionWithReducer<
 >('editor/renameSpeaker', (state, payload) => {
   const { oldName, newName } = payload;
 
-  state.document.content = state.document.content.map((paragraph) => {
-    if (paragraph.speaker === oldName) {
-      return { ...paragraph, speaker: newName };
+  state.document.content = state.document.content.map((item) => {
+    if (item.type == 'paragraph_break' && item.speaker === oldName) {
+      return { ...item, speaker: newName };
     } else {
-      return paragraph;
+      return item;
     }
   });
 });
 
-export const deleteSomething = createActionWithReducer<EditorState>(
+function deleteParagraphBreak(state: EditorState, currentIndex: number) {
+  const item = state.document.content[currentIndex];
+  if (item.type !== 'paragraph_break') {
+    throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
+  }
+  if (currentIndex == 0) {
+    item.speaker = null;
+  } else {
+    state.document.content.splice(currentIndex, 1);
+  }
+  state.cursor.current = 'user';
+  state.cursor.userIndex = currentIndex;
+}
+function shouldLookLeft(state: EditorState, direction: string): boolean {
+  if (direction == 'left' && state.cursor.current == 'user') {
+    return true;
+  }
+  if (
+    state.cursor.current == 'player' &&
+    state.cursor.playerTime == currentItem(state).absoluteStart &&
+    direction == 'left'
+  ) {
+    return true;
+  }
+  return false;
+}
+function deleteNonSelection(state: EditorState, direction: 'left' | 'right') {
+  const directionOffset = shouldLookLeft(state, direction) ? 1 : 0;
+  const currentIndex = currentItem(state).absoluteIndex - directionOffset;
+  if (currentIndex < 0) {
+    return;
+  }
+  const item = state.document.content[currentIndex];
+  switch (item.type) {
+    case 'paragraph_break': {
+      deleteParagraphBreak(state, currentIndex);
+      break;
+    }
+    case 'silence':
+    case 'artificial_silence':
+    case 'heading':
+    case 'word': {
+      state.selection = { headPosition: direction, startIndex: currentIndex, length: 1 };
+    }
+  }
+}
+export const deleteSomething = createActionWithReducer<EditorState, 'left' | 'right'>(
   'editor/deleteSomething',
-  async (state) => {
+  async (state, direction) => {
     if (state.selection !== null) {
       deleteSelection.reducer(state);
     } else {
-      const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(
-        state.currentTimePlayer
-      );
-      if (items[items.length - 1].itemIdx == 0) {
-        deleteParagraphBreak.reducer(state);
-      } else {
-        selectLeft.reducer(state);
-      }
+      deleteNonSelection(state, direction);
     }
   }
 );

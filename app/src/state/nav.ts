@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { fetchModelState } from './models';
 import { RootState, store } from './index';
 import { subscribeOpenAbout } from '../../ipc/ipc_renderer';
+import { isRunningInTest } from '../util';
 
 export enum Page {
   Landing,
@@ -61,6 +62,8 @@ export const navSlice = createSlice({
 export const { openEditor, openLanding, openTranscribing, openAbout } = navSlice.actions;
 export default navSlice.reducer;
 
-subscribeOpenAbout(() => {
-  store.dispatch(openAbout());
-});
+if (!isRunningInTest()) {
+  subscribeOpenAbout(() => {
+    store.dispatch(openAbout());
+  });
+}

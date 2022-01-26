@@ -28,6 +28,7 @@ export type AsyncActionWithReducers<StateSlice, Returned, ThunkArg> = AsyncThunk
       rejected?: ReducerType<StateSlice, Error>;
       fulfilled?: ReducerType<StateSlice, Returned>;
     };
+    payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, { state: RootState }>;
   };
 
 /**
@@ -88,5 +89,5 @@ export function createAsyncActionWithReducer<StateSlice, ThunkArg = void, Return
     }
   };
 
-  return Object.assign(thunk, { reducers, handleAction });
+  return Object.assign(thunk, { reducers, handleAction, payloadCreator });
 }

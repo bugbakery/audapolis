@@ -41,6 +41,7 @@ type MacroItem = HeadingItem | Paragraph;
 export type TimedMacroItem = MacroItem & TimedItemExtension;
 export type TimedParagraphItem = ParagraphItem & TimedItemExtension;
 export interface Paragraph<I = TimedParagraphItem> {
+  type: 'paragraph';
   speaker: string | null;
   content: I[];
 }

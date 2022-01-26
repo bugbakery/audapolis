@@ -6,7 +6,7 @@ import {
   subscribeLocalServerInfo,
   subscribeLocalServerStderr,
 } from '../../ipc/ipc_renderer';
-import { assertSome } from '../util';
+import { assertSome, isRunningInTest } from '../util';
 
 export interface ServerState {
   servers: ServerConfig[];
@@ -64,23 +64,25 @@ export const getServer = (state: RootState): ServerConfig => {
   return state.server.servers[state.server.selectedServer];
 };
 
-subscribeLocalServerStderr((stderr) => {
-  console.groupCollapsed('server stderr');
-  stderr.split('\n').forEach((line) => {
-    console.log(line);
+if (!isRunningInTest()) {
+  subscribeLocalServerStderr((stderr) => {
+    console.groupCollapsed('server stderr');
+    stderr.split('\n').forEach((line) => {
+      console.log(line);
+    });
+    console.groupEnd();
   });
-  console.groupEnd();
-});
-subscribeLocalServerInfo((info) => {
-  assertSome(info.port);
+  subscribeLocalServerInfo((info) => {
+    assertSome(info.port);
 
-  store.dispatch(
-    setLocalServer({
-      hostname: 'http://localhost',
-      port: info.port,
-      token: info.token,
-      state: info.state,
-    })
-  );
-});
-requestLocalServerInfo();
+    store.dispatch(
+      setLocalServer({
+        hostname: 'http://localhost',
+        port: info.port,
+        token: info.token,
+        state: info.state,
+      })
+    );
+  });
+  requestLocalServerInfo();
+}

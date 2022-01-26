@@ -10,7 +10,6 @@ import { EditorState } from './types';
 import {
   DocumentItem,
   HeadingItem,
-  Paragraph,
   ParagraphBreakItem,
   ParagraphItem,
   RenderItem,
@@ -19,7 +18,7 @@ import {
   TimedMacroItem,
   TimedParagraphItem,
 } from '../../core/document';
-import _, { times } from 'lodash';
+import _ from 'lodash';
 import memoize from 'proxy-memoize';
 import { assertUnreachable, roughEq } from '../../util';
 
@@ -34,20 +33,25 @@ export const timedDocumentItems = memoize((content: DocumentItem[]): TimedDocume
   });
 });
 
-export const currentItem = memoize((state: EditorState): TimedDocumentItem => {
+export const currentItem = memoize((state: EditorState): TimedDocumentItem | undefined => {
+  const timedItems = timedDocumentItems(state.document.content);
+  return timedItems[currentIndex(state)];
+});
+
+export const currentIndex = memoize((state: EditorState): number => {
   const timedItems = timedDocumentItems(state.document.content);
   switch (state.cursor.current) {
     case 'user':
-      return timedItems[state.cursor.userIndex];
+      return state.cursor.userIndex;
     case 'player': {
       const currentTime = currentCursorTime(state);
-      const currentIndex =
+      return (
         _.sortedLastIndexBy<{ absoluteStart: number }>(
           timedItems,
           { absoluteStart: currentTime },
           (item) => item.absoluteStart
-        ) - 1;
-      return timedItems[currentIndex];
+        ) - 1
+      );
     }
   }
 });
@@ -57,7 +61,7 @@ export const currentCursorTime = memoize((state: EditorState): number => {
     case 'player':
       return state.cursor.playerTime;
     case 'user':
-      return currentItem(state).absoluteStart;
+      return currentItem(state)?.absoluteStart || 0;
   }
 });
 
@@ -168,7 +172,10 @@ export const renderItems = memoize((content: DocumentItem[]): RenderItem[] => {
   return items;
 });
 
-const isTimedParagraphItem = (item: TimedDocumentItem): item is TimedParagraphItem =>
+export const isParagraphItem = (item: DocumentItem): item is ParagraphItem =>
+  ['word', 'silence', 'artificial_silence'].indexOf(item.type) >= 0;
+
+export const isTimedParagraphItem = (item: TimedDocumentItem): item is TimedParagraphItem =>
   ['word', 'silence', 'artificial_silence'].indexOf(item.type) >= 0;
 
 const filterTimedParagraphItems = (content: TimedDocumentItem[]): TimedParagraphItem[] =>
@@ -183,12 +190,12 @@ export const macroItems = memoize((content: DocumentItem[]): TimedMacroItem[] =>
       throw new Error('ParagraphItem encountered before first paragraph break.');
     }
   }
-  const macroItems = timedContent
+  return timedContent
     .filter(
       (item): item is (ParagraphBreakItem | HeadingItem) & TimedItemExtension =>
         item.type == 'paragraph_break' || item.type == 'heading'
     )
-    .map((item, idx, arr) => {
+    .map((item, idx, arr): TimedMacroItem => {
       switch (item.type) {
         case 'heading':
           return item;
@@ -206,17 +213,20 @@ export const macroItems = memoize((content: DocumentItem[]): TimedMacroItem[] =>
         }
       }
     });
-  return macroItems;
 });
 
-export const currentSpeaker = memoize((state: EditorState): string | null => {
-  const curItem = currentItem(state);
-  const timedItems = timedDocumentItems(state.document.content);
-  for (let idx = curItem.absoluteIndex - 1; idx >= 0; idx--) {
-    const idxItem = timedItems[idx];
+export function getSpeakerAtIndex(items: DocumentItem[], index: number): string | null {
+  for (let idx = index - 1; idx >= 0; idx--) {
+    const idxItem = items[idx];
     if (idxItem.type == 'paragraph_break') {
       return idxItem.speaker;
     }
   }
   return null;
+}
+
+export const currentSpeaker = memoize((state: EditorState): string | null => {
+  const curItem = currentItem(state);
+  const timedItems = timedDocumentItems(state.document.content);
+  return getSpeakerAtIndex(timedItems, curItem?.absoluteIndex || 0);
 });

@@ -1,33 +1,47 @@
-import { assertSome, EPSILON } from '../../util';
-import { v4 as uuidv4 } from 'uuid';
+import { assertSome } from '../../util';
 import {
   deserializeDocument,
   Document,
-  DocumentGenerator,
-  DocumentGeneratorItem,
-  getItemsAtTime,
+  DocumentItem,
   serializeDocument,
-  TimedV1ParagraphItem,
+  TimedDocumentItem,
   Word,
 } from '../../core/document';
 import { clipboard } from 'electron';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState } from './types';
-import { selectLeft } from './selection';
-import { setUserSetTime } from './play';
-import { GeneratorBox } from '../../util/itertools';
-import { currentCursorTime, currentItem, currentSpeaker } from './selectors';
-import _ from 'lodash';
-import { dispatch } from 'react-hot-toast/dist/core/store';
+import {
+  currentCursorTime,
+  currentIndex,
+  currentItem,
+  currentSpeaker,
+  getSpeakerAtIndex,
+  isParagraphItem,
+  isTimedParagraphItem,
+  macroItems,
+  selectedItems,
+} from './selectors';
 
+function getInsertPos(state: EditorState): number {
+  switch (state.cursor.current) {
+    case 'user':
+      return state.cursor.userIndex;
+    case 'player': {
+      const item = currentItem(state);
+      if (!item) {
+        throw new Error('no current item');
+      }
+      const curPos = currentCursorTime(state);
+      const itemLength = 'length' in item ? item.length : 0;
+      const itemMiddle = item.absoluteStart + itemLength / 2;
+      return curPos <= itemMiddle ? item.absoluteIndex : item.absoluteIndex + 1;
+    }
+  }
+}
 export const insertParagraphBreak = createActionWithReducer<EditorState>(
   'editor/insertParagraphBreak',
   (state) => {
-    const item = currentItem(state);
-    const curPos = currentCursorTime(state);
-    const itemLength = 'length' in item ? item.length : 0;
-    const itemMiddle = item.absoluteStart + itemLength / 2;
-    const insertPos = curPos <= itemMiddle ? item.absoluteIndex : item.absoluteIndex + 1;
+    const insertPos = getInsertPos(state);
     const speaker = currentSpeaker(state);
     state.document.content.splice(insertPos, 0, {
       type: 'paragraph_break',
@@ -106,32 +120,29 @@ function shouldLookLeft(state: EditorState, direction: string): boolean {
   if (direction == 'left' && state.cursor.current == 'user') {
     return true;
   }
-  if (
+  return (
     state.cursor.current == 'player' &&
-    state.cursor.playerTime == currentItem(state).absoluteStart &&
+    state.cursor.playerTime == currentItem(state)?.absoluteStart &&
     direction == 'left'
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 function deleteNonSelection(state: EditorState, direction: 'left' | 'right') {
   const directionOffset = shouldLookLeft(state, direction) ? 1 : 0;
-  const currentIndex = currentItem(state).absoluteIndex - directionOffset;
-  if (currentIndex < 0) {
+  const curIdx = currentIndex(state) - directionOffset;
+  if (curIdx < 0) {
     return;
   }
-  const item = state.document.content[currentIndex];
+  const item = state.document.content[curIdx];
   switch (item.type) {
     case 'paragraph_break': {
-      deleteParagraphBreak(state, currentIndex);
+      deleteParagraphBreak(state, curIdx);
       break;
     }
     case 'silence':
     case 'artificial_silence':
     case 'heading':
     case 'word': {
-      state.selection = { headPosition: direction, startIndex: currentIndex, length: 1 };
+      state.selection = { headPosition: direction, startIndex: curIdx, length: 1 };
     }
   }
 }
@@ -146,6 +157,13 @@ export const deleteSomething = createActionWithReducer<EditorState, 'left' | 'ri
   }
 );
 
+function untimeDocumentItems(items: TimedDocumentItem[]): DocumentItem[] {
+  return items.map((item) => {
+    const { absoluteStart: _aS, absoluteIndex: _aI, ...untimedIcon } = item;
+    return untimedIcon;
+  });
+}
+
 export const copy = createAsyncActionWithReducer<EditorState>(
   'editor/copy',
   async (arg, { getState }) => {
@@ -157,10 +175,29 @@ export const copy = createAsyncActionWithReducer<EditorState>(
       return;
     }
 
-    const documentSlice = DocumentGenerator.fromParagraphs(state.document.content)
-      .exactFrom(selection.range.start)
-      .exactUntil(selection.range.start + selection.range.length)
-      .toParagraphs();
+    const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
+    if (timedDocumentSlice.length > 0 && isTimedParagraphItem(timedDocumentSlice[0])) {
+      timedDocumentSlice.unshift({
+        type: 'paragraph_break',
+        speaker: getSpeakerAtIndex(state.document.content, timedDocumentSlice[0].absoluteIndex),
+        absoluteStart: 0,
+        absoluteIndex: 0,
+      });
+    }
+
+    if (
+      timedDocumentSlice.length > 0 &&
+      timedDocumentSlice[timedDocumentSlice.length - 1].type == 'heading'
+    ) {
+      timedDocumentSlice.push({
+        type: 'paragraph_break',
+        speaker: null,
+        absoluteStart: 0,
+        absoluteIndex: 0,
+      });
+    }
+
+    const documentSlice = untimeDocumentItems(timedDocumentSlice);
 
     const serializedSlice = await serializeDocument({
       content: documentSlice,
@@ -188,7 +225,7 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
     assertSome(state);
 
     if (!clipboard.has('x-audapolis/document-zip')) {
-      throw new Error('cannot paste clipboard contents');
+      throw new Error('Clipboard does not contain an audapolis document');
     }
     const buffer = clipboard.readBuffer('x-audapolis/document-zip');
     // TODO: Don't extract sources from zip we already have in our file
@@ -198,75 +235,51 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
   },
   {
     fulfilled: (state, payload) => {
-      state.selection = null;
-      state.document.sources = { ...state.document.sources, ...payload.sources };
-
-      let time = state.currentTimePlayer;
-      let items = getItemsAtTime(DocumentGenerator.fromParagraphs(state.document.content), time);
-      let endOfParagraph = false;
-
-      // if we are at the end of a paragraph
-      const firstItemEnd = items[0].absoluteStart + items[0].length;
-      if (firstItemEnd - 2 * EPSILON <= time && firstItemEnd > time) {
-        time = items[0].absoluteStart + items[0].length;
-        items = getItemsAtTime(DocumentGenerator.fromParagraphs(state.document.content), time);
-        endOfParagraph = true;
+      if (payload.content.length == 0) {
+        return;
+      }
+      const mergedSources = { ...state.document.sources, ...payload.sources };
+      let paraSeen = false;
+      for (const item of payload.content) {
+        if ('source' in item && !(item.source in mergedSources)) {
+          throw new Error(`Paste failed, missing source: ${item.source}`);
+        }
+        if (isParagraphItem(item) && !paraSeen) {
+          throw new Error(
+            'Parse failed, missing paragraph break. paragraph items without prior paragraph_break'
+          );
+        }
+        if (item.type == 'paragraph_break') {
+          paraSeen = true;
+        }
       }
 
-      const documentGenerator = DocumentGenerator.fromParagraphs(state.document.content).collect();
-      const beforeSlice = new GeneratorBox(documentGenerator).takewhile(
-        (item) => item.absoluteStart + item.length <= time
-      );
-      const afterSlice = new GeneratorBox(documentGenerator).dropwhile(
-        (item) => item.absoluteStart + item.length <= time
-      );
-      const pastedSlice = DocumentGenerator.fromParagraphs(payload.content);
-
-      if (!endOfParagraph && items[items.length - 1].firstInParagraph) {
-        // we paste to the beginning of a paragrpaph
-        let renameDict = { [items[0].speaker]: null as null | string };
-        const chained = beforeSlice.chain(
-          pastedSlice
-            .map((x) => {
-              if (x.speaker in renameDict) {
-                renameDict[x.speaker] = x.paragraphUuid;
-              }
-              return x;
-            })
-            .chain(
-              afterSlice.map((x) => {
-                if (x.speaker in renameDict) {
-                  return { ...x, paragraphUuid: renameDict[x.speaker] || x.paragraphUuid };
-                } else {
-                  renameDict = {};
-                  return x;
-                }
-              })
-            )
-        );
-        state.document.content = new DocumentGenerator(chained).toParagraphs();
-      } else {
-        let renameDict = { [items[0].speaker]: null as null | string };
-        const chained = beforeSlice
-          .map((x) => {
-            if (x.speaker in renameDict) {
-              renameDict[x.speaker] = x.paragraphUuid;
-            }
-            return x;
-          })
-          .chain(
-            pastedSlice.map((x) => {
-              if (x.speaker in renameDict) {
-                return { ...x, paragraphUuid: renameDict[x.speaker] || x.paragraphUuid };
-              } else {
-                renameDict = {};
-                return x;
-              }
-            })
-          )
-          .chain(afterSlice);
-        state.document.content = new DocumentGenerator(chained).toParagraphs();
+      if (state.selection) {
+        state.cursor.current = 'user';
+        state.cursor.userIndex = state.selection.startIndex;
+        deleteSelection.reducer(state);
       }
+
+      const insertPos = getInsertPos(state);
+      const previousItem = state.document.content[Math.max(insertPos - 1, 0)];
+      const nextItem = state.document.content[insertPos];
+      if (
+        previousItem &&
+        previousItem.type == 'paragraph_break' &&
+        previousItem.speaker == null &&
+        (!nextItem || !isParagraphItem(nextItem))
+      ) {
+        state.document.content.splice(insertPos, 1);
+      } else if (nextItem && nextItem.type != 'paragraph_break') {
+        payload.content.push({
+          type: 'paragraph_break',
+          speaker: getSpeakerAtIndex(state.document.content, insertPos),
+        });
+      }
+
+      state.document.content.splice(insertPos, 0, ...payload.content);
+
+      state.document.sources = mergedSources;
     },
     rejected: (state, payload) => {
       console.error('paste rejected:', payload);
@@ -285,24 +298,36 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
       return;
     }
 
-    const filterFn = (item: DocumentGeneratorItem) =>
-      item.absoluteStart >= selection.range.start &&
-      item.absoluteStart + item.length <= selection.range.start + selection.range.length;
-    const paragraphs = DocumentGenerator.fromParagraphs(state.document.content)
-      .filter(filterFn)
-      .toParagraphs();
+    const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
+    if (timedDocumentSlice.length > 0 && isTimedParagraphItem(timedDocumentSlice[0])) {
+      timedDocumentSlice.unshift({
+        type: 'paragraph_break',
+        speaker: getSpeakerAtIndex(state.document.content, timedDocumentSlice[0].absoluteIndex),
+        absoluteStart: 0,
+        absoluteIndex: 0,
+      });
+    }
 
-    const selectionText = paragraphs
+    // console.log(timedDocumentSlice);
+    console.log(macroItems(timedDocumentSlice));
+
+    const selectionText = macroItems(timedDocumentSlice)
       .map((paragraph) => {
-        let paragraphText = '';
-        if (state.displaySpeakerNames) {
-          paragraphText += `${paragraph.speaker}:\n`;
+        switch (paragraph.type) {
+          case 'heading':
+            return '#'.repeat(paragraph.level) + ` ${paragraph.text}`;
+          case 'paragraph': {
+            let paragraphText = '';
+            if (state.displaySpeakerNames) {
+              paragraphText += `${paragraph.speaker}:\n`;
+            }
+            paragraphText += paragraph.content
+              .filter((x): x is Word & TimedDocumentItem => x.type == 'word')
+              .map((x) => x.word)
+              .join(' ');
+            return paragraphText.trim();
+          }
         }
-        paragraphText += paragraph.content
-          .filter((x) => x.type == 'word')
-          .map((x) => (x as Word).word)
-          .join(' ');
-        return paragraphText;
       })
       .join('\n\n');
 

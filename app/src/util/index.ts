@@ -11,7 +11,7 @@ export function assertSome<T>(x: T | null | undefined | void): asserts x is T {
   }
 }
 
-export function assertUnreachable(x: never): never {
+export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }
 
@@ -34,4 +34,8 @@ export function switchExtension(pathName: string, extension: string): string {
     basename += extension;
   }
   return path.join(dirname, basename);
+}
+
+export function isRunningInTest(): boolean {
+  return process.env.JEST_WORKER_ID !== undefined;
 }

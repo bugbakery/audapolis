@@ -5,7 +5,6 @@ import { ActionWithReducers, AsyncActionWithReducers } from '../util';
 import undoable, { includeAction, StateWithHistory } from 'redux-undo';
 import {
   deleteSelection,
-  deleteParagraphBreak,
   insertParagraphBreak,
   paste,
   reassignParagraph,
@@ -19,7 +18,7 @@ import * as ioReducers from './io';
 import * as playReducers from './play';
 import * as selectionReducers from './selection';
 
-const reducers: (
+export const reducers: (
   | ActionWithReducers<EditorState, any>
   | AsyncActionWithReducers<EditorState, any, any>
 )[] = [
@@ -45,7 +44,6 @@ function editorReducer(state: EditorState | undefined, action: AnyAction): Edito
 const stateSlice: Reducer<StateWithHistory<EditorState | null>> = undoable(editorReducer, {
   filter: includeAction([
     insertParagraphBreak.type,
-    deleteParagraphBreak.type,
     deleteSelection.type,
     deleteSomething.type,
     reassignParagraph.type,

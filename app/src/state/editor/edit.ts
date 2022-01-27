@@ -148,7 +148,7 @@ function deleteNonSelection(state: EditorState, direction: 'left' | 'right') {
 }
 export const deleteSomething = createActionWithReducer<EditorState, 'left' | 'right'>(
   'editor/deleteSomething',
-  async (state, direction) => {
+  (state, direction) => {
     if (state.selection !== null) {
       deleteSelection.reducer(state);
     } else {

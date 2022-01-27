@@ -1,8 +1,9 @@
-import { defaultEditorState } from './types';
+import { defaultEditorState, EditorState } from './types';
 import _ from 'lodash';
 import {
   copy,
   copySelectionText,
+  cut,
   deleteSelection,
   deleteSomething,
   insertParagraphBreak,
@@ -11,13 +12,13 @@ import {
   renameSpeaker,
   setWord,
 } from './edit';
-import { AsyncThunkPayloadCreator } from '@reduxjs/toolkit/dist/createAsyncThunk';
+import { AsyncThunkAction } from '@reduxjs/toolkit/dist/createAsyncThunk';
 import JSZip from 'jszip';
 import { emptyDocument, serializeDocument, Document } from '../../core/document';
 import { mocked } from 'jest-mock';
 import { clipboard } from 'electron';
-import { AsyncActionWithReducers } from '../util';
-import { RootState, store } from '../index';
+import { reducers } from './index';
+import { AnyAction } from '@reduxjs/toolkit';
 
 test('insert paragraph break user cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
@@ -861,96 +862,31 @@ jest.mock('electron', () => {
   };
 });
 const mockedWriteText = mocked(clipboard.writeText);
-async function runPayloadCreator<ThunkArg, Returned>(
-  payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, { state: RootState }>,
-  state: RootState,
-  arg: any
-) {
-  const handler = {
-    get: function (target: any, prop: string | symbol) {
-      if (prop in target) {
-        return target[prop];
-      }
-      throw new Error(`Trying to access property '${String(prop)}' on fake thunkApi`);
-    },
-  };
-  // const editorReducers = Object.values(editReducers);
-  const thunkApi = new Proxy(
-    {
-      getState: (): RootState => state,
-      // dispatch: async (
-      //   action:
-      //     | { type: string; payload: never }
-      //     | ((dispatch: () => never, getState: () => RootState) => void)
-      // ) => {
-      //   if (typeof action == 'function') {
-      //     return action(
-      //       () => {
-      //         throw new Error('TODO: dispatch');
-      //       },
-      //       (): RootState => state
-      //     );
-      //   }
-      //   let { type, payload } = action;
-      //   console.log('dispatch called with', arguments);
-      //   if (!type) {
-      //     console.log('no type');
-      //   }
-      //   console.log('dispatching', type, 'with payload', payload);
-      //   console.log('reducers', reducers);
-      //   state.editor.present = await produce(
-      //     state.editor.present || defaultEditorState,
-      //     async (state: EditorState) => {
-      //       for (const reducer of editorReducers) {
-      //         if (
-      //           ('type' in reducer && reducer.type == type) ||
-      //           ('typePrefix' in reducer && reducer.typePrefix == type)
-      //         ) {
-      //           console.log('FOUND', type, reducer);
-      //           if ('payloadCreator' in reducer) {
-      //             console.log('FOUND PAYLOAD CREATOR', type);
-      //             await runPayloadCreator(reducer.payloadCreator, state, payload);
-      //           }
-      //           if ('reducer' in reducer) {
-      //             console.log('running reducer', reducer, type);
-      //             reducer.reducer(state, payload);
-      //           } else {
-      //             throw new Error(`'${type}' was not created using createActionWithReducer`);
-      //           }
-      //         }
-      //       }
-      //     }
-      //   );
-      // },
-    },
-    handler
-  );
-  return payloadCreator(arg, thunkApi);
-}
-async function runAsyncAction<StateSlice, Returned, ThunkArg>(
-  thunk: AsyncActionWithReducers<StateSlice, Returned, ThunkArg>,
-  stateModifier: (state: RootState) => void,
-  arg?: any
-): Promise<RootState> {
-  const state: RootState = _.cloneDeep(store.getState());
-  stateModifier(state);
 
-  await runPayloadCreator(thunk.payloadCreator, state, arg);
-  return state;
+/**
+ * Calls an async thunk and handles oll the side effects in the same Promise.
+ * Awaiting the returned promise ensures all properly awaited side effects are done.
+ * @param thunk the thunk to test
+ * @param state the current state. this will likely be mutated.
+ */
+async function runAsyncThunkSync(
+  thunk: AsyncThunkAction<any, any, any>,
+  state: EditorState
+): Promise<void> {
+  const dispatch = async (action: AnyAction | AsyncThunkAction<any, any, any>) => {
+    if (typeof action == 'function') {
+      await runAsyncThunkSync(action, state);
+    } else {
+      reducers.forEach((reducer) => {
+        reducer.handleAction(state, action);
+      });
+    }
+  };
+
+  const getState = () => ({ editor: { present: _.cloneDeep(state) } });
+  const returned = await thunk(dispatch, getState, {});
+  dispatch(returned);
 }
-//
-// async function runAsyncActionWithEditorState<StateSlice, Returned, ThunkArg>(
-//   thunk: AsyncActionWithReducers<StateSlice, Returned, ThunkArg>,
-//   state: EditorState,
-//   arg?: any
-// ): Promise<EditorState | null> {
-//   const newRootState = await runAsyncAction(
-//     thunk,
-//     (initialState) => (initialState.editor.present = state),
-//     arg
-//   );
-//   return newRootState.editor.present;
-// }
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -965,7 +901,7 @@ test('copy', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
-  await runAsyncAction(copy, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copy(), state);
 
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -997,7 +933,7 @@ test('copy adds para-break before first word', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
-  await runAsyncAction(copy, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copy(), state);
 
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -1029,7 +965,7 @@ test('copy adds para break if selections end in heading', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
-  await runAsyncAction(copy, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copy(), state);
 
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -1062,135 +998,123 @@ test('copy does nothing if no selection', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.selection = null;
-  await runAsyncAction(copy, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copy(), state);
   expect(mockedSerializeDocument).not.toHaveBeenCalled();
   expect(clipboard.writeBuffer).not.toHaveBeenCalled();
 });
 
-// test('cut', async () => {
-//   let state = _.cloneDeep(defaultEditorState);
-//   state.document.content = [
-//     { type: 'paragraph_break', speaker: 'Speaker One' },
-//     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ];
-//   state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
-//   const newState = await runAsyncActionWithEditorState(cut, state);
-//   if (newState) {
-//     state = newState;
-//   }
-//
-//   expect(state.document.content).toStrictEqual([
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ]);
-//
-//   expect(serializeDocument).toHaveBeenCalledTimes(1);
-//   expect(serializeDocument.mock.calls[0].length).toBe(1);
-//   expect(serializeDocument.mock.calls[0][0]).toMatchObject({
-//     content: [
-//       { type: 'paragraph_break', speaker: 'Speaker One' },
-//       { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     ],
-//   });
-//   expect(clipboard.writeBuffer).toHaveBeenCalled();
-// });
-//
-// test('cut adds para-break before first word', async () => {
-//   let state = _.cloneDeep(defaultEditorState);
-//   state.document.content = [
-//     { type: 'paragraph_break', speaker: 'Speaker One' },
-//     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ];
-//   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
-//   const newState = await runAsyncActionWithEditorState(cut, state);
-//   if (newState) {
-//     state = newState;
-//   }
-//
-//   expect(state.document.content).toStrictEqual([
-//     { type: 'paragraph_break', speaker: 'Speaker One' },
-//     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ]);
-//
-//   expect(serializeDocument).toHaveBeenCalledTimes(1);
-//   expect(serializeDocument.mock.calls[0].length).toBe(1);
-//   expect(serializeDocument.mock.calls[0][0]).toMatchObject({
-//     content: [
-//       { type: 'paragraph_break', speaker: 'Speaker One' },
-//       { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     ],
-//   });
-//   expect(clipboard.writeBuffer).toHaveBeenCalled();
-// });
-//
-// test('cut adds para break if selections end in heading', async () => {
-//   let state = _.cloneDeep(defaultEditorState);
-//   state.document.content = [
-//     { type: 'paragraph_break', speaker: 'Speaker One' },
-//     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ];
-//   state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
-//   const newState = await runAsyncActionWithEditorState(cut, state);
-//   if (newState) {
-//     state = newState;
-//   }
-//
-//   expect(state.document.content).toStrictEqual([
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ]);
-//
-//   expect(serializeDocument).toHaveBeenCalledTimes(1);
-//   expect(serializeDocument.mock.calls[0].length).toBe(1);
-//   expect(serializeDocument.mock.calls[0][0]).toMatchObject({
-//     content: [
-//       { type: 'paragraph_break', speaker: 'Speaker One' },
-//       { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//       { type: 'heading', level: 1, text: 'Heading One' },
-//       { type: 'paragraph_break', speaker: null },
-//     ],
-//   });
-//   expect(clipboard.writeBuffer).toHaveBeenCalled();
-// });
-//
-// test('cut does nothing if no selection', async () => {
-//   let state = _.cloneDeep(defaultEditorState);
-//   state.document.content = [
-//     { type: 'paragraph_break', speaker: 'Speaker One' },
-//     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ];
-//   state.selection = null;
-//   const newState = await runAsyncActionWithEditorState(cut, state);
-//   if (newState) {
-//     state = newState;
-//   }
-//   expect(state.document.content).toStrictEqual([
-//     { type: 'paragraph_break', speaker: 'Speaker One' },
-//     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-//     { type: 'heading', level: 1, text: 'Heading One' },
-//     { type: 'paragraph_break', speaker: 'Speaker Two' },
-//     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-//   ]);
-//   expect(serializeDocument).not.toHaveBeenCalled();
-//   expect(clipboard.writeBuffer).not.toHaveBeenCalled();
-// });
+test('cut', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
+  await runAsyncThunkSync(cut(), state);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+
+  expect(serializeDocument).toHaveBeenCalledTimes(1);
+  expect(serializeDocument.mock.calls[0].length).toBe(1);
+  expect(serializeDocument.mock.calls[0][0]).toMatchObject({
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    ],
+  });
+  expect(clipboard.writeBuffer).toHaveBeenCalled();
+});
+
+test('cut adds para-break before first word', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
+  await runAsyncThunkSync(cut(), state);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+
+  expect(serializeDocument).toHaveBeenCalledTimes(1);
+  expect(serializeDocument.mock.calls[0].length).toBe(1);
+  expect(serializeDocument.mock.calls[0][0]).toMatchObject({
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    ],
+  });
+  expect(clipboard.writeBuffer).toHaveBeenCalled();
+});
+
+test('cut adds para break if selections end in heading', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
+  await runAsyncThunkSync(cut(), state);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+
+  expect(serializeDocument).toHaveBeenCalledTimes(1);
+  expect(serializeDocument.mock.calls[0].length).toBe(1);
+  expect(serializeDocument.mock.calls[0][0]).toMatchObject({
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+      { type: 'heading', level: 1, text: 'Heading One' },
+      { type: 'paragraph_break', speaker: null },
+    ],
+  });
+  expect(clipboard.writeBuffer).toHaveBeenCalled();
+});
+
+test('cut does nothing if no selection', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.selection = null;
+  await runAsyncThunkSync(cut(), state);
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+  expect(serializeDocument).not.toHaveBeenCalled();
+  expect(clipboard.writeBuffer).not.toHaveBeenCalled();
+});
 
 // TODO: should we test the paste payload creator?
 
@@ -1488,7 +1412,7 @@ test('copySelectionText', async () => {
   };
   state.displaySpeakerNames = true;
 
-  await runAsyncAction(copySelectionText, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copySelectionText(), state);
 
   expect(mockedWriteText).toHaveBeenCalledTimes(1);
   expect(mockedWriteText).toHaveBeenCalledWith(
@@ -1518,7 +1442,7 @@ test('copySelectionText: null speaker, no content', async () => {
     length: 1,
   };
 
-  await runAsyncAction(copySelectionText, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copySelectionText(), state);
 
   expect(mockedWriteText).toHaveBeenCalledTimes(1);
   expect(mockedWriteText).toHaveBeenCalledWith('');
@@ -1536,7 +1460,7 @@ test('copySelectionText: null speaker, text', async () => {
     length: 2,
   };
 
-  await runAsyncAction(copySelectionText, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copySelectionText(), state);
 
   expect(mockedWriteText).toHaveBeenCalledTimes(1);
   expect(mockedWriteText).toHaveBeenCalledWith('One');
@@ -1550,7 +1474,7 @@ test('copySelectionText: no selection', async () => {
   ];
   state.selection = null;
 
-  await runAsyncAction(copySelectionText, (initialState) => (initialState.editor.present = state));
+  await runAsyncThunkSync(copySelectionText(), state);
 
   expect(mockedWriteText).toHaveBeenCalledTimes(0);
 });

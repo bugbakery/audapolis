@@ -1021,9 +1021,9 @@ test('cut', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
 
-  expect(serializeDocument).toHaveBeenCalledTimes(1);
-  expect(serializeDocument.mock.calls[0].length).toBe(1);
-  expect(serializeDocument.mock.calls[0][0]).toMatchObject({
+  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
+  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
+  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
     content: [
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
@@ -1053,9 +1053,9 @@ test('cut adds para-break before first word', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
 
-  expect(serializeDocument).toHaveBeenCalledTimes(1);
-  expect(serializeDocument.mock.calls[0].length).toBe(1);
-  expect(serializeDocument.mock.calls[0][0]).toMatchObject({
+  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
+  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
+  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
     content: [
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
@@ -1081,9 +1081,9 @@ test('cut adds para break if selections end in heading', async () => {
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
 
-  expect(serializeDocument).toHaveBeenCalledTimes(1);
-  expect(serializeDocument.mock.calls[0].length).toBe(1);
-  expect(serializeDocument.mock.calls[0][0]).toMatchObject({
+  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
+  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
+  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
     content: [
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
@@ -1112,7 +1112,7 @@ test('cut does nothing if no selection', async () => {
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(serializeDocument).not.toHaveBeenCalled();
+  expect(mockedSerializeDocument).not.toHaveBeenCalled();
   expect(clipboard.writeBuffer).not.toHaveBeenCalled();
 });
 

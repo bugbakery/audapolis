@@ -1,4 +1,4 @@
-import { defaultEditorState, EditorState } from '../state/editor/types';
+import { defaultEditorState } from '../state/editor/types';
 import _ from 'lodash';
 import memoize from './proxy-memoize';
 import { produce } from 'immer';
@@ -22,10 +22,7 @@ test('counter counts', () => {
 
 test('no state change => no reeval', () => {
   const [counter, countingFn] = newCountingFunction();
-  const memoizedTime = memoize((state: EditorState) => {
-    console.log(state.cursor.playerTime);
-    countingFn();
-  });
+  const memoizedTime = memoize(countingFn);
   const state = _.cloneDeep(defaultEditorState);
   state.cursor.playerTime = 1;
   expect(counter.current).toBe(0);
@@ -40,10 +37,7 @@ test('no state change => no reeval', () => {
 // This test is to document proxy-memoize's behaviour, so we notice if they change it
 test('immerless state change => no reeval', () => {
   const [counter, countingFn] = newCountingFunction();
-  const memoizedTime = memoize((state: EditorState) => {
-    console.log(state.cursor.playerTime);
-    countingFn();
-  });
+  const memoizedTime = memoize(countingFn);
   const state = _.cloneDeep(defaultEditorState);
   state.cursor.playerTime = 1;
   expect(counter.current).toBe(0);
@@ -56,10 +50,7 @@ test('immerless state change => no reeval', () => {
 
 test('unrelated state change => no reeval', () => {
   const [counter, countingFn] = newCountingFunction();
-  const memoizedTime = memoize((state: EditorState) => {
-    console.log(state.cursor.playerTime);
-    countingFn();
-  });
+  const memoizedTime = memoize(countingFn);
   const state = _.cloneDeep(defaultEditorState);
   state.cursor.playerTime = 1;
   expect(counter.current).toBe(0);
@@ -72,10 +63,7 @@ test('unrelated state change => no reeval', () => {
 
 test('immer: state change =>  reeval', () => {
   const [counter, countingFn] = newCountingFunction();
-  const memoizedTime = memoize((state: EditorState) => {
-    console.log(state.cursor.playerTime);
-    countingFn();
-  });
+  const memoizedTime = memoize(countingFn);
   let state = _.cloneDeep(defaultEditorState);
   state.cursor.playerTime = 1;
   expect(counter.current).toBe(0);
@@ -90,10 +78,7 @@ test('immer: state change =>  reeval', () => {
 
 test('immer: unrelated state change => no reeval', () => {
   const [counter, countingFn] = newCountingFunction();
-  const memoizedTime = memoize((state: EditorState) => {
-    console.log(state.cursor.playerTime);
-    countingFn();
-  });
+  const memoizedTime = memoize(countingFn);
   let state = _.cloneDeep(defaultEditorState);
   state.cursor.playerTime = 1;
   expect(counter.current).toBe(0);

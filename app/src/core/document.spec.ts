@@ -1,303 +1,110 @@
-import { DocumentGenerator, getItemsAtTime, V1Paragraph, RenderItem } from './document';
+import { deserializeDocument, Document, serializeDocument, V1Paragraph } from './document';
+import JSZip from 'jszip';
 
-test('rawExactFrom behaves correctly', () => {
-  const defaultWord = {
-    conf: 1,
-    source: 'some_source',
+test('serialization roundtrips', async () => {
+  const testDocument: Document = {
+    content: [
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    sources: {
+      'source-1': {
+        objectUrl: 'blob://source-1',
+        fileContents: new ArrayBuffer(0),
+      },
+    },
   };
-  const input: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          word: 'w1',
-          ...defaultWord,
-          sourceStart: 0,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w2',
-          ...defaultWord,
-          sourceStart: 1,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w3',
-          ...defaultWord,
-          sourceStart: 2,
-          length: 1,
-        },
-      ],
+  global.URL.createObjectURL = jest.fn(() => 'MOCKED_URL');
+  const serializedDocument = serializeDocument(testDocument);
+  const serializedBuffer = await serializedDocument.generateAsync({ type: 'nodebuffer' });
+  const deserializedDocument = await deserializeDocument(serializedBuffer);
+  expect(deserializedDocument).toStrictEqual({
+    content: [
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    sources: {
+      'source-1': {
+        objectUrl: 'MOCKED_URL',
+        fileContents: new ArrayBuffer(0),
+      },
     },
-  ];
-  const expectedOutput: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          word: 'w2',
-          ...defaultWord,
-          sourceStart: 1.5,
-          length: 0.5,
-        },
-        {
-          type: 'word',
-          word: 'w3',
-          ...defaultWord,
-          sourceStart: 2,
-          length: 1,
-        },
-      ],
-    },
-  ];
-  const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.exactFrom(1.5).toParagraphs()).toMatchObject(expectedOutput);
+  });
 });
 
-test('rawExactFrom behaves correctly on edge cases', () => {
-  const defaultWord = {
-    conf: 1,
-    source: 'some_source',
-  };
-  const input: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          word: 'w1',
-          ...defaultWord,
-          sourceStart: 0,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w2',
-          ...defaultWord,
-          sourceStart: 1,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w3',
-          ...defaultWord,
-          sourceStart: 2,
-          length: 1,
-        },
-      ],
-    },
-  ];
-  const expectedOutput: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          word: 'w2',
-          ...defaultWord,
-          sourceStart: 1,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w3',
-          ...defaultWord,
-          sourceStart: 2,
-          length: 1,
-        },
-      ],
-    },
-  ];
-  const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.exactFrom(1).toParagraphs()).toMatchObject(expectedOutput);
+test('deserialization fails if document.json is missing', async () => {
+  const serializedDocument = new JSZip();
+  const serializedBuffer = await serializedDocument.generateAsync({ type: 'nodebuffer' });
+  await expect(deserializeDocument(serializedBuffer)).rejects.toThrow('document.json');
 });
 
-test('rawExactUntil behaves correctly', () => {
-  const defaultWord = {
-    conf: 1,
-    source: 'some_source',
+test('deserialization fails if source is missing', async () => {
+  const testDocument = {
+    content: [
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    version: 2,
   };
-  const input: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          word: 'w1',
-          ...defaultWord,
-          sourceStart: 0,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w2',
-          ...defaultWord,
-          sourceStart: 1,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w3',
-          ...defaultWord,
-          sourceStart: 2,
-          length: 1,
-        },
-      ],
-    },
-  ];
-  const expectedOutput: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          word: 'w1',
-          ...defaultWord,
-          sourceStart: 0,
-          length: 1,
-        },
-        {
-          type: 'word',
-          word: 'w2',
-          ...defaultWord,
-          sourceStart: 1,
-          length: 0.5,
-        },
-      ],
-    },
-  ];
-  const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.exactUntil(1.5).toParagraphs()).toMatchObject(expectedOutput);
+  const serializedDocument = new JSZip();
+  serializedDocument.file('document.json', JSON.stringify(testDocument));
+  const serializedBuffer = await serializedDocument.generateAsync({ type: 'nodebuffer' });
+  await expect(deserializeDocument(serializedBuffer)).rejects.toThrow('source-1');
 });
 
-test('renderItemsFromDocumentGenerator behaves correctly', () => {
-  const defaultWord = {
-    conf: 1,
-    word: 'some_word',
+test('deserialization fails if missing version', async () => {
+  const testDocument = {
+    content: [
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
   };
-  const input: V1Paragraph[] = [
-    {
-      speaker: 'someone',
-      content: [
-        {
-          type: 'word',
-          ...defaultWord,
-          source: 'source_1',
-          sourceStart: 0,
-          length: 1,
-        },
-        {
-          type: 'word',
-          ...defaultWord,
-          source: 'source_1',
-          sourceStart: 1,
-          length: 1,
-        },
-        {
-          type: 'word',
-          ...defaultWord,
-          source: 'source_2',
-          sourceStart: 2,
-          length: 1,
-        },
-        {
-          type: 'word',
-          ...defaultWord,
-          source: 'source_2',
-          sourceStart: 2,
-          length: 1,
-        },
-      ],
-    },
-  ];
-  const expectedOutput: RenderItem[] = [
-    {
-      absoluteStart: 0,
-      length: 2,
-
-      source: 'source_1',
-      sourceStart: 0,
-      speaker: 'someone',
-    },
-    {
-      absoluteStart: 2,
-      length: 1,
-
-      source: 'source_2',
-      sourceStart: 2,
-      speaker: 'someone',
-    },
-    {
-      absoluteStart: 3,
-      length: 1,
-
-      source: 'source_2',
-      sourceStart: 2,
-      speaker: 'someone',
-    },
-  ];
-  const documentGenerator = DocumentGenerator.fromParagraphs(input);
-  expect(documentGenerator.toRenderItems().collect()).toMatchObject(expectedOutput);
+  const serializedDocument = new JSZip();
+  serializedDocument.file('document.json', JSON.stringify(testDocument));
+  const serializedBuffer = await serializedDocument.generateAsync({ type: 'nodebuffer' });
+  await expect(deserializeDocument(serializedBuffer)).rejects.toThrow('version');
 });
 
-test('getItemsAtTime', () => {
+test('deserialization fails if unknown version', async () => {
+  const testDocument = {
+    content: [
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    version: 50000,
+  };
+  const serializedDocument = new JSZip();
+  serializedDocument.file('document.json', JSON.stringify(testDocument));
+  const serializedBuffer = await serializedDocument.generateAsync({ type: 'nodebuffer' });
+  await expect(deserializeDocument(serializedBuffer)).rejects.toThrow('version');
+});
+
+test('deserialization of v1 succeeds', async () => {
   const testContent: V1Paragraph[] = [
     {
-      speaker: 'paragraph_01',
+      speaker: 'Speaker One',
       content: [
-        { type: 'artificial_silence', length: 1 },
-        { type: 'artificial_silence', length: 1 },
-        { type: 'artificial_silence', length: 1 },
-      ],
-    },
-    {
-      speaker: 'paragraph_02',
-      content: [
-        { type: 'artificial_silence', length: 1 },
-        { type: 'artificial_silence', length: 1 },
-        { type: 'artificial_silence', length: 1 },
+        { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
       ],
     },
   ];
-
-  expect(getItemsAtTime(DocumentGenerator.fromParagraphs(testContent), 0.5)).toMatchObject([
-    {
-      absoluteStart: 0,
-      itemIdx: 0,
-      length: 1,
-      speaker: 'paragraph_01',
-      type: 'artificial_silence',
+  global.URL.createObjectURL = jest.fn(() => 'MOCKED_URL');
+  const serializedDocument = new JSZip();
+  serializedDocument.file('document.json', JSON.stringify({ version: 1, content: testContent }));
+  const sources = serializedDocument.folder('sources');
+  if (sources == null) {
+    throw new Error("couldn't create sources folder");
+  }
+  sources.file('source-1', 'ABC');
+  const serializedBuffer = await serializedDocument.generateAsync({ type: 'nodebuffer' });
+  const deserializedDocument = await deserializeDocument(serializedBuffer);
+  const fileContent = deserializedDocument.sources['source-1'].fileContents;
+  const fileAsString = String.fromCharCode.apply(null, new Uint8Array(fileContent));
+  expect(fileAsString).toBe('ABC');
+  expect(deserializedDocument).toMatchObject({
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    sources: {
+      'source-1': {
+        objectUrl: 'MOCKED_URL',
+      },
     },
-  ]);
-
-  expect(getItemsAtTime(DocumentGenerator.fromParagraphs(testContent), 1.5)).toMatchObject([
-    {
-      absoluteStart: 1,
-      itemIdx: 1,
-      length: 1,
-      speaker: 'paragraph_01',
-      type: 'artificial_silence',
-    },
-  ]);
-
-  expect(getItemsAtTime(DocumentGenerator.fromParagraphs(testContent), 3.0)).toMatchObject([
-    {
-      absoluteStart: 2,
-      itemIdx: 2,
-      length: 1,
-      speaker: 'paragraph_01',
-      type: 'artificial_silence',
-    },
-    {
-      absoluteStart: 3,
-      itemIdx: 0,
-      length: 1,
-      speaker: 'paragraph_02',
-      type: 'artificial_silence',
-    },
-  ]);
+  });
 });

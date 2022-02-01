@@ -11,7 +11,7 @@ const { FFmpegCommand, FFmpegInput, FFmpegOutput, FilterNode, FilterChain } = Fe
   ffmpeg_bin: ffmpegPath,
 });
 
-function getSubtitleCodec(outputPath: string): string {
+export function getSubtitleCodec(outputPath: string): string {
   if (outputPath.endsWith('.mp4')) {
     return 'mov_text';
   } else if (outputPath.endsWith('.mkv')) {

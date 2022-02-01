@@ -1,9 +1,10 @@
-import { DocumentGenerator, RenderItem } from './document';
+import { RenderItem } from './document';
 import { createSelector, Store } from '@reduxjs/toolkit';
 import { EditorState } from '../state/editor/types';
 import { setPlay, setPlayerTime } from '../state/editor/play';
 import { RootState } from '../state';
 import { assertSome } from '../util';
+import { currentCursorTime, renderItems, selectedItems } from '../state/editor/selectors';
 
 export class Player {
   sources: Record<string, HTMLVideoElement> = {};
@@ -27,28 +28,25 @@ export class Player {
       }
     );
     const renderItemsHandler = createSelector(
-      (state: EditorState) => state.document.content,
-      (state: EditorState) => state.selection,
-      (paragraphs, selection) => {
+      (state: EditorState) => state,
+      (state) => {
         this.pause();
-        let generator = DocumentGenerator.fromParagraphs(paragraphs);
-        if (selection) {
-          generator = generator
-            .exactFrom(selection.range.start)
-            .exactUntil(selection.range.start + selection.range.length);
+        if (selectedItems(state)) {
+          // TODO: we should use a non-memoized version for this
+          this.renderItems = renderItems(selectedItems(state));
         }
-        this.renderItems = generator.toRenderItems().collect();
+        this.renderItems = renderItems(state.document.content);
         if (this.playing) this.play();
       }
     );
     const userSetTimeHandler = createSelector(
-      (state: EditorState) => state.currentTimeUserSet,
-      (time) => {
+      (state: EditorState) => state,
+      (state) => {
         this.pause();
 
         // we don't notify redux here of the state change because we already set the player time for user set events in the
         // setUserSetTime action. This avoids having inconsistencies in the key repeat of the delete key.
-        this.currentTime = time;
+        this.currentTime = currentCursorTime(state);
 
         const currentRenderItem = this.getCurrentRenderItem();
 

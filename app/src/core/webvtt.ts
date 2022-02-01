@@ -1,4 +1,3 @@
-import { V1Paragraph, DocumentGenerator, TimedV1ParagraphItem } from './document';
 import {
   escapeVttString,
   formattedTime,
@@ -7,10 +6,11 @@ import {
   WebVtt,
 } from '@audapolis/webvtt-writer';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { DocumentItem, Paragraph, TimedItemExtension, Word } from './document';
+import { macroItems } from '../state/editor/selectors';
 
 function paragraphToCue(
-  paragraph: V1Paragraph<TimedV1ParagraphItem>,
+  paragraph: Paragraph,
   wordTimings: boolean,
   includeSpeakerNames: boolean
 ): VttCue | null {
@@ -19,7 +19,7 @@ function paragraphToCue(
   }
   const firstItem = paragraph.content[0];
   const lastItem = paragraph.content[paragraph.content.length - 1];
-  const itemToString = (item: TimedV1ParagraphItem & { type: 'word' }): string => {
+  const itemToString = (item: Word & TimedItemExtension): string => {
     if (wordTimings) {
       return `<${formattedTime(item.absoluteStart)}><c>${escapeVttString(item.word)}</c>`;
     } else {
@@ -27,7 +27,7 @@ function paragraphToCue(
     }
   };
   const payload =
-    (includeSpeakerNames ? `<v ${escapeVttString(paragraph.speaker)}>` : '') +
+    (includeSpeakerNames && paragraph.speaker ? `<v ${escapeVttString(paragraph.speaker)}>` : '') +
     paragraph.content
       .filter((item) => item.type == 'word')
       .map(itemToString)
@@ -41,39 +41,41 @@ function paragraphToCue(
 }
 
 export function contentToVtt(
-  content: V1Paragraph[],
+  content: DocumentItem[],
   wordTimings: boolean,
   includeSpeakerNames: boolean,
   limitLineLength: number | null
 ): WebVtt {
-  const vtt = new WebVtt(
-    'This file was automatically generated using audapolis: https://github.com/audapolis/audapolis'
-  );
-  let docGenerator = DocumentGenerator.fromParagraphs(content);
   if (limitLineLength !== null) {
-    let lastUuid = '';
     let currentCharacterLength = 0;
-    let currentUuid = '';
-    docGenerator = docGenerator.itemMap((item) => {
-      if (lastUuid != item.paragraphUuid) {
-        lastUuid = item.paragraphUuid;
-        currentCharacterLength = item.type == 'word' ? item.word.length + 1 : 0;
-        currentUuid = item.paragraphUuid;
-        return item;
+    let currentSpeaker = null;
+    const items: DocumentItem[] = [];
+    for (const item of content) {
+      if (item.type == 'paragraph_break') {
+        currentCharacterLength = 0;
+        currentSpeaker = item.speaker;
       }
-      if (item.type != 'word') {
-        return { ...item, paragraphUuid: currentUuid };
+      if (item.type == 'word') {
+        if (currentCharacterLength + item.word.length > limitLineLength) {
+          items.push({ type: 'paragraph_break', speaker: currentSpeaker });
+          currentCharacterLength = 0;
+        }
+        currentCharacterLength += item.word.length;
       }
-      if (currentCharacterLength + item.word.length > limitLineLength) {
-        currentUuid = uuidv4();
-        currentCharacterLength = item.word.length;
-      }
-      currentCharacterLength += 1 + item.word.length;
-      return { ...item, paragraphUuid: currentUuid };
-    });
+
+      items.push(item);
+    }
+    content = items;
   }
-  const timedParagraphs = docGenerator.toTimedParagraphs();
-  for (const paragraph of timedParagraphs) {
+
+  const paragraphItems: Paragraph[] = macroItems(content).filter(
+    (x): x is Paragraph & TimedItemExtension => x.type == 'paragraph'
+  );
+
+  const vtt = new WebVtt(
+    'This file was generated using audapolis: https://github.com/audapolis/audapolis'
+  );
+  for (const paragraph of paragraphItems) {
     const cue = paragraphToCue(paragraph, wordTimings, includeSpeakerNames);
     if (cue) {
       vtt.add(cue);
@@ -83,7 +85,7 @@ export function contentToVtt(
 }
 
 export async function exportWebVTT(
-  content: V1Paragraph[],
+  content: DocumentItem[],
   outputPath: string,
   wordTimings: boolean,
   includeSpeakerNames: boolean,

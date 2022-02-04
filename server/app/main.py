@@ -60,13 +60,21 @@ async def start_transcription(
     lang: str,
     model: str,
     diarize: bool = False,
+    diarize_max_speakers: int = 16,
     file: UploadFile = File(...),
     fileName: str = Form(...),
     auth: str = Depends(token_auth),
 ):
     task = tasks.add(TranscriptionTask(file.filename, TranscriptionState.QUEUED))
     background_tasks.add_task(
-        process_audio, lang, model, file.file, fileName, task.uuid, diarize
+        process_audio,
+        lang,
+        model,
+        file.file,
+        fileName,
+        task.uuid,
+        diarize,
+        diarize_max_speakers,
     )
     return task
 

@@ -54,83 +54,87 @@ export const transcribeFile = createAsyncThunk<string | undefined, void, { state
 
 export const startTranscription = createAsyncThunk<
   void,
-  { model: Model; diarize: boolean },
+  { model: Model; diarize: boolean; diarize_max_speakers: number },
   { state: RootState }
->('transcribing/upload', async ({ model, diarize }, { dispatch, getState }) => {
-  const state = getState();
-  const server = getServer(state);
-  const path = state?.transcribe?.file;
-  if (path === undefined) {
-    throw Error('Failed to start transcription: No file for transcription given.');
-  }
-  dispatch(openTranscribing());
-
-  dispatch(setProgress(0));
-  dispatch(setState(TranscriptionState.CONVERTING));
-
-  const fileName = basename(path);
-  let wavFileContent;
-  try {
-    wavFileContent = await convertToWav(path, (p) => dispatch(setProgress(p)));
-  } catch (err) {
-    alert(err);
-    dispatch(openLanding());
-    return;
-  }
-
-  const file = new File([wavFileContent], 'input.wav');
-  const task = await startTranscriptionApiCall(
-    server,
-    model.lang,
-    model.name,
-    diarize,
-    file,
-    fileName
-  );
-
-  dispatch(setState(task.state));
-
-  while (true) {
-    const { content, state, progress } = await getTask(server, task);
-
-    dispatch(setProgress(progress));
-    dispatch(setState(state));
-
-    if (state == 'done') {
-      const fileContent = readFileSync(path);
-      const fileContents = fileContent.buffer;
-      const objectUrl = URL.createObjectURL(new Blob([fileContents]));
-      const hash = createHash('sha256');
-      hash.update(fileContent.slice(0));
-      const hashValue = hash.digest('hex');
-      const sources = {
-        [hashValue]: {
-          fileName,
-          fileContents,
-          objectUrl,
-        },
-      };
-      if (content === undefined) {
-        throw Error('Transcription failed: State is done, but no content was produced');
-      }
-      // TODO: proper typing
-      const contentWithSource = content.map((paragraph: any) => {
-        paragraph.content = paragraph.content.map((word: any) => {
-          word['source'] = hashValue;
-          return word;
-        });
-        return paragraph;
-      });
-      dispatch(
-        openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
-      );
-      // Once the task is finished, try to delete it but ignore any errors
-      await deleteTask(server, task);
-      break;
+>(
+  'transcribing/upload',
+  async ({ model, diarize, diarize_max_speakers }, { dispatch, getState }) => {
+    const state = getState();
+    const server = getServer(state);
+    const path = state?.transcribe?.file;
+    if (path === undefined) {
+      throw Error('Failed to start transcription: No file for transcription given.');
     }
-    await sleep(0.1);
+    dispatch(openTranscribing());
+
+    dispatch(setProgress(0));
+    dispatch(setState(TranscriptionState.CONVERTING));
+
+    const fileName = basename(path);
+    let wavFileContent;
+    try {
+      wavFileContent = await convertToWav(path, (p) => dispatch(setProgress(p)));
+    } catch (err) {
+      alert(err);
+      dispatch(openLanding());
+      return;
+    }
+
+    const file = new File([wavFileContent], 'input.wav');
+    const task = await startTranscriptionApiCall(
+      server,
+      model.lang,
+      model.name,
+      diarize,
+      diarize_max_speakers,
+      file,
+      fileName
+    );
+
+    dispatch(setState(task.state));
+
+    while (true) {
+      const { content, state, progress } = await getTask(server, task);
+
+      dispatch(setProgress(progress));
+      dispatch(setState(state));
+
+      if (state == 'done') {
+        const fileContent = readFileSync(path);
+        const fileContents = fileContent.buffer;
+        const objectUrl = URL.createObjectURL(new Blob([fileContents]));
+        const hash = createHash('sha256');
+        hash.update(fileContent.slice(0));
+        const hashValue = hash.digest('hex');
+        const sources = {
+          [hashValue]: {
+            fileName,
+            fileContents,
+            objectUrl,
+          },
+        };
+        if (content === undefined) {
+          throw Error('Transcription failed: State is done, but no content was produced');
+        }
+        // TODO: proper typing
+        const contentWithSource = content.map((paragraph: any) => {
+          paragraph.content = paragraph.content.map((word: any) => {
+            word['source'] = hashValue;
+            return word;
+          });
+          return paragraph;
+        });
+        dispatch(
+          openDocumentFromMemory({ sources: sources, content: contentWithSource as Paragraph[] })
+        );
+        // Once the task is finished, try to delete it but ignore any errors
+        await deleteTask(server, task);
+        break;
+      }
+      await sleep(0.1);
+    }
   }
-});
+);
 
 export const importSlice = createSlice({
   name: 'nav',

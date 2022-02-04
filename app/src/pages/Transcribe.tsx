@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
@@ -15,6 +15,8 @@ import {
   Link,
   majorScale,
   Text,
+  TextInputField,
+  toaster,
 } from 'evergreen-ui';
 import * as path from 'path';
 import { TranscribeTour } from '../tour/TranscribeTour';
@@ -27,6 +29,7 @@ export function TranscribePage(): JSX.Element {
   );
   const [selectedModel, setSelectedModel] = useState(models[0]);
   const [diarize, setDiarize] = useState(true);
+  const [diarizationSpeakers, setDiarizationSpeakers] = useState('2');
   const [animationDone, setAnimationDone] = useState(false);
 
   return (
@@ -50,14 +53,20 @@ export function TranscribePage(): JSX.Element {
               tabIndex={0}
               marginLeft={8}
               appearance="primary"
-              onClick={() =>
-                dispatch(
-                  startTranscription({
-                    model: selectedModel,
-                    diarize,
-                  })
-                )
-              }
+              onClick={() => {
+                const parsedSpeakers = parseInt(diarizationSpeakers);
+                if ((diarize && isFinite(parsedSpeakers)) || !diarize) {
+                  dispatch(
+                    startTranscription({
+                      model: selectedModel,
+                      diarize: diarize,
+                      diarize_max_speakers: diarize ? parsedSpeakers - 1 : 0,
+                    })
+                  );
+                } else {
+                  toaster.warning('number of speakers is invalid');
+                }
+              }}
             >
               Transcribe
             </Button>
@@ -67,11 +76,6 @@ export function TranscribePage(): JSX.Element {
         <FormField label="Opened File" marginBottom={majorScale(3)}>
           <Text color="muted">{path.basename(file)}</Text>
         </FormField>
-        <Checkbox
-          label="Auto-detect speakers"
-          checked={diarize}
-          onChange={(e) => setDiarize(e.target.checked)}
-        />
         <FormField
           label="Transcription Model"
           hint={
@@ -89,6 +93,25 @@ export function TranscribePage(): JSX.Element {
             itemToString={(model) => `${model.lang} - ${model.name}`}
             onChange={(selected) => setSelectedModel(selected)}
           />
+        </FormField>
+        <FormField label={'Speaker Separation'}>
+          <Checkbox
+            label="Automatically separate speakers"
+            checked={diarize}
+            onChange={(e) => setDiarize(e.target.checked)}
+          />
+          {diarize ? (
+            <TextInputField
+              description={'number of speakers'}
+              value={diarizationSpeakers}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setDiarizationSpeakers(e.target.value)
+              }
+              isInvalid={!isFinite(parseInt(diarizationSpeakers))}
+            />
+          ) : (
+            <></>
+          )}
         </FormField>
       </Dialog>
     </AppContainer>

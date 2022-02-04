@@ -41,6 +41,7 @@ export function startTranscription(
   lang: string,
   model: string,
   diarize: boolean,
+  diarize_max_speakers: number,
   file: File,
   fileName: string
 ): Promise<TranscriptionTask> {
@@ -48,7 +49,7 @@ export function startTranscription(
     server,
     'POST',
     'tasks/start_transcription',
-    { lang, model, diarize },
+    { lang, model, diarize, diarize_max_speakers },
     { form: { file, fileName } }
   ).then((x) => x.json());
 }

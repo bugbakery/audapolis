@@ -76,6 +76,7 @@ def process_audio(
     fileName: str,
     task_uuid: str,
     diarize: bool,
+    diarize_max_speakers: int,
 ):
     # TODO: Set error state if model does not exist
     model = models.get(lang, model)
@@ -106,6 +107,7 @@ def process_audio(
     else:
         task.state = TranscriptionState.DIARIZING
         diarization_model = BinaryKeyDiarizationModel()
+        diarization_model.CLUSTERING_SELECTION_MAX_SPEAKERS = diarize_max_speakers
         segments = diarization_model.diarize(
             SAMPLE_RATE, np.array(audio.get_array_of_samples())
         )

@@ -4,7 +4,7 @@ import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename } from 'path';
 import { sleep } from '../util';
-import { V1Paragraph } from '../core/document';
+import { DocumentItem } from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getServer } from './server';
 import { createHash } from 'crypto';
@@ -116,17 +116,18 @@ export const startTranscription = createAsyncThunk<
         if (content === undefined) {
           throw Error('Transcription failed: State is done, but no content was produced');
         }
-        // TODO: proper typing
-        const contentWithSource = content.map((paragraph: any) => {
-          paragraph.content = paragraph.content.map((word: any) => {
-            word['source'] = hashValue;
-            return word;
-          });
-          return paragraph;
-        });
-        dispatch(
-          openDocumentFromMemory({ sources: sources, content: contentWithSource as V1Paragraph[] })
-        );
+
+        const flatContent: DocumentItem[] = [];
+        for (const para of content) {
+          flatContent.push(
+            { type: 'paragraph_break', speaker: para.speaker },
+            ...para.content.map((word: any) => {
+              word['source'] = hashValue;
+              return word;
+            })
+          );
+        }
+        dispatch(openDocumentFromMemory({ sources: sources, content: flatContent }));
         // Once the task is finished, try to delete it but ignore any errors
         await deleteTask(server, task);
         break;

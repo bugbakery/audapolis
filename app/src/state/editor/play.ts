@@ -1,23 +1,27 @@
 import { assertSome, EPSILON } from '../../util';
-import { DocumentGenerator, getItemsAtTime } from '../../core/document';
 import { createActionWithReducer } from '../util';
 import { EditorState } from './types';
+import { currentItem } from './selectors';
 
 export const setPlayerTime = createActionWithReducer<EditorState, number>(
   'editor/setTimePlayer',
   (state, newTime) => {
-    state.currentTimePlayer = newTime;
+    state.cursor.current = 'player';
+    state.cursor.playerTime = newTime;
   }
 );
 
-export const setUserSetTime = createActionWithReducer<EditorState, number>(
-  'editor/setTimeUserSet',
-  (state, newTime) => {
-    state.currentTimeUserSet = newTime;
-
-    // we also set the player time here (instead of in the player) because this way we cannot come into an
-    // inconsistent state when fast events are fired (e.g. key repeat of the backspace key)
-    state.currentTimePlayer = newTime;
+export const setUserIndex = createActionWithReducer<EditorState, number>(
+  'editor/setUserIndex',
+  (state, newIndex) => {
+    state.cursor.current = 'user';
+    if (newIndex < 0) {
+      newIndex = 0;
+    }
+    if (newIndex > state.document.content.length) {
+      newIndex = state.document.content.length;
+    }
+    state.cursor.userIndex = newIndex;
   }
 );
 
@@ -36,37 +40,36 @@ export const togglePlaying = createActionWithReducer<EditorState>(
 );
 
 export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (state) => {
-  const items = getItemsAtTime(
-    DocumentGenerator.fromParagraphs(state.document.content),
-    state.currentTimePlayer
-  );
-  const firstItem = items[0];
-  const secondItem = items[items.length - 1];
-  assertSome(firstItem);
-  assertSome(secondItem);
-
-  // if we are at the beginning of a paragraph, we should put the cursor at the end of the previous paragraph
-  if (items.length == 2 && secondItem.firstInParagraph) {
-    setUserSetTime.reducer(state, firstItem.absoluteStart + firstItem.length - 2 * EPSILON);
+  if (state.cursor.current == 'user') {
+    setUserIndex.reducer(state, state.cursor.userIndex - 1);
   } else {
-    setUserSetTime.reducer(state, firstItem.absoluteStart);
+    const item = currentItem(state);
+    assertSome(item);
+    console.log(item);
+    if (state.cursor.playerTime > item.absoluteStart + EPSILON) {
+      setUserIndex.reducer(state, item.absoluteIndex);
+    } else {
+      setUserIndex.reducer(state, item.absoluteIndex - 1);
+    }
   }
+
   state.selection = null;
 });
 
 export const goRight = createActionWithReducer<EditorState>('editor/goRight', (state) => {
-  const items = getItemsAtTime(
-    DocumentGenerator.fromParagraphs(state.document.content),
-    state.currentTimePlayer
-  );
-
-  const secondItem = items[items.length - 1];
-  assertSome(secondItem);
-
-  if (items.length == 2 && secondItem.lastInParagraph) {
-    setUserSetTime.reducer(state, secondItem.absoluteStart + secondItem.length - 2 * EPSILON);
+  if (state.cursor.current == 'user') {
+    setUserIndex.reducer(state, state.cursor.userIndex + 1);
   } else {
-    setUserSetTime.reducer(state, secondItem.absoluteStart + secondItem.length);
+    const item = currentItem(state);
+    assertSome(item);
+    const itemLength = 'length' in item ? item.length : 0;
+    console.log(item);
+    if (state.cursor.playerTime + EPSILON < item.absoluteStart + itemLength) {
+      setUserIndex.reducer(state, item.absoluteIndex + 1);
+    } else {
+      setUserIndex.reducer(state, item.absoluteIndex + 2);
+    }
   }
+
   state.selection = null;
 });

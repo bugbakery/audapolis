@@ -1,7 +1,17 @@
+/***
+ * This file contains code for managing the selection. If you know what you are doing and just want
+ * to modify the selection, `setSelection` might be the way to go.
+ *
+ * If your code is in some way user facing, the other functions might just be right for you. They
+ * perform certain actions on the selection (e.g. growing/shrinking it) while taking care to make
+ * the experience as intuitive as possible.
+ */
+
 import { assertSome, EPSILON } from '../../util';
-import { DocumentGenerator, getDocumentDuration, TimedV1ParagraphItem } from '../../core/document';
 import { createActionWithReducer } from '../util';
 import { EditorState, Selection } from './types';
+import { currentCursorTime, isParagraphItem, timedDocumentItems } from './selectors';
+import _ from 'lodash';
 
 export const setSelection = createActionWithReducer<EditorState, Selection | null>(
   'editor/setSelection',
@@ -10,134 +20,182 @@ export const setSelection = createActionWithReducer<EditorState, Selection | nul
   }
 );
 
-export const selectLeft = createActionWithReducer<EditorState>('editor/selectLeft', (state) => {
-  const selectionInfo = getSelectionInfo(state.selection);
-  const getItemLeft = (time: number) =>
-    DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time)[0];
-  if (!selectionInfo || !state.selection) {
-    const item = getItemLeft(state.currentTimePlayer);
-    assertSome(item);
-    state.selection = {
-      range: { start: item.absoluteStart, length: item.length },
-      startItem: item,
-    };
+function changeSelectionLeft(state: EditorState) {
+  assertSome(state.selection);
+  const timedItems = timedDocumentItems(state.document.content);
+  if (state.selection.headPosition == 'left') {
+    state.selection.startIndex -= 1;
+    state.selection.length += 1;
+    if (
+      state.selection.startIndex > 0 &&
+      isParagraphItem(timedItems[state.selection.startIndex]) &&
+      timedItems[state.selection.startIndex - 1].type == 'paragraph_break'
+    ) {
+      state.selection.startIndex -= 1;
+      state.selection.length += 1;
+    }
+    state.cursor.current = 'user';
+    state.cursor.userIndex = state.selection.startIndex;
   } else {
-    const { leftEnd, rightEnd, currentEndLeft } = selectionInfo;
-    if (currentEndLeft) {
-      const item = getItemLeft(leftEnd);
-      assertSome(item);
-      state.selection.range.length = rightEnd - item.absoluteStart;
-      state.selection.range.start = item.absoluteStart;
-    } else {
-      const item = getItemLeft(rightEnd);
-      assertSome(item);
-      state.selection.range.length = item.absoluteStart - leftEnd;
+    state.selection.length -= 1;
+    state.cursor.current = 'user';
+    state.cursor.userIndex = state.selection.startIndex + state.selection.length;
+    if (state.selection.length == 0) {
+      state.selection = null;
     }
   }
-});
+}
 
-export const selectRight = createActionWithReducer<EditorState>('editor/selectRight', (state) => {
-  const selectionInfo = getSelectionInfo(state.selection);
-  const getItemRight = (time: number) => {
-    const items = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(time);
-    return items[items.length - 1];
-  };
-  if (!selectionInfo || !state.selection) {
-    let item = getItemRight(state.currentTimePlayer);
-
-    // this is special handling for the case where we are at the end of a paragraph
-    // and position the cursor -EPSILON from the end of the item
-    if (item.absoluteStart + item.length - state.currentTimePlayer < 2 * EPSILON) {
-      item = getItemRight(item.absoluteStart + item.length);
-    }
-
-    state.selection = {
-      range: { start: item.absoluteStart, length: item.length },
-      startItem: item,
-    };
-  } else {
-    const { leftEnd, rightEnd, currentEndRight } = selectionInfo;
-    if (currentEndRight) {
-      const item = getItemRight(rightEnd);
-      const itemEnd = item.absoluteStart + item.length;
-      state.selection.range.length = itemEnd - leftEnd;
-    } else {
-      const item = getItemRight(leftEnd);
-      const itemEnd = item.absoluteStart + item.length;
-      state.selection.range.length = rightEnd - itemEnd;
-      state.selection.range.start = itemEnd;
-    }
-  }
-});
-
-export const selectAll = createActionWithReducer<EditorState>('editor/selectAll', (state) => {
-  assertSome(state);
-  const item = DocumentGenerator.fromParagraphs(state.document.content).getItemsAtTime(0)[0];
-  assertSome(item);
-  state.selection = {
-    range: { start: 0, length: getDocumentDuration(state.document.content) },
-    startItem: item,
-  };
-});
-
-export const selectionIncludeFully = createActionWithReducer<EditorState, TimedV1ParagraphItem>(
-  'editor/selectionIncludeFully',
-  (state, payload) => {
-    assertSome(state);
-    if (!state.selection) {
-      state.selection = {
-        range: { start: payload.absoluteStart, length: payload.length },
-        startItem: payload,
-      };
-    } else {
-      if (state.selection.range.start == state.selection.startItem.absoluteStart) {
-        if (payload.absoluteStart >= state.selection.range.start) {
-          state.selection.range.length =
-            payload.absoluteStart + payload.length - state.selection.range.start;
-        } else {
-          state.selection.range = {
-            start: payload.absoluteStart,
-            length:
-              state.selection.startItem.absoluteStart +
-              state.selection.startItem.length -
-              payload.absoluteStart,
-          };
-        }
+function leftIndex(state: EditorState): number {
+  const timedItems = timedDocumentItems(state.document.content);
+  switch (state.cursor.current) {
+    case 'user':
+      return state.cursor.userIndex - 1;
+    case 'player': {
+      const currentTime = currentCursorTime(state);
+      const currentIdx =
+        _.sortedLastIndexBy<{ absoluteStart: number }>(
+          timedItems,
+          { absoluteStart: currentTime },
+          (item) => item.absoluteStart
+        ) - 1;
+      const previousIdx =
+        _.sortedLastIndexBy<{ absoluteStart: number }>(
+          timedItems,
+          { absoluteStart: currentTime - EPSILON },
+          (item) => item.absoluteStart
+        ) - 1;
+      const previousItem = timedItems[previousIdx];
+      if (
+        isParagraphItem(previousItem) &&
+        previousItem.absoluteStart + previousItem.length >= state.cursor.playerTime
+      ) {
+        return previousIdx;
       } else {
-        if (
-          payload.absoluteStart + payload.length <=
-          state.selection.range.start + state.selection.range.length
-        ) {
-          state.selection.range.length =
-            state.selection.range.start + state.selection.range.length - payload.absoluteStart;
-          state.selection.range.start = payload.absoluteStart;
-        } else {
-          state.selection.range = {
-            start: state.selection.startItem.absoluteStart,
-            length:
-              payload.absoluteStart + payload.length - state.selection.startItem.absoluteStart,
-          };
-        }
+        return currentIdx;
       }
+    }
+  }
+}
+function createSelectionLeft(state: EditorState) {
+  const curIdx = leftIndex(state);
+  const timedContent = timedDocumentItems(state.document.content);
+  const curItem = timedContent[curIdx];
+  state.selection = { headPosition: 'left', length: 1, startIndex: curItem.absoluteIndex };
+  if (
+    state.selection.startIndex > 0 &&
+    isParagraphItem(timedContent[state.selection.startIndex]) &&
+    timedContent[state.selection.startIndex - 1].type == 'paragraph_break'
+  ) {
+    state.selection.startIndex -= 1;
+    state.selection.length += 1;
+  }
+  state.cursor.current = 'user';
+  state.cursor.userIndex = state.selection.startIndex;
+}
+
+export const moveHeadLeft = createActionWithReducer<EditorState>('editor/moveHeadLeft', (state) => {
+  if (state.selection) {
+    changeSelectionLeft(state);
+  } else {
+    createSelectionLeft(state);
+  }
+});
+
+function changeSelectionRight(state: EditorState) {
+  assertSome(state.selection);
+  const timedItems = timedDocumentItems(state.document.content);
+  if (state.selection.headPosition == 'left') {
+    state.selection.startIndex += 1;
+    state.selection.length -= 1;
+    state.cursor.current = 'user';
+    state.cursor.userIndex = state.selection.startIndex;
+    if (state.selection.length == 0) {
+      state.selection = null;
+    }
+  } else {
+    state.selection.length += 1;
+    const curItem = timedItems[state.selection.startIndex + state.selection.length - 1];
+    const nextItem = timedItems[state.selection.startIndex + state.selection.length];
+    if (curItem && curItem.type == 'paragraph_break' && nextItem && isParagraphItem(nextItem)) {
+      state.selection.length += 1;
+    }
+    state.cursor.current = 'user';
+    state.cursor.userIndex = state.selection.startIndex + state.selection.length;
+  }
+}
+
+function rightIndex(state: EditorState): number {
+  const timedItems = timedDocumentItems(state.document.content);
+  switch (state.cursor.current) {
+    case 'user':
+      return state.cursor.userIndex;
+    case 'player': {
+      const currentTime = currentCursorTime(state);
+      const currentIdx =
+        _.sortedLastIndexBy<{ absoluteStart: number }>(
+          timedItems,
+          { absoluteStart: currentTime },
+          (item) => item.absoluteStart
+        ) - 1;
+      const previousItem = timedItems[currentIdx - 1];
+      if (previousItem?.type == 'paragraph_break') {
+        return currentIdx - 1;
+      } else {
+        return currentIdx;
+      }
+    }
+  }
+}
+
+function createSelectionRight(state: EditorState) {
+  const curIdx = rightIndex(state);
+  const timedContent = timedDocumentItems(state.document.content);
+  const curItem = timedContent[curIdx];
+  const nextItem = timedContent[curIdx + 1];
+  state.selection = { headPosition: 'right', length: 1, startIndex: curItem.absoluteIndex };
+  if (curItem.type == 'paragraph_break' && isParagraphItem(nextItem)) {
+    state.selection.length += 1;
+  }
+  state.cursor.current = 'user';
+  state.cursor.userIndex = state.selection.startIndex + state.selection.length;
+}
+
+export const moveHeadRight = createActionWithReducer<EditorState>(
+  'editor/moveHeadRight',
+  (state) => {
+    if (state.selection) {
+      changeSelectionRight(state);
+    } else {
+      createSelectionRight(state);
     }
   }
 );
 
-function getSelectionInfo(
-  selection: Selection | null
-): { currentEndRight: boolean; currentEndLeft: boolean; leftEnd: number; rightEnd: number } | null {
-  if (selection) {
-    const startDifference = Math.abs(selection.startItem.absoluteStart - selection.range.start);
-    const selectionStartItemEnd = selection.startItem.absoluteStart + selection.startItem.length;
-    const selectionEnd = selection.range.start + selection.range.length;
-    const endDifference = Math.abs(selectionStartItemEnd - selectionEnd);
-    return {
-      leftEnd: selection.range.start,
-      rightEnd: selection.range.start + selection.range.length,
-      currentEndRight: startDifference < EPSILON,
-      currentEndLeft: endDifference < EPSILON,
+export const selectAll = createActionWithReducer<EditorState>('editor/selectAll', (state) => {
+  if (state.document.content.length > 0) {
+    state.selection = {
+      headPosition: 'left',
+      startIndex: 0,
+      length: state.document.content.length,
     };
   } else {
-    return null;
+    state.selection = null;
   }
-}
+});
+
+export const selectionIncludeFully = createActionWithReducer<EditorState, number>(
+  'editor/selectionIncludeFully',
+  (state, absoluteIndex) => {
+    if (state.selection == null) {
+      state.selection = { headPosition: 'right', startIndex: absoluteIndex, length: 1 };
+    } else if (absoluteIndex < state.selection.startIndex) {
+      state.selection.length += state.selection.startIndex - absoluteIndex;
+      state.selection.startIndex = absoluteIndex;
+      state.selection.headPosition = 'left';
+    } else if (absoluteIndex > state.selection.startIndex + state.selection.length - 1) {
+      state.selection.length = absoluteIndex - state.selection.startIndex + 1;
+      state.selection.headPosition = 'right';
+    }
+  }
+);

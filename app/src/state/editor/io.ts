@@ -1,8 +1,6 @@
 import {
   deserializeDocumentFromFile,
   Document,
-  DocumentGenerator,
-  DocumentGeneratorItem,
   serializeDocumentToFile,
   Source,
 } from '../../core/document';
@@ -13,6 +11,7 @@ import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState, NoFileSelectedError } from './types';
 import { setPlay } from './play';
 import { openFile, saveFile } from '../../../ipc/ipc_renderer';
+import { renderItems, selectedItems } from './selectors';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
@@ -138,14 +137,7 @@ export const exportSelection = createAsyncActionWithReducer<EditorState>(
       return;
     }
 
-    const filterFn = (item: DocumentGeneratorItem) =>
-      item.absoluteStart >= selection.range.start &&
-      item.absoluteStart + item.length <= selection.range.start + selection.range.length;
-    const render_items = DocumentGenerator.fromParagraphs(state.document.content)
-      .filter(filterFn)
-      .toRenderItems()
-      .collect();
-
+    const render_items = renderItems(selectedItems(state));
     const path = await saveFile({
       title: 'Export selection',
       properties: ['showOverwriteConfirmation', 'createDirectory'],

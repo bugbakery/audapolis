@@ -19,10 +19,12 @@ export function Paragraph({
   data,
   color,
   displaySpeakerNames,
+  paraBreakIdx,
 }: {
   data: ParagraphType & TimedItemExtension;
   color: string;
   displaySpeakerNames: boolean;
+  paraBreakIdx: number;
 }): JSX.Element {
   const dispatch = useDispatch();
 
@@ -37,6 +39,11 @@ export function Paragraph({
         flexShrink={0}
         marginRight={majorScale(1)}
       />
+      {data.absoluteIndex == 0 ? (
+        <ParagraphSign key={data.content.length} id={`item-0`} shown={false} />
+      ) : (
+        <></>
+      )}
       <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 0.5s'}>
         {data.content.map((item, i) => {
           const commonProps = {
@@ -64,18 +71,7 @@ export function Paragraph({
             }
           }
         })}
-        {
-          // TODO: This is a lie that only works because we do not show headings yet.
-          data.content.length > 0 ? (
-            <ParagraphSign
-              key={data.content.length}
-              id={`item-${data.content[data.content.length - 1].absoluteIndex + 1}`}
-              shown={true}
-            />
-          ) : (
-            <></>
-          )
-        }
+        <ParagraphSign key={data.content.length} id={`item-${paraBreakIdx}`} shown={true} />
       </Pane>
     </Pane>
   );

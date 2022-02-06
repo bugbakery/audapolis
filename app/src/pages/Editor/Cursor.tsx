@@ -74,7 +74,7 @@ function useComputeCursorPosition(): {
   );
 
   // TODO: Caching?
-  if (!itemIdx) return null;
+  if (itemIdx == null) return null;
   const itemElement = document.getElementById(`item-${itemIdx}`);
   if (!itemElement) return null;
   let left = itemElement.offsetLeft;

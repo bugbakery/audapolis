@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { player } from '../../core/player';
 import { Card, FilmIcon, Pane } from 'evergreen-ui';
 import { CrossedOutIcon } from '../../components/Util';
-import { currentItem } from '../../state/editor/selectors';
+import { currentIndex } from '../../state/editor/selectors';
 
 const PlayerContainer = styled.div<{ visible: boolean }>`
   position: absolute;
@@ -24,14 +24,27 @@ const VideoTag = styled.video<{ visible: boolean }>`
   z-index: 2;
 `;
 
+const FallbackVideoTag = styled.div<{ visible: boolean }>`
+  width: 300px;
+  height: calc(300px / 16 * 9);
+  display: ${({ visible }) => (visible ? 'block' : 'none')};
+  position: relative;
+  z-index: 2;
+`;
+
 export function Player(): JSX.Element {
   const sources = useSelector((state: RootState) => state.editor.present?.document.sources) || {};
   const currentSource = useSelector((state: RootState) => {
     if (!state.editor.present) {
       return null;
     }
-    const ci = currentItem(state.editor.present);
-    return ci && 'source' in ci ? ci.source : null;
+    let cIdx = currentIndex(state.editor.present);
+    let cItem = state.editor.present.document.content[cIdx];
+    if (cIdx > 0 && cItem.type == 'paragraph_break') {
+      cIdx -= 1;
+      cItem = state.editor.present.document.content[cIdx];
+    }
+    return cItem && 'source' in cItem ? cItem.source : null;
   });
   const displayVideo =
     useSelector((state: RootState) => state.editor.present?.displayVideo) || false;
@@ -66,6 +79,10 @@ export function Player(): JSX.Element {
             }}
           />
         ))}
+        <FallbackVideoTag
+          visible={currentSource === null}
+          key={Object.entries(sources).length + 1}
+        />
       </Pane>
     </PlayerContainer>
   );

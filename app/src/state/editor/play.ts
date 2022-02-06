@@ -41,7 +41,9 @@ export const togglePlaying = createActionWithReducer<EditorState>(
 
 export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (state) => {
   if (state.cursor.current == 'user') {
-    setUserIndex.reducer(state, state.cursor.userIndex - 1);
+    if (state.cursor.userIndex > 1) {
+      setUserIndex.reducer(state, state.cursor.userIndex - 1);
+    }
   } else {
     const item = currentItem(state);
     assertSome(item);

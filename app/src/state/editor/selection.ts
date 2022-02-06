@@ -104,7 +104,6 @@ export const moveHeadLeft = createActionWithReducer<EditorState>('editor/moveHea
 
 function changeSelectionRight(state: EditorState) {
   assertSome(state.selection);
-  const timedItems = timedDocumentItems(state.document.content);
   if (state.selection.headPosition == 'left') {
     state.selection.startIndex += 1;
     state.selection.length -= 1;
@@ -115,11 +114,6 @@ function changeSelectionRight(state: EditorState) {
     }
   } else {
     state.selection.length += 1;
-    const curItem = timedItems[state.selection.startIndex + state.selection.length - 1];
-    const nextItem = timedItems[state.selection.startIndex + state.selection.length];
-    if (curItem && curItem.type == 'paragraph_break' && nextItem && isParagraphItem(nextItem)) {
-      state.selection.length += 1;
-    }
     state.cursor.current = 'user';
     state.cursor.userIndex = state.selection.startIndex + state.selection.length;
   }
@@ -152,11 +146,11 @@ function createSelectionRight(state: EditorState) {
   const curIdx = rightIndex(state);
   const timedContent = timedDocumentItems(state.document.content);
   const curItem = timedContent[curIdx];
-  const nextItem = timedContent[curIdx + 1];
   state.selection = { headPosition: 'right', length: 1, startIndex: curItem.absoluteIndex };
-  if (curItem.type == 'paragraph_break' && isParagraphItem(nextItem)) {
+  if (curIdx == 0 && curItem.type == 'paragraph_break') {
     state.selection.length += 1;
   }
+
   state.cursor.current = 'user';
   state.cursor.userIndex = state.selection.startIndex + state.selection.length;
 }

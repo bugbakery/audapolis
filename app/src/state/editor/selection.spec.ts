@@ -165,25 +165,25 @@ test('moveHeadRight: selection (right head), extends to right', () => {
   expect(state.cursor.userIndex).toBe(3);
 });
 
-test('moveHeadRight: no selection, selects next after para break if met', () => {
+test('moveHeadRight: no selection, para break is selected as own item', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
   state.cursor.userIndex = 4;
   moveHeadRight.reducer(state);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 4, length: 2 });
+  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 4, length: 1 });
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(6);
+  expect(state.cursor.userIndex).toBe(5);
 });
 
-test('moveHeadRight: selection, selects para break if met', () => {
+test('moveHeadRight: selection over para break', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
   state.cursor.userIndex = 4;
   state.selection = { headPosition: 'right', startIndex: 3, length: 1 };
   moveHeadRight.reducer(state);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 3, length: 3 });
+  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 3, length: 2 });
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(6);
+  expect(state.cursor.userIndex).toBe(5);
 });
 
 test('moveHeadRight: left headed selection, shrinks selection', () => {
@@ -221,7 +221,7 @@ test.each([1, 1.1, 1.4, 1.5, 1.7])(
   }
 );
 
-test('moveHeadRight: no selection, player time 0, includes para break', () => {
+test('moveHeadRight: no selection, player time 0 includes para break', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;

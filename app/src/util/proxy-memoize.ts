@@ -1,3 +1,8 @@
+// This file was vendored from proxy-memoize https://github.com/dai-shi/proxy-memoize
+// It is licensed under the MIT License
+
+/* eslint-disable */
+
 import { createProxy, isChanged, getUntracked, trackMemo } from 'proxy-compare';
 import { isDraft, original } from 'immer';
 
@@ -64,9 +69,12 @@ const memoize = <Obj extends object, Result>(
   const proxyCache = new WeakMap();
   const memoizedFn = (obj: Obj) => {
     if (isDraft(obj)) {
-      obj = original(obj);
+      const orig = original(obj);
+      if (orig !== undefined) {
+        obj = orig;
+      }
     }
-    let origObj = getUntracked(obj);
+    const origObj = getUntracked(obj);
     const cacheKey = origObj || obj;
     const cache = resultCache.get(cacheKey);
     if (cache) {

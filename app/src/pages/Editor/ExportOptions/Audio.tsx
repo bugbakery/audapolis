@@ -1,7 +1,8 @@
 import React, { MutableRefObject } from 'react';
-import { DocumentGenerator, Document } from '../../../core/document';
+import { Document } from '../../../core/document';
 import { exportAudio, ProgressCallback } from '../../../core/ffmpeg';
 import { ExportType } from './index';
+import { documentRenderItems } from '../../../state/editor/selectors';
 
 export const exportDefinition: ExportType = {
   type: 'audio',
@@ -18,11 +19,9 @@ export function Audio({
   >;
 }): JSX.Element {
   exportCallbackRef.current = async (document, path, progressCallback) => {
-    const renderItems = DocumentGenerator.fromParagraphs(document.content)
-      .toRenderItems()
-      .collect();
+    const ris = documentRenderItems(document.content);
     const sources = document.sources;
-    await exportAudio(renderItems, sources, path, progressCallback);
+    await exportAudio(ris, sources, path, progressCallback);
   };
 
   return <></>;

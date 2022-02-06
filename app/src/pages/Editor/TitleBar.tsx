@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { TitleBar, TitleBarGroup, TitleBarSection } from '../../components/TitleBar';
 import { ActionCreators } from 'redux-undo';
-import { DocumentGenerator } from '../../core/document';
 import {
   ExportIcon,
   FilmIcon,
@@ -32,6 +31,7 @@ import { saveDocument } from '../../state/editor/io';
 import { setPlay } from '../../state/editor/play';
 import { useTheme } from '../../components/theme';
 import { Circle } from 'rc-progress';
+import { currentCursorTime, paragraphItems } from '../../state/editor/selectors';
 
 function ProgressButton({
   progress,
@@ -74,7 +74,7 @@ export function EditorTitleBar(): JSX.Element {
   const canExport = useSelector(
     (state: RootState) =>
       state.editor.present?.document.content != undefined &&
-      !DocumentGenerator.fromParagraphs(state.editor.present?.document.content).next().done
+      paragraphItems(state.editor.present?.document.content).length > 0
   );
 
   const exportState = useSelector(
@@ -154,7 +154,9 @@ const TitleBarButton = React.forwardRef(function titleBarButton(
 });
 
 function PlayerControls(props: PaneProps) {
-  const time = useSelector((state: RootState) => state.editor.present?.currentTimePlayer) || 0;
+  const time = useSelector((state: RootState) =>
+    state.editor.present ? currentCursorTime(state.editor.present) : 0
+  );
   const formatInt = (x: number) => {
     const str = Math.floor(x).toString();
     return (str.length == 1 ? '0' + str : str).substr(0, 2);

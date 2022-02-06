@@ -1,6 +1,6 @@
 import { Combobox, FormField, majorScale } from 'evergreen-ui';
 import React, { MutableRefObject, useState } from 'react';
-import { Document, DocumentGenerator } from '../../../core/document';
+import { Document } from '../../../core/document';
 import { RootState } from '../../../state';
 import { assertSome } from '../../../util';
 import { useSelector, useStore } from 'react-redux';
@@ -8,6 +8,7 @@ import { exportOtio } from '../../../core/otio';
 import path from 'path';
 import { ExportType } from './index';
 import { ProgressCallback } from '../../../core/ffmpeg';
+import { documentRenderItems } from '../../../state/editor/selectors';
 
 export const exportDefinition: ExportType = {
   type: 'OpenTimelineIO',
@@ -32,15 +33,13 @@ export function Otio({
     assertSome(state.editor.present);
     const server = state.server.servers[state.server.selectedServer];
 
-    const renderItems = DocumentGenerator.fromParagraphs(document.content)
-      .toRenderItems()
-      .collect();
+    const ris = documentRenderItems(document.content);
     const sources = document.sources;
     await exportOtio(
       documentBaseName,
       otioFormat.extension,
       otioFormat.adapter,
-      renderItems,
+      ris,
       sources,
       path,
       server

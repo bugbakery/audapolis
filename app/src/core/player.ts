@@ -4,7 +4,12 @@ import { EditorState } from '../state/editor/types';
 import { setPlay, setPlayerTime } from '../state/editor/play';
 import { RootState } from '../state';
 import { assertSome } from '../util';
-import { currentCursorTime, renderItems, selectedItems } from '../state/editor/selectors';
+import {
+  documentRenderItems,
+  renderItems,
+  selectedItems,
+  timedDocumentItems,
+} from '../state/editor/selectors';
 
 export class Player {
   sources: Record<string, HTMLVideoElement> = {};
@@ -28,33 +33,44 @@ export class Player {
       }
     );
     const renderItemsHandler = createSelector(
-      (state: EditorState) => state,
-      (state) => {
+      (state: EditorState) => selectedItems(state),
+      (state: EditorState) => state.document.content,
+      (selectedItems, content) => {
         this.pause();
-        if (selectedItems(state)) {
-          // TODO: we should use a non-memoized version for this
-          this.renderItems = renderItems(selectedItems(state));
+        if (selectedItems.length > 0) {
+          this.renderItems = renderItems(selectedItems);
+        } else {
+          this.renderItems = documentRenderItems(content);
         }
-        this.renderItems = renderItems(state.document.content);
         if (this.playing) this.play();
       }
     );
     const userSetTimeHandler = createSelector(
-      (state: EditorState) => state,
-      (state) => {
+      (state: EditorState) => state.cursor.current,
+      (state: EditorState) => state.cursor.userIndex,
+      (state: EditorState) => state.document.content,
+      (current, userIndex, content) => {
+        if (current != 'user') {
+          return;
+        }
         this.pause();
 
         // we don't notify redux here of the state change because we already set the player time for user set events in the
         // setUserSetTime action. This avoids having inconsistencies in the key repeat of the delete key.
-        this.currentTime = currentCursorTime(state);
+        const timedDocument = timedDocumentItems(content);
+        this.currentTime = timedDocument[userIndex].absoluteStart;
 
         const currentRenderItem = this.getCurrentRenderItem();
 
         // we need to update this even if we are not playing because the video might be shown
         if (currentRenderItem && 'source' in currentRenderItem && currentRenderItem.source) {
           const offset = this.currentTime - currentRenderItem.absoluteStart;
+          console.log(this.sources);
+          console.log(currentRenderItem.source);
           const element = this.sources[currentRenderItem.source];
-          element.currentTime = currentRenderItem.sourceStart + offset;
+          if (element) {
+            element.currentTime = currentRenderItem.sourceStart + offset;
+          }
         }
 
         if (this.playing) this.play();
@@ -91,6 +107,7 @@ export class Player {
 
   clampCurrentTimeToRenderItemsRange(): void {
     const lastRenderItem = this.renderItems[this.renderItems.length - 1];
+    console.log(this.renderItems);
     if (this.currentTime < this.renderItems[0].absoluteStart) {
       this.updateCurrentTime(this.renderItems[0].absoluteStart);
     } else if (this.currentTime > lastRenderItem.absoluteStart + lastRenderItem.length) {

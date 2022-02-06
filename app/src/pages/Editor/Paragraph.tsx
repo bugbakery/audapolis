@@ -64,6 +64,18 @@ export function Paragraph({
             }
           }
         })}
+        {
+          // TODO: This is a lie that only works because we do not show headings yet.
+          data.content.length > 0 ? (
+            <ParagraphSign
+              key={data.content.length}
+              id={`item-${data.content[data.content.length - 1].absoluteIndex + 1}`}
+              shown={true}
+            />
+          ) : (
+            <></>
+          )
+        }
       </Pane>
     </Pane>
   );
@@ -77,6 +89,16 @@ function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
   );
 }
 
+function ParagraphSign({
+  shown,
+  ...props
+}: HTMLAttributes<HTMLSpanElement> & { shown: boolean }): JSX.Element {
+  return (
+    <span className={'item'} style={{ color: 'gray' }} {...props}>
+      {shown ? ' ¶' : ''}
+    </span>
+  );
+}
 function ShortSilence({
   preserve,
   ...props

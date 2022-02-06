@@ -5,7 +5,8 @@ import { RootState } from '../../state';
 import { Pane } from 'evergreen-ui';
 import { useElementSize } from '../../components/useElementSize';
 import { useTheme } from '../../components/theme';
-import { currentCursorTime, currentItem } from '../../state/editor/selectors';
+import { currentCursorTime, currentIndex, timedDocumentItems } from '../../state/editor/selectors';
+import { EditorState } from '../../state/editor/types';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
@@ -47,24 +48,38 @@ export function Cursor(): JSX.Element {
   );
 }
 
+function getCursorPositionIndex(state: EditorState): number {
+  switch (state.cursor.current) {
+    case 'player':
+      return currentIndex(state);
+    case 'user':
+      return state.cursor.userIndex;
+  }
+}
+
 function useComputeCursorPosition(): {
   left: number;
   top: number;
 } | null {
-  const item = useSelector((state: RootState) =>
-    state.editor.present ? currentItem(state.editor.present) : null
+  const itemIdx = useSelector((state: RootState) =>
+    state.editor.present ? getCursorPositionIndex(state.editor.present) : null
   );
   const time = useSelector((state: RootState) =>
     state.editor.present ? currentCursorTime(state.editor.present) : 0
   );
+  const item = useSelector((state: RootState) =>
+    state.editor.present && itemIdx != null
+      ? timedDocumentItems(state.editor.present.document.content)[itemIdx]
+      : null
+  );
 
   // TODO: Caching?
-  if (!item) return null;
-  const itemElement = document.getElementById(`item-${item.absoluteIndex}`);
+  if (!itemIdx) return null;
+  const itemElement = document.getElementById(`item-${itemIdx}`);
   if (!itemElement) return null;
   let left = itemElement.offsetLeft;
   const top = itemElement.offsetTop;
-  if (item.absoluteStart <= time && 'length' in item) {
+  if (item && item.absoluteStart <= time && 'length' in item) {
     const timeInWord = time - item.absoluteStart;
     left += (timeInWord / item.length) * itemElement.offsetWidth;
   }

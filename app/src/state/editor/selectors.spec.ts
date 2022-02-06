@@ -438,7 +438,7 @@ test('current item skips through zero-length items', () => {
     { type: 'paragraph_break', speaker: 'Speaker One' },
   ]);
   state.cursor.current = 'player';
-  state.cursor.playerTime = 4;
+  state.cursor.playerTime = 0;
   expect(currentItem(state)).toStrictEqual({
     type: 'paragraph_break',
     speaker: 'Speaker One',

@@ -179,12 +179,17 @@ export function Document(): JSX.Element {
         switch (p.type) {
           case 'paragraph': {
             const speakerColor = getSpeakerColor(p.speaker);
+            // TODO: This is a lie that only works because we do not show headings yet.
+            //  Once headings are supported, this needs to be better
+            const paraBreak = contentMacros[i + 1];
+            const paraBreakIdx = paraBreak !== undefined ? paraBreak.absoluteIndex : content.length;
             return (
               <Paragraph
                 key={i}
                 data={p}
                 color={speakerColor}
                 displaySpeakerNames={displaySpeakerNames}
+                paraBreakIdx={paraBreakIdx}
               />
             );
           }

@@ -129,8 +129,10 @@ export function Document(): JSX.Element {
       dispatch(deleteSomething('right'));
     } else if (e.key == 'ArrowLeft' && e.shiftKey) {
       dispatch(moveHeadLeft());
+      e.preventDefault();
     } else if (e.key == 'ArrowRight' && e.shiftKey) {
       dispatch(moveHeadRight());
+      e.preventDefault();
     } else if (e.key == 'ArrowLeft') {
       dispatch(goLeft());
     } else if (e.key == 'ArrowRight') {
@@ -204,10 +206,12 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
       const end = document.getElementById(`item-${selection.startIndex + selection.length}`);
       if (start && end) {
         if (selection.headPosition == 'left') {
-          window.getSelection()?.setBaseAndExtent(start, 0, end, end.children.length);
+          window.getSelection()?.setBaseAndExtent(start, 0, end, 0);
         } else {
-          window.getSelection()?.setBaseAndExtent(end, end.children.length, start, 0);
+          window.getSelection()?.setBaseAndExtent(end, 0, start, 0);
         }
+      } else {
+        window.getSelection()?.removeAllRanges();
       }
     } else {
       window.getSelection()?.removeAllRanges();

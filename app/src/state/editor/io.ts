@@ -71,6 +71,13 @@ export const setSources = createActionWithReducer<EditorState, Record<string, So
     state.document.sources = sources;
   }
 );
+
+export const setDocumentPath = createActionWithReducer<EditorState, string>(
+  'editor/setDocumentPath',
+  (state, path) => {
+    state.path = path;
+  }
+);
 export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState, void, Document>(
   'editor/openDocumentFromDisk',
   async (_, { dispatch }) => {
@@ -89,9 +96,11 @@ export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState, vo
 
     dispatch(openEditor());
     try {
-      return await deserializeDocumentFromFile(path, (sources) => {
+      const doc = await deserializeDocumentFromFile(path, (sources) => {
         dispatch(setSources(sources));
       });
+      dispatch(setDocumentPath(path));
+      return doc;
     } catch (e) {
       dispatch(openLanding());
       throw e;

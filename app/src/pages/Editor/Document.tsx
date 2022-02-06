@@ -1,30 +1,25 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
-import {
-  computeTimed,
-  DocumentGenerator,
-  getItemsAtTime,
-  V1Paragraph as ParagraphType,
-  TimedV1ParagraphItem,
-} from '../../core/document';
+import { TimedDocumentItem } from '../../core/document';
 import * as React from 'react';
 import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef } from 'react';
 import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
 import { SelectionMenu } from './SelectionMenu';
-import { EPSILON } from '../../util';
 import { Heading, majorScale, Pane, useTheme } from 'evergreen-ui';
 import styled from 'styled-components';
 import {
   selectionIncludeFully,
-  selectLeft,
-  selectRight,
+  moveHeadLeft,
+  moveHeadRight,
   setSelection,
 } from '../../state/editor/selection';
-import { goLeft, goRight, setUserSetTime } from '../../state/editor/play';
+import { goLeft, goRight, setUserIndex } from '../../state/editor/play';
 import { deleteSomething } from '../../state/editor/edit';
 import { Theme } from '../../components/theme';
+import { macroItems, speakerIndices, timedDocumentItems } from '../../state/editor/selectors';
+import { Selection } from '../../state/editor/types';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -46,14 +41,15 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
 
 export function Document(): JSX.Element {
   const dispatch = useDispatch();
-  const contentRaw = useSelector((state: RootState) => state.editor.present?.document?.content);
+  const content = useSelector((state: RootState) =>
+    state.editor.present ? timedDocumentItems(state.editor.present.document.content) : []
+  );
+  const contentMacros = macroItems(content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
-  const content = computeTimed(contentRaw || ([] as ParagraphType[]));
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
-  const speakerIndices = Object.fromEntries(
-    Array.from(new Set(content.map((p) => p.speaker))).map((name, i) => [name, i])
-  );
+
+  const speakerColorIndices = speakerIndices(contentMacros);
   const ref = useRef<HTMLDivElement>(null);
   const theme: Theme = useTheme();
   const setCaret = useRef(false);
@@ -67,11 +63,11 @@ export function Document(): JSX.Element {
     dispatch(setSelection(null));
   };
 
-  const getParagraphItemIdx = (element: HTMLElement | null) =>
-    element?.dataset?.item?.split('-').map((x) => parseInt(x)) || [];
-  const getItem = (element: HTMLElement | null): TimedV1ParagraphItem | null => {
-    const [paragraphIdx, itemIdx] = getParagraphItemIdx(element);
-    return content[paragraphIdx]?.content[itemIdx];
+  const getAbsoluteItemIndex = (element: HTMLElement | null) =>
+    parseInt(element?.id?.replace('item-', '') || '');
+  const getItem = (element: HTMLElement | null): TimedDocumentItem | null => {
+    const itemIdx = getAbsoluteItemIndex(element);
+    return content[itemIdx];
   };
   const itemFromNode = (node: Node, n = 0) => {
     const child = getChild(node, n);
@@ -88,15 +84,7 @@ export function Document(): JSX.Element {
     if (!range) return;
     const item = itemFromNode(range.startContainer, range.startOffset);
     if (!item) return;
-    dispatch(selectionIncludeFully(item));
-  };
-
-  const isLastItemInParagraph = (element: Node, offset: number): boolean => {
-    const node = getChild(element, offset);
-    const parent = node?.parentElement;
-    const [paragraphIdx, itemIdx] = getParagraphItemIdx(parent);
-    if (paragraphIdx == content.length - 1) return false;
-    return itemIdx == content[paragraphIdx]?.content.length - 1 && offset != 1;
+    dispatch(selectionIncludeFully(item.absoluteIndex));
   };
 
   const setBrowserRangeToStateRange = (selectionRange: globalThis.Range) => {
@@ -105,32 +93,21 @@ export function Document(): JSX.Element {
       const node =
         selectionRange && getChild(selectionRange.startContainer, selectionRange.startOffset);
       const element = node?.parentElement;
-      const nodeLength = element?.textContent?.length;
       const item = getItem(element);
-      if (item && nodeLength !== undefined) {
-        // two epsilon is the theoretical minimum here but four epsilon seems to be more robust
-        const timeSubtract = isLastItemInParagraph(
-          selectionRange.startContainer,
-          selectionRange.startOffset
-        )
-          ? 4 * EPSILON
-          : 0;
-
-        const timeAdd = selectionRange.startOffset == nodeLength ? item.length : 0;
-        dispatch(setUserSetTime(item.absoluteStart + timeAdd - timeSubtract));
+      if (item) {
+        dispatch(setUserIndex(item.absoluteIndex));
       }
     } else {
       const startItem = itemFromNode(selectionRange.startContainer, selectionRange.startOffset);
       const endItem = itemFromNode(selectionRange.endContainer, selectionRange.endOffset);
       if (!startItem || !endItem) return;
-      const range = {
-        start: startItem.absoluteStart,
-        length:
-          endItem.absoluteStart +
-          (selectionRange.endOffset == 0 ? 0 : endItem.length) -
-          startItem.absoluteStart,
+      const range: Selection = {
+        startIndex: startItem.absoluteIndex,
+        length: endItem.absoluteIndex - startItem.absoluteIndex + 1,
+        // TODO: calculate this from selection anchor & focus node
+        headPosition: 'right',
       };
-      dispatch(setSelection({ range, startItem }));
+      dispatch(setSelection(range));
     }
   };
 
@@ -147,11 +124,13 @@ export function Document(): JSX.Element {
 
   const keyDownHandler: KeyboardEventHandler = (e) => {
     if (e.key === 'Backspace') {
-      dispatch(deleteSomething());
+      dispatch(deleteSomething('left'));
+    } else if (e.key === 'Delete') {
+      dispatch(deleteSomething('right'));
     } else if (e.key == 'ArrowLeft' && e.shiftKey) {
-      dispatch(selectLeft());
+      dispatch(moveHeadLeft());
     } else if (e.key == 'ArrowRight' && e.shiftKey) {
-      dispatch(selectRight());
+      dispatch(moveHeadRight());
     } else if (e.key == 'ArrowLeft') {
       dispatch(goLeft());
     } else if (e.key == 'ArrowRight') {
@@ -161,8 +140,11 @@ export function Document(): JSX.Element {
       e.preventDefault();
     }
   };
-  function getSpeakerColor(speaker: string) {
-    const color_idx = speakerIndices[speaker] % Object.keys(theme.colors.speakers).length;
+  function getSpeakerColor(speaker: string | null) {
+    // TODO: Handle speaker == null everywhere properly
+    const color_idx =
+      speakerColorIndices[speaker !== null ? speaker : 'null'] %
+      Object.keys(theme.colors.speakers).length;
     return theme.colors.speakers[color_idx];
   }
 
@@ -191,72 +173,46 @@ export function Document(): JSX.Element {
         <FileNameDisplay path={fileName} />
       </Pane>
 
-      {content.length > 0 ? (
-        content.map((p, i) => {
-          const speakerColor = getSpeakerColor(p.speaker);
-          return (
-            <Paragraph
-              key={i}
-              speaker={p.speaker}
-              content={p.content}
-              paragraphIdx={i}
-              color={speakerColor}
-              displaySpeakerNames={displaySpeakerNames}
-            />
-          );
-        })
-      ) : (
-        <Paragraph
-          key={0}
-          speaker=""
-          content={[{ type: 'artificial_silence', absoluteStart: 0, length: 0 }]}
-          paragraphIdx={0}
-          color={theme.colors.text.info}
-          displaySpeakerNames={displaySpeakerNames}
-        />
-      )}
+      {contentMacros.map((p, i) => {
+        switch (p.type) {
+          case 'paragraph': {
+            const speakerColor = getSpeakerColor(p.speaker);
+            return (
+              <Paragraph
+                key={i}
+                data={p}
+                color={speakerColor}
+                displaySpeakerNames={displaySpeakerNames}
+              />
+            );
+          }
+          case 'heading': {
+            console.error('TODO');
+            return <></>;
+          }
+        }
+      })}
     </DocumentContainer>
   );
 }
 
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
-  const ltr =
-    useSelector((state: RootState) => state.editor.present?.selection?.startItem.absoluteStart) ==
-    selection?.range.start;
-  const content = useSelector((state: RootState) => state.editor.present?.document.content) || [];
   useEffect(() => {
-    const nodeFromTime = (time: number, last: boolean): { node: Node; offset: number } | null => {
-      const items = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time);
-      const item = items[last ? items.length - 1 : 0] || {
-        globalIdx: 0,
-        absoluteStart: time,
-        length: 1,
-      };
-      const node = documentRef.current?.getElementsByClassName('item').item(item.globalIdx);
-      if (!node) return null;
-      const child = getChild(node);
-      const childLenght = child.childNodes.length || child.textContent?.length || 0;
-      return {
-        node: child,
-        offset: ((time - item.absoluteStart) / item.length) * childLenght,
-      };
-    };
-
     if (selection) {
-      const start = nodeFromTime(selection.range.start, true);
-      const end = nodeFromTime(selection.range.start + selection.range.length, true);
+      const start = document.getElementById(`item-${selection.startIndex}`);
+      const end = document.getElementById(`item-${selection.startIndex + selection.length}`);
       if (start && end) {
-        if (ltr) {
-          window.getSelection()?.setBaseAndExtent(start.node, start.offset, end.node, end.offset);
+        if (selection.headPosition == 'left') {
+          window.getSelection()?.setBaseAndExtent(start, 0, end, end.children.length);
         } else {
-          window.getSelection()?.setBaseAndExtent(end.node, end.offset, start.node, start.offset);
+          window.getSelection()?.setBaseAndExtent(end, end.children.length, start, 0);
         }
       }
     } else {
       window.getSelection()?.removeAllRanges();
     }
-  }, [selection?.range.start, selection?.range.length, ltr, documentRef.current]);
+  }, [selection?.startIndex, selection?.length, selection?.headPosition, documentRef.current]);
   return <></>;
 }
 

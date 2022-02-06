@@ -7,9 +7,11 @@ import {
   currentSpeaker,
   macroItems,
   paragraphItems,
-  renderItems,
+  documentRenderItems,
   selectedItems,
+  speakerIndices,
   timedDocumentItems,
+  renderItems,
 } from './selectors';
 import { produce } from 'immer';
 
@@ -216,6 +218,7 @@ test('selected items', () => {
     headPosition: 'right',
   };
   expect(selectedItems(state)).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 1 },
     {
       type: 'word',
       source: 'source-1',
@@ -244,6 +247,50 @@ test('selected items: empty selection', () => {
   state.document.content = _.cloneDeep(testContent);
 
   expect(selectedItems(state)).toStrictEqual([]);
+});
+
+test('selected render items', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.selection = {
+    startIndex: 3,
+    length: 2,
+    headPosition: 'right',
+  };
+  const selItems = selectedItems(state);
+  expect(selItems).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 1, absoluteIndex: 2 },
+    {
+      type: 'word',
+      source: 'source-1',
+      sourceStart: 3,
+      length: 1,
+      word: 'Two',
+      conf: 1,
+      absoluteStart: 1,
+      absoluteIndex: 3,
+    },
+    {
+      type: 'word',
+      source: 'source-1',
+      sourceStart: 4,
+      length: 1,
+      word: 'Three',
+      conf: 1,
+      absoluteStart: 2,
+      absoluteIndex: 4,
+    },
+  ]);
+  expect(renderItems(selItems)).toStrictEqual([
+    {
+      absoluteStart: 1,
+      length: 2,
+      source: 'source-1',
+      sourceStart: 3,
+      speaker: 'Speaker One',
+      type: 'media',
+    },
+  ]);
 });
 
 test('current user cursor time at zero-length item', () => {
@@ -593,7 +640,7 @@ test('paragraph from heading without prior para break', () => {
 });
 
 test('renderItems', () => {
-  expect(renderItems(testContent)).toStrictEqual([
+  expect(documentRenderItems(testContent)).toStrictEqual([
     {
       type: 'media',
       absoluteStart: 0,
@@ -616,7 +663,7 @@ test('renderItems', () => {
 
 test('render items: source silence', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'silence', source: 'source-1', sourceStart: 3, length: 1 },
@@ -635,7 +682,7 @@ test('render items: source silence', () => {
 
 test('render items: same source, not-matching time', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3.1, length: 1, word: 'Two', conf: 1 },
@@ -662,7 +709,7 @@ test('render items: same source, not-matching time', () => {
 
 test('render items: same source, not-matching time', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 2.9, length: 1, word: 'Two', conf: 1 },
@@ -689,7 +736,7 @@ test('render items: same source, not-matching time', () => {
 
 test('render items: same source, matching time', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
@@ -708,7 +755,7 @@ test('render items: same source, matching time', () => {
 
 test('render items: missing paragraph break', () => {
   expect(() =>
-    renderItems([
+    documentRenderItems([
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
     ])
@@ -717,7 +764,7 @@ test('render items: missing paragraph break', () => {
 
 test('render items: same source, matching time, matching speaker-name', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -737,7 +784,7 @@ test('render items: same source, matching time, matching speaker-name', () => {
 
 test('render items: same source, matching time, mismatching speaker-name', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -765,7 +812,7 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
 
 test('render items: two silences', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'artificial_silence', length: 1 },
       { type: 'artificial_silence', length: 1 },
@@ -781,7 +828,7 @@ test('render items: two silences', () => {
 
 test('render items: word after silence', () => {
   expect(
-    renderItems([
+    documentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'artificial_silence', length: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
@@ -899,5 +946,36 @@ test('current item at t=4', () => {
     length: 1,
     word: 'One',
     conf: 1,
+  });
+});
+
+test('speakerIndices', () => {
+  const content = _.cloneDeep(testContent);
+  const contentMacros = macroItems(content);
+  expect(speakerIndices(contentMacros)).toStrictEqual({
+    'Speaker One': 0,
+    null: 1,
+    'Speaker Two': 2,
+  });
+});
+
+test('speakerIndices: empty doc', () => {
+  const contentMacros = macroItems([]);
+  expect(speakerIndices(contentMacros)).toStrictEqual({});
+});
+
+test('speakerIndices: empty doc', () => {
+  const contentMacros = macroItems([
+    { type: 'paragraph_break', speaker: null },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'paragraph_break', speaker: null },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+  ]);
+  expect(speakerIndices(contentMacros)).toStrictEqual({
+    null: 0,
+    'Speaker One': 1,
+    'Speaker Two': 2,
   });
 });

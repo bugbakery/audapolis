@@ -78,7 +78,7 @@ export const setWord = createActionWithReducer<
 
 export const reassignParagraph = createActionWithReducer<
   EditorState,
-  { absoluteIndex: number; newSpeaker: string }
+  { absoluteIndex: number; newSpeaker: string | null }
 >('editor/reassignParagraph', (state, payload) => {
   const { absoluteIndex, newSpeaker } = payload;
   const item = state.document.content[absoluteIndex];
@@ -90,7 +90,7 @@ export const reassignParagraph = createActionWithReducer<
 
 export const renameSpeaker = createActionWithReducer<
   EditorState,
-  { oldName: string; newName: string }
+  { oldName: string | null; newName: string | null }
 >('editor/renameSpeaker', (state, payload) => {
   const { oldName, newName } = payload;
 
@@ -307,9 +307,6 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
         absoluteIndex: 0,
       });
     }
-
-    // console.log(timedDocumentSlice);
-    console.log(macroItems(timedDocumentSlice));
 
     const selectionText = macroItems(timedDocumentSlice)
       .map((paragraph) => {

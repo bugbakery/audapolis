@@ -1,16 +1,11 @@
 import * as React from 'react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
-import {
-  DocumentGenerator,
-  DocumentGeneratorItem,
-  getItemsAtTime,
-  V1Paragraph,
-} from '../../core/document';
 import { Pane } from 'evergreen-ui';
 import { useElementSize } from '../../components/useElementSize';
 import { useTheme } from '../../components/theme';
+import { currentCursorTime, currentItem } from '../../state/editor/selectors';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
@@ -20,7 +15,7 @@ export function Cursor(): JSX.Element {
   // we do this to re-render the cursor when the parent container size changes
   const _parentSize = useElementSize(ref?.parentElement);
 
-  const { left, top } = useComputeCursorPosition(ref?.parentElement) || {
+  const { left, top } = useComputeCursorPosition() || {
     left: -100,
     top: -100,
   };
@@ -52,57 +47,24 @@ export function Cursor(): JSX.Element {
   );
 }
 
-function useComputeCursorPosition(parentElement: HTMLElement | null | undefined): {
+function useComputeCursorPosition(): {
   left: number;
   top: number;
 } | null {
-  const content = useSelector((state: RootState) => state.editor.present?.document?.content);
-  const time = useSelector((state: RootState) => state.editor.present?.currentTimePlayer);
+  const item = useSelector((state: RootState) =>
+    state.editor.present ? currentItem(state.editor.present) : null
+  );
+  const time = useSelector((state: RootState) =>
+    state.editor.present ? currentCursorTime(state.editor.present) : 0
+  );
 
-  // we use caching here because we have to calculate the cursor position every frame
-  const last = useRef<null | {
-    content: V1Paragraph[];
-    parentElement: HTMLElement;
-    item: DocumentGeneratorItem;
-    itemElement: HTMLDivElement;
-  }>();
-  const lastItem = last.current?.item;
-
-  if (!content || time == undefined || !parentElement) return null;
-
-  if (
-    !(
-      last &&
-      lastItem &&
-      last.current?.content == content &&
-      last.current?.parentElement == parentElement &&
-      lastItem?.absoluteStart < time &&
-      lastItem?.absoluteStart + lastItem?.length > time &&
-      document.body.contains(last.current?.itemElement)
-    )
-  ) {
-    const items = getItemsAtTime(DocumentGenerator.fromParagraphs(content).enumerate(), time);
-    const item = items[items.length - 1];
-    if (!item) return null;
-    const itemElement = parentElement
-      .getElementsByClassName('item')
-      .item(item.globalIdx) as HTMLDivElement | null;
-    if (!itemElement) return null;
-
-    last.current = {
-      content,
-      parentElement,
-      item,
-      itemElement,
-    };
-  }
-
-  if (!last.current) return null;
-  const { itemElement, item } = last.current;
-
+  // TODO: Caching?
+  if (!item) return null;
+  const itemElement = document.getElementById(`item-${item.absoluteIndex}`);
+  if (!itemElement) return null;
   let left = itemElement.offsetLeft;
   const top = itemElement.offsetTop;
-  if (item.absoluteStart <= time) {
+  if (item.absoluteStart <= time && 'length' in item) {
     const timeInWord = time - item.absoluteStart;
     left += (timeInWord / item.length) * itemElement.offsetWidth;
   }

@@ -45,7 +45,6 @@ export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (sta
   } else {
     const item = currentItem(state);
     assertSome(item);
-    console.log(item);
     if (state.cursor.playerTime > item.absoluteStart + EPSILON) {
       setUserIndex.reducer(state, item.absoluteIndex);
     } else {
@@ -63,7 +62,6 @@ export const goRight = createActionWithReducer<EditorState>('editor/goRight', (s
     const item = currentItem(state);
     assertSome(item);
     const itemLength = 'length' in item ? item.length : 0;
-    console.log(item);
     if (state.cursor.playerTime + EPSILON < item.absoluteStart + itemLength) {
       setUserIndex.reducer(state, item.absoluteIndex + 1);
     } else {

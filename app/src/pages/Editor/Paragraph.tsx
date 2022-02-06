@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { V1Paragraph as ParagraphType, TimedV1ParagraphItem } from '../../core/document';
+import { Paragraph as ParagraphType, TimedItemExtension } from '../../core/document';
 import { assertSome } from '../../util';
 import {
   Button,
@@ -16,13 +16,11 @@ import {
 import { reassignParagraph, renameSpeaker, setWord } from '../../state/editor/edit';
 
 export function Paragraph({
-  speaker,
-  content,
-  paragraphIdx,
+  data,
   color,
   displaySpeakerNames,
-}: ParagraphType<TimedV1ParagraphItem> & {
-  paragraphIdx: number;
+}: {
+  data: ParagraphType & TimedItemExtension;
   color: string;
   displaySpeakerNames: boolean;
 }): JSX.Element {
@@ -31,8 +29,8 @@ export function Paragraph({
   return (
     <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
       <Speaker
-        name={speaker}
-        paragraphIdx={paragraphIdx}
+        name={data.speaker}
+        paragraphBreakAbsoluteIndex={data.absoluteIndex}
         color={color.toString()}
         width={displaySpeakerNames ? 150 : 0}
         transition={'width 0.2s'}
@@ -40,10 +38,10 @@ export function Paragraph({
         marginRight={majorScale(1)}
       />
       <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 0.5s'}>
-        {content.map((item, i) => {
+        {data.content.map((item, i) => {
           const commonProps = {
             key: i,
-            'data-item': `${paragraphIdx}-${i}`,
+            id: `item-${item.absoluteIndex}`,
           };
 
           if (item.type == 'word') {
@@ -51,7 +49,7 @@ export function Paragraph({
               <Word
                 word={item.word}
                 changehandler={(text: string) => {
-                  dispatch(setWord({ text, absoluteStart: item.absoluteStart }));
+                  dispatch(setWord({ text, absoluteIndex: item.absoluteIndex }));
                 }}
                 {...commonProps}
               />
@@ -60,7 +58,9 @@ export function Paragraph({
             if (item.length > 0.4) {
               return <LongSilence {...commonProps} />;
             } else {
-              return <ShortSilence preserve={i == 0 || i == content.length - 1} {...commonProps} />;
+              return (
+                <ShortSilence preserve={i == 0 || i == data.content.length - 1} {...commonProps} />
+              );
             }
           }
         })}
@@ -171,41 +171,45 @@ enum EditingType {
 }
 type SpeakerEditing = null | {
   type: EditingType;
-  currentText: string;
+  currentText: string | null;
   isNew: boolean;
 };
 
+const EditingStartButton = ({
+  type,
+  bottom,
+  setEditing,
+  name,
+  ...props
+}: {
+  setEditing: (next: SpeakerEditing) => void;
+  name: string | null;
+  type: EditingType;
+  children: string;
+  bottom?: boolean;
+}) => (
+  <Button
+    {...props}
+    onClick={() => setEditing({ isNew: true, type, currentText: name })}
+    display={'block'}
+    margin={majorScale(1)}
+    marginBottom={bottom ? majorScale(1) : 0}
+  />
+);
+
 function Speaker({
   name,
-  paragraphIdx,
+  paragraphBreakAbsoluteIndex,
   color,
   ...props
 }: PaneProps & {
-  name: string;
-  paragraphIdx: number;
+  name: string | null;
+  paragraphBreakAbsoluteIndex: number;
 }): JSX.Element {
   const [editing, setEditing] = useState(null as SpeakerEditing);
   const dispatch = useDispatch();
 
   if (!editing) {
-    const EditingStartButton = ({
-      type,
-      bottom,
-      ...props
-    }: {
-      type: EditingType;
-      children: string;
-      bottom?: boolean;
-    }) => (
-      <Button
-        {...props}
-        onClick={() => setEditing({ isNew: true, type, currentText: name })}
-        display={'block'}
-        margin={majorScale(1)}
-        marginBottom={bottom ? majorScale(1) : 0}
-      />
-    );
-
     return (
       <Pane
         {...props}
@@ -218,8 +222,15 @@ function Speaker({
           position={Position.RIGHT}
           content={
             <Pane display={'flex'} flexDirection={'column'}>
-              <EditingStartButton type={EditingType.Rename}>Rename Speaker</EditingStartButton>
-              <EditingStartButton type={EditingType.Reassign} bottom>
+              <EditingStartButton type={EditingType.Rename} setEditing={setEditing} name={name}>
+                Rename Speaker
+              </EditingStartButton>
+              <EditingStartButton
+                type={EditingType.Reassign}
+                setEditing={setEditing}
+                name={name}
+                bottom
+              >
                 Reassign Speaker
               </EditingStartButton>
             </Pane>
@@ -244,7 +255,8 @@ function Speaker({
       <Pane {...props}>
         <TextInput
           width={'100%'}
-          value={editing.currentText}
+          placeholder={'Enter speaker name'}
+          value={editing.currentText || ''}
           ref={(ref: HTMLInputElement) => {
             if (editing.isNew) {
               ref?.focus();
@@ -258,7 +270,7 @@ function Speaker({
               if (editing.type == EditingType.Reassign) {
                 dispatch(
                   reassignParagraph({
-                    paragraphIdx: paragraphIdx,
+                    absoluteIndex: paragraphBreakAbsoluteIndex,
                     newSpeaker: editing.currentText,
                   })
                 );

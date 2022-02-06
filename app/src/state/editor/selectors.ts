@@ -10,6 +10,7 @@ import { EditorState } from './types';
 import {
   DocumentItem,
   HeadingItem,
+  Paragraph as ParagraphType,
   ParagraphBreakItem,
   ParagraphItem,
   RenderItem,
@@ -19,7 +20,7 @@ import {
   TimedParagraphItem,
 } from '../../core/document';
 import _ from 'lodash';
-import memoize from 'proxy-memoize';
+import memoize from '../../util/proxy-memoize';
 import { assertUnreachable, roughEq } from '../../util';
 
 export const timedDocumentItems = memoize((content: DocumentItem[]): TimedDocumentItem[] => {
@@ -65,14 +66,32 @@ export const currentCursorTime = memoize((state: EditorState): number => {
   }
 });
 
+function isParagraphBreakAtStart(content: DocumentItem[]) {
+  for (const item of content) {
+    if (item.type == 'paragraph_break') {
+      return true;
+    } else if (isParagraphItem(item)) {
+      return false;
+    }
+  }
+}
 export const selectedItems = memoize((state: EditorState): TimedDocumentItem[] => {
   if (!state.selection) {
     return [];
   } else {
-    return timedDocumentItems(state.document.content).slice(
+    const selectedItems = timedDocumentItems(state.document.content).slice(
       state.selection.startIndex,
       state.selection.startIndex + state.selection.length
     );
+    if (!isParagraphBreakAtStart(selectedItems)) {
+      selectedItems.splice(0, 0, {
+        type: 'paragraph_break',
+        speaker: getSpeakerAtIndex(state.document.content, state.selection.startIndex),
+        absoluteIndex: selectedItems[0].absoluteIndex - 1,
+        absoluteStart: selectedItems[0].absoluteStart,
+      });
+    }
+    return selectedItems;
   }
 });
 
@@ -109,8 +128,12 @@ function isSubsequentSourceSegment(
   }
 }
 
-export const renderItems = memoize((content: DocumentItem[]): RenderItem[] => {
+export const documentRenderItems = memoize((content: DocumentItem[]): RenderItem[] => {
   const timedContent = timedDocumentItems(content);
+  return renderItems(timedContent);
+});
+
+export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
   const items = [];
   let current: RenderItem | null = null;
   let current_speaker: string | null = null;
@@ -136,6 +159,7 @@ export const renderItems = memoize((content: DocumentItem[]): RenderItem[] => {
         case 'word': {
           const { absoluteStart, length, sourceStart, source } = item;
           if (current_speaker === null) {
+            console.log(timedContent);
             throw new Error(
               'ParagraphItem encountered before first paragraph break. What is the speaker?'
             );
@@ -170,7 +194,7 @@ export const renderItems = memoize((content: DocumentItem[]): RenderItem[] => {
     items.push(current);
   }
   return items;
-});
+}
 
 export const isParagraphItem = (item: DocumentItem): item is ParagraphItem =>
   ['word', 'silence', 'artificial_silence'].indexOf(item.type) >= 0;
@@ -229,4 +253,13 @@ export const currentSpeaker = memoize((state: EditorState): string | null => {
   const curItem = currentItem(state);
   const timedItems = timedDocumentItems(state.document.content);
   return getSpeakerAtIndex(timedItems, curItem?.absoluteIndex || 0);
+});
+
+export const speakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
+  const uniqueSpeakerNames = new Set(
+    contentMacros
+      .filter((x): x is ParagraphType & TimedItemExtension => x.type == 'paragraph')
+      .map((p) => p.speaker)
+  );
+  return Object.fromEntries(Array.from(uniqueSpeakerNames).map((name, i) => [name, i]));
 });

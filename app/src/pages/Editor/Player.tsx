@@ -3,9 +3,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import styled from 'styled-components';
 import { player } from '../../core/player';
-import { DocumentGenerator } from '../../core/document';
 import { Card, FilmIcon, Pane } from 'evergreen-ui';
 import { CrossedOutIcon } from '../../components/Util';
+import { currentItem } from '../../state/editor/selectors';
 
 const PlayerContainer = styled.div<{ visible: boolean }>`
   position: absolute;
@@ -27,12 +27,11 @@ const VideoTag = styled.video<{ visible: boolean }>`
 export function Player(): JSX.Element {
   const sources = useSelector((state: RootState) => state.editor.present?.document.sources) || {};
   const currentSource = useSelector((state: RootState) => {
-    const currentItem =
-      state.editor.present &&
-      DocumentGenerator.fromParagraphs(state.editor.present.document.content).getItemsAtTime(
-        state.editor.present.currentTimePlayer
-      )[0];
-    return currentItem && 'source' in currentItem ? currentItem.source : null;
+    if (!state.editor.present) {
+      return null;
+    }
+    const ci = currentItem(state.editor.present);
+    return ci && 'source' in ci ? ci.source : null;
   });
   const displayVideo =
     useSelector((state: RootState) => state.editor.present?.displayVideo) || false;

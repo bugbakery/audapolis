@@ -193,9 +193,13 @@ export const selectionIncludeFully = createActionWithReducer<EditorState, number
       state.selection.length += state.selection.startIndex - absoluteIndex;
       state.selection.startIndex = absoluteIndex;
       state.selection.headPosition = 'left';
+      state.cursor.current = 'user';
+      state.cursor.userIndex = state.selection.startIndex;
     } else if (absoluteIndex > state.selection.startIndex + state.selection.length - 1) {
       state.selection.length = absoluteIndex - state.selection.startIndex + 1;
       state.selection.headPosition = 'right';
+      state.cursor.current = 'user';
+      state.cursor.userIndex = state.selection.startIndex + state.selection.length;
     }
   }
 );

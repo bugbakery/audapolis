@@ -6,6 +6,7 @@ import { RootState } from '../state';
 import { assertSome } from '../util';
 import {
   documentRenderItems,
+  isParagraphItem,
   renderItems,
   selectedItems,
   timedDocumentItems,
@@ -23,9 +24,14 @@ export class Player {
   setStore(store: Store): void {
     const playingHandler = createSelector(
       (state: EditorState) => state.playing,
-      (playing) => {
+      (state: EditorState) => state.selection,
+      (state: EditorState) => state.document.content,
+      (playing, selection, content) => {
         this.playing = playing;
         if (playing) {
+          if (selection) {
+            this.currentTime = timedDocumentItems(content)[selection.startIndex].absoluteStart;
+          }
           this.play();
         } else {
           this.pause();
@@ -58,15 +64,18 @@ export class Player {
         // we don't notify redux here of the state change because we already set the player time for user set events in the
         // setUserSetTime action. This avoids having inconsistencies in the key repeat of the delete key.
         const timedDocument = timedDocumentItems(content);
-        this.currentTime = timedDocument[userIndex].absoluteStart;
-
+        if (userIndex >= timedDocument.length) {
+          const lastItem = timedDocument[timedDocument.length - 1];
+          const itemLength = isParagraphItem(lastItem) ? lastItem.length : 0;
+          this.currentTime = lastItem.absoluteStart + itemLength;
+        } else {
+          this.currentTime = timedDocument[userIndex].absoluteStart;
+        }
         const currentRenderItem = this.getCurrentRenderItem();
 
         // we need to update this even if we are not playing because the video might be shown
         if (currentRenderItem && 'source' in currentRenderItem && currentRenderItem.source) {
           const offset = this.currentTime - currentRenderItem.absoluteStart;
-          console.log(this.sources);
-          console.log(currentRenderItem.source);
           const element = this.sources[currentRenderItem.source];
           if (element) {
             element.currentTime = currentRenderItem.sourceStart + offset;

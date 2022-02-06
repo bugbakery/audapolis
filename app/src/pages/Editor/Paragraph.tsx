@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Paragraph as ParagraphType, TimedItemExtension } from '../../core/document';
 import { assertSome } from '../../util';
 import {
@@ -14,6 +14,7 @@ import {
   TextInput,
 } from 'evergreen-ui';
 import { reassignParagraph, renameSpeaker, setWord } from '../../state/editor/edit';
+import { RootState } from '../../state';
 
 export function Paragraph({
   data,
@@ -27,7 +28,13 @@ export function Paragraph({
   paraBreakIdx: number;
 }): JSX.Element {
   const dispatch = useDispatch();
-
+  const selection = useSelector((state: RootState) => state.editor.present?.selection);
+  const showParSign =
+    data.content.length == 0 ||
+    (selection !== null &&
+      selection !== undefined &&
+      selection.startIndex <= paraBreakIdx &&
+      selection.startIndex + selection.length > paraBreakIdx);
   return (
     <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
       <Speaker
@@ -71,7 +78,7 @@ export function Paragraph({
             }
           }
         })}
-        <ParagraphSign key={data.content.length} id={`item-${paraBreakIdx}`} shown={true} />
+        <ParagraphSign key={data.content.length} id={`item-${paraBreakIdx}`} shown={showParSign} />
       </Pane>
     </Pane>
   );

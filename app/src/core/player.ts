@@ -116,7 +116,6 @@ export class Player {
 
   clampCurrentTimeToRenderItemsRange(): void {
     const lastRenderItem = this.renderItems[this.renderItems.length - 1];
-    console.log(this.renderItems);
     if (this.currentTime < this.renderItems[0].absoluteStart) {
       this.updateCurrentTime(this.renderItems[0].absoluteStart);
     } else if (this.currentTime > lastRenderItem.absoluteStart + lastRenderItem.length) {
@@ -134,10 +133,26 @@ export class Player {
       const element = this.sources[currentRenderItem.source];
       const offset = this.currentTime - currentRenderItem.absoluteStart;
       element.currentTime = currentRenderItem.sourceStart + offset;
+      const startTime = Date.now() / 1000;
       this.playRenderItem(
         currentRenderItem,
-        () => element.currentTime - currentRenderItem.sourceStart + currentRenderItem.absoluteStart,
-        () => element.pause(),
+        () => {
+          // Previously we only used the element based time - sadly, this does not work, because
+          // element.currentTime is buggy as hell. Now we just hope that the time in the media
+          // element playback speed is not much slower than the system time.
+          // Since we only saw reports of it running faster than system time, we use this double-
+          // approach to prevent that from causing problems
+          // TODO: Reconsider this code once https://github.com/w3c/media-and-entertainment/issues/4
+          //  is available
+          const elementBasedPosition =
+            element.currentTime - currentRenderItem.sourceStart + currentRenderItem.absoluteStart;
+          const clockBasedPosition =
+            Date.now() / 1000 - startTime + currentRenderItem.absoluteStart;
+          return Math.max(elementBasedPosition, clockBasedPosition);
+        },
+        () => {
+          element.pause();
+        },
         () => this.play()
       );
       element.play();

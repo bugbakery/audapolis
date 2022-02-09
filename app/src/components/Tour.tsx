@@ -29,7 +29,7 @@ export function resetTour(): void {
     .filter((x) => x.startsWith('intro/'))
     .forEach((x) => {
       localStorage.removeItem(x);
-      console.log(x);
+      console.log('Removed', x);
     });
   Object.values(listeners).forEach((listener) => listener());
 }

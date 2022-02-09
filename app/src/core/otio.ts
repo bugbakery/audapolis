@@ -28,7 +28,6 @@ export async function exportOtio(
       console.debug(x);
       throw Error('not implemented');
     }
-    console.log(x.speaker);
     const hasVideo = !!player.getResolution(x.source);
     const duration = player.getDuration(x.source);
     assertSome(duration);
@@ -43,11 +42,9 @@ export async function exportOtio(
     };
   });
 
-  console.log(timeline);
   const otioOutput = await convertOtio(server, name, adapter, timeline);
 
   for (const name of Object.keys(sources)) {
-    console.log(Object.keys(sources), name, sources[name]);
     const source_path = path.join(outputPath, 'media', name);
     fs.writeFileSync(source_path, new Buffer(sources[name].fileContents));
   }

@@ -29,7 +29,6 @@ export const saveDocument = createAsyncActionWithReducer<
       await serializeDocumentToFile(document, state_path);
       return { document };
     } else {
-      console.log('opening save dialog');
       const path = await saveFile({
         title: 'Save file as...',
         properties: ['showOverwriteConfirmation', 'createDirectory'],
@@ -39,7 +38,6 @@ export const saveDocument = createAsyncActionWithReducer<
         ],
       }).then((x) => x.filePath);
       if (!path) return;
-      console.log('saving to ', path);
       await serializeDocumentToFile(document, path);
       return { document, path };
     }
@@ -157,7 +155,6 @@ export const exportSelection = createAsyncActionWithReducer<EditorState>(
       ],
     }).then((x) => x.filePath);
     if (!path) return;
-    console.log('exporting to', path);
     await ffmpeg_exporter.exportAudio(render_items, state.document.sources, path);
   }
 );

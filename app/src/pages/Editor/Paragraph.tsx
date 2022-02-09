@@ -131,7 +131,6 @@ export function Word({
   const ref = useRef<HTMLSpanElement>(null);
 
   const startEditing = () => {
-    console.log('ref current', ref.current);
     setEditing(true);
     const range = document.createRange();
     assertSome(ref.current);

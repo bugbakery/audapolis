@@ -256,7 +256,7 @@ test('reassign paragraph', () => {
   ]);
 });
 
-test('reassign paragraph: idx is not a word', () => {
+test('reassign paragraph: idx is not a para break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
     { type: 'heading', level: 1, text: 'Heading One' },
@@ -570,7 +570,7 @@ test('delete something: left at idx=0', () => {
   expect(state.cursor.userIndex).toBe(0);
 });
 
-test('delete something: right at idx=0', () => {
+test('delete something: right doesnt delete first para_break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -581,7 +581,7 @@ test('delete something: right at idx=0', () => {
   ];
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: null },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -589,6 +589,79 @@ test('delete something: right at idx=0', () => {
   ]);
   expect(state.cursor.current).toBe('user');
   expect(state.cursor.userIndex).toBe(0);
+});
+
+test('delete something: left doesnt delete first para', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 1;
+  deleteSomething.reducer(state, 'left');
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(1);
+});
+
+test('delete something: right doesnt delete first para_break', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'heading', level: 1, text: 'Pre Heading' },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 1;
+  deleteSomething.reducer(state, 'right');
+  expect(state.document.content).toStrictEqual([
+    { type: 'heading', level: 1, text: 'Pre Heading' },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(1);
+});
+
+test('delete something: left doesnt delete first para', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'heading', level: 1, text: 'Pre Heading' },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  deleteSomething.reducer(state, 'left');
+  expect(state.document.content).toStrictEqual([
+    { type: 'heading', level: 1, text: 'Pre Heading' },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ]);
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(2);
 });
 
 test('delete something: word; left; player cursor at end of word', () => {
@@ -721,13 +794,13 @@ test('delete something: left at t=0', () => {
   state.cursor.playerTime = 0;
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: null },
+    { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.current).toBe('player');
   expect(state.cursor.userIndex).toBe(0);
 });
 
@@ -1344,7 +1417,7 @@ test('paste: existing data', async () => {
   });
 });
 
-test('paste: first after para break generates new para break after', async () => {
+test('paste: pasting directly after a para break generates a new para break after the pasted content', async () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },

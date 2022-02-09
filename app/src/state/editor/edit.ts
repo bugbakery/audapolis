@@ -105,14 +105,14 @@ export const renameSpeaker = createActionWithReducer<
 
 function deleteParagraphBreak(state: EditorState, currentIndex: number) {
   const item = state.document.content[currentIndex];
+  const firstParaIndex = state.document.content.findIndex((x) => x.type == 'paragraph_break');
   if (item.type !== 'paragraph_break') {
     throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
   }
-  if (currentIndex == 0) {
-    item.speaker = null;
-  } else {
-    state.document.content.splice(currentIndex, 1);
+  if (currentIndex == firstParaIndex) {
+    return;
   }
+  state.document.content.splice(currentIndex, 1);
   state.cursor.current = 'user';
   state.cursor.userIndex = currentIndex;
 }

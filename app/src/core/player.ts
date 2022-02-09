@@ -123,7 +123,7 @@ export class Player {
     }
   }
 
-  play(): void {
+  async play(): Promise<void> {
     this.clampCurrentTimeToRenderItemsRange();
 
     const currentRenderItem = this.getCurrentRenderItem();
@@ -134,13 +134,14 @@ export class Player {
       const offset = this.currentTime - currentRenderItem.absoluteStart;
       element.currentTime = currentRenderItem.sourceStart + offset;
       const startTime = Date.now() / 1000;
+      await element.play();
       this.playRenderItem(
         currentRenderItem,
         () => {
           // Previously we only used the element based time - sadly, this does not work, because
           // element.currentTime is buggy as hell. Now we just hope that the time in the media
           // element playback speed is not much slower than the system time.
-          // Since we only saw reports of it running faster than system time, we use this double-
+          // Since the playback sometimes runs faster than system time, we use this double
           // approach to prevent that from causing problems
           // TODO: Reconsider this code once https://github.com/w3c/media-and-entertainment/issues/4
           //  is available
@@ -155,7 +156,6 @@ export class Player {
         },
         () => this.play()
       );
-      element.play();
     } else {
       // we produce synthetic silence
       const startTime = Date.now();

@@ -32,7 +32,7 @@ test('no state change => no reeval', () => {
   expect(counter.current).toBe(1);
 });
 
-// DO NOT TO THIS
+// DO NOT DO THIS
 // We need to use immerjs for state changes so proxy-memoize picks up on them
 // This test is to document proxy-memoize's behaviour, so we notice if they change it
 test('immerless state change => no reeval', () => {

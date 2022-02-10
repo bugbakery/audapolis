@@ -19,7 +19,7 @@ export const store = configureStore({
   }),
 });
 
-(window as any).store = store;
+window.store = store;
 player.setStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;

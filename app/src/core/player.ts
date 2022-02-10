@@ -61,8 +61,6 @@ export class Player {
         }
         this.pause();
 
-        // we don't notify redux here of the state change because we already set the player time for user set events in the
-        // setUserSetTime action. This avoids having inconsistencies in the key repeat of the delete key.
         const timedDocument = timedDocumentItems(content);
         if (userIndex >= timedDocument.length) {
           const lastItem = timedDocument[timedDocument.length - 1];

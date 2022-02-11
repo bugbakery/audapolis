@@ -1,11 +1,3 @@
-// - [x] currentItem
-// - document as render items
-// - [x] playback relevant items (media, transition)
-// - as paragraphs
-// - [x] items in selection
-// - [x] document with timed items
-// - [x] current cursor time
-
 import { EditorState } from './types';
 import {
   DocumentItem,
@@ -57,6 +49,21 @@ export const currentIndex = memoize((state: EditorState): number => {
   }
 });
 
+export const currentIndexLeft = (state: EditorState): number => {
+  const timedItems = timedDocumentItems(state.document.content);
+  switch (state.cursor.current) {
+    case 'user':
+      return state.cursor.userIndex - 1;
+    case 'player': {
+      const idx = currentIndex(state);
+      if (timedItems[idx].absoluteStart >= state.cursor.playerTime) {
+        return idx - 1;
+      }
+      return idx;
+    }
+  }
+};
+
 export const currentCursorTime = memoize((state: EditorState): number => {
   switch (state.cursor.current) {
     case 'player':
@@ -66,7 +73,7 @@ export const currentCursorTime = memoize((state: EditorState): number => {
   }
 });
 
-function isParagraphBreakAtStart(content: DocumentItem[]) {
+function isParagraphBreakAtStart(content: DocumentItem[]): boolean {
   for (const item of content) {
     if (item.type == 'paragraph_break') {
       return true;
@@ -74,6 +81,7 @@ function isParagraphBreakAtStart(content: DocumentItem[]) {
       return false;
     }
   }
+  return true;
 }
 export const selectedItems = memoize((state: EditorState): TimedDocumentItem[] => {
   if (!state.selection) {
@@ -243,7 +251,7 @@ export const macroItems = memoize((content: DocumentItem[]): TimedMacroItem[] =>
 });
 
 export function getSpeakerAtIndex(items: DocumentItem[], index: number): string | null {
-  for (let idx = index - 1; idx >= 0; idx--) {
+  for (let idx = Math.min(index, items.length) - 1; idx >= 0; idx--) {
     const idxItem = items[idx];
     if (idxItem.type == 'paragraph_break') {
       return idxItem.speaker;
@@ -265,4 +273,11 @@ export const speakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
       .map((p) => p.speaker)
   );
   return Object.fromEntries(Array.from(uniqueSpeakerNames).map((name, i) => [name, i]));
+});
+
+export const firstPossibleCursorPosition = memoize((content: DocumentItem[]): number => {
+  if (content.length >= 1 && content[0].type == 'paragraph_break') {
+    return 1;
+  }
+  return 0;
 });

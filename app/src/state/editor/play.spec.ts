@@ -53,7 +53,8 @@ test('goLeft start of paragraph', () => {
 });
 
 test('goLeft at start of document', () => {
-  testLeftUser(0, 0);
+  testLeftUser(0, 1);
+  testLeftUser(1, 1);
 });
 
 const testRightPlayer = (before: number, after: number) => {

@@ -19,9 +19,9 @@ export function Audio({
   >;
 }): JSX.Element {
   exportCallbackRef.current = async (document, path, progressCallback) => {
-    const ris = documentRenderItems(document.content);
+    const renderItems = documentRenderItems(document.content);
     const sources = document.sources;
-    await exportAudio(ris, sources, path, progressCallback);
+    await exportAudio(renderItems, sources, path, progressCallback);
   };
 
   return <></>;

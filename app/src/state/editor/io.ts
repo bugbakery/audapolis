@@ -11,7 +11,7 @@ import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState, NoFileSelectedError } from './types';
 import { setPlay } from './play';
 import { openFile, saveFile } from '../../../ipc/ipc_renderer';
-import { renderItems, selectedItems } from './selectors';
+import { firstPossibleCursorPosition, renderItems, selectedItems } from './selectors';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
@@ -70,13 +70,11 @@ export const setSources = createActionWithReducer<EditorState, Record<string, So
   }
 );
 
-export const setDocumentPath = createActionWithReducer<EditorState, string>(
-  'editor/setDocumentPath',
-  (state, path) => {
-    state.path = path;
-  }
-);
-export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState, void, Document>(
+export const openDocumentFromDisk = createAsyncActionWithReducer<
+  EditorState,
+  void,
+  { document: Document; path: string }
+>(
   'editor/openDocumentFromDisk',
   async (_, { dispatch }) => {
     const file = await openFile({
@@ -97,16 +95,18 @@ export const openDocumentFromDisk = createAsyncActionWithReducer<EditorState, vo
       const doc = await deserializeDocumentFromFile(path, (sources) => {
         dispatch(setSources(sources));
       });
-      dispatch(setDocumentPath(path));
-      return doc;
+      return { path, document: doc };
     } catch (e) {
       dispatch(openLanding());
       throw e;
     }
   },
   {
-    fulfilled: (state, document) => {
+    fulfilled: (state, { path, document }) => {
       state.document = document;
+      state.path = path;
+      state.cursor.current = 'user';
+      state.cursor.userIndex = firstPossibleCursorPosition(state.document.content);
     },
     rejected: (state, error) => {
       if (error.name == 'NoFileSelectedError') return;
@@ -125,10 +125,6 @@ export const openDocumentFromMemory = createAsyncActionWithReducer<EditorState, 
   {
     fulfilled: (state, document) => {
       state.document = document;
-    },
-    rejected: (state, error) => {
-      console.error('an error occurred while trying to load the document from memory', error);
-      alert(`an error occurred while trying to open the file:\n${error.message}`);
     },
   }
 );

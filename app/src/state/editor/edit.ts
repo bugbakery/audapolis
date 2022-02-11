@@ -4,6 +4,7 @@ import {
   Document,
   DocumentItem,
   serializeDocument,
+  Source,
   TimedDocumentItem,
   Word,
 } from '../../core/document';
@@ -105,11 +106,10 @@ export const renameSpeaker = createActionWithReducer<
 
 function deleteParagraphBreak(state: EditorState, currentIndex: number) {
   const item = state.document.content[currentIndex];
-  const firstParaIndex = state.document.content.findIndex((x) => x.type == 'paragraph_break');
   if (item.type !== 'paragraph_break') {
     throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
   }
-  if (currentIndex == firstParaIndex) {
+  if (currentIndex == firstParagraphBreakIndex(state.document.content)) {
     return;
   }
   state.document.content.splice(currentIndex, 1);
@@ -239,46 +239,27 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
         return;
       }
       const mergedSources = { ...state.document.sources, ...payload.sources };
-      let paraSeen = false;
-      for (const item of payload.content) {
-        if ('source' in item && !(item.source in mergedSources)) {
-          throw new Error(`Paste failed, missing source: ${item.source}`);
-        }
-        if (isParagraphItem(item) && !paraSeen) {
-          throw new Error(
-            'Parse failed, missing paragraph break. paragraph items without prior paragraph_break'
-          );
-        }
-        if (item.type == 'paragraph_break') {
-          paraSeen = true;
-        }
-      }
-
-      if (state.selection) {
-        state.cursor.current = 'user';
-        state.cursor.userIndex = state.selection.startIndex;
-        deleteSelection.reducer(state);
-      }
+      checkPastedContent(payload, mergedSources);
+      deleteSelection.reducer(state);
 
       const insertPos = getInsertPos(state);
-      const previousItem = state.document.content[Math.max(insertPos - 1, 0)];
-      const nextItem = state.document.content[insertPos];
-      if (
-        previousItem &&
-        previousItem.type == 'paragraph_break' &&
-        previousItem.speaker == null &&
-        (!nextItem || !isParagraphItem(nextItem))
-      ) {
-        state.document.content.splice(insertPos, 1);
-      } else if (nextItem && nextItem.type != 'paragraph_break') {
+
+      if (atEmptyUnnamedParagraph(state, insertPos)) {
+        state.document.content.splice(insertPos - 1, 1);
+      }
+
+      if (pastedEndsWithDifferentSpeakerThanNextItem(state, payload, insertPos)) {
         payload.content.push({
           type: 'paragraph_break',
           speaker: getSpeakerAtIndex(state.document.content, insertPos),
         });
       }
 
-      state.document.content.splice(insertPos, 0, ...payload.content);
+      if (pastedSpeakerMatchesSpeakerAtInsertPos(state, payload, insertPos)) {
+        payload.content.splice(0, 1);
+      }
 
+      state.document.content.splice(insertPos, 0, ...payload.content);
       state.document.sources = mergedSources;
     },
     rejected: (state, payload) => {
@@ -286,6 +267,75 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
     },
   }
 );
+
+function getLastSpeaker(content: DocumentItem[]): string | null {
+  for (const item of content.slice().reverse()) {
+    if (item.type == 'paragraph_break') {
+      return item.speaker;
+    }
+  }
+  return null;
+}
+
+function checkPastedContent(pasted: Document, mergedSources: Record<string, Source>) {
+  let paraSeen = false;
+  for (const item of pasted.content) {
+    if ('source' in item && !(item.source in mergedSources)) {
+      throw new Error(`Paste failed, missing source: ${item.source}`);
+    }
+    if (isParagraphItem(item) && !paraSeen) {
+      throw new Error(
+        'Parse failed, missing paragraph break. paragraph items without prior paragraph_break'
+      );
+    }
+    if (item.type == 'paragraph_break') {
+      paraSeen = true;
+    }
+  }
+}
+
+function atEmptyUnnamedParagraph(state: EditorState, insertPos: number) {
+  const previousIdx = Math.max(insertPos - 1, 0);
+  const previousItem = state.document.content[previousIdx];
+  const nextItem = state.document.content[insertPos];
+
+  return (
+    previousItem.type == 'paragraph_break' &&
+    previousItem.speaker == null &&
+    (!nextItem || !isParagraphItem(nextItem))
+  );
+}
+
+function pastedSpeakerMatchesSpeakerAtInsertPos(
+  state: EditorState,
+  payload: Document,
+  insertPos: number
+): boolean {
+  return (
+    payload.content.length > 0 &&
+    payload.content[0].type == 'paragraph_break' &&
+    payload.content[0].speaker == getSpeakerAtIndex(state.document.content, insertPos)
+  );
+}
+
+function pastedEndsWithDifferentSpeakerThanNextItem(
+  state: EditorState,
+  payload: Document,
+  insertPos: number
+): boolean {
+  const nextItem = state.document.content[insertPos];
+  return (
+    nextItem &&
+    nextItem.type != 'paragraph_break' &&
+    getSpeakerAtIndex(state.document.content, insertPos + 1) != getLastSpeaker(payload.content) &&
+    insertPos >= firstParagraphBreakIndex(state.document.content) // if we paste before the first para break, there is no speaker
+  );
+}
+
+function firstParagraphBreakIndex(content: DocumentItem[]): number {
+  const firstIndex = content.findIndex((x) => x.type == 'paragraph_break');
+  return firstIndex != -1 ? firstIndex : content.length;
+}
 
 export const copySelectionText = createAsyncActionWithReducer<EditorState>(
   'editor/copySelectionText',

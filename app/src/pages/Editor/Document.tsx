@@ -10,9 +10,9 @@ import { SelectionMenu } from './SelectionMenu';
 import { Heading, majorScale, Pane, useTheme } from 'evergreen-ui';
 import styled from 'styled-components';
 import {
-  selectionIncludeFully,
-  moveHeadLeft,
-  moveHeadRight,
+  moveSelectionHeadTo,
+  moveSelectionHeadLeft,
+  moveSelectionHeadRight,
   setSelection,
 } from '../../state/editor/selection';
 import { goLeft, goRight, setUserIndex } from '../../state/editor/play';
@@ -52,14 +52,22 @@ export function Document(): JSX.Element {
   const speakerColorIndices = speakerIndices(contentMacros);
   const ref = useRef<HTMLDivElement>(null);
   const theme: Theme = useTheme();
-  const setCaret = useRef(false);
+  const hasMoveFired = useRef(false);
 
   useEffect(() => {
     ref.current && ref.current.focus();
   }, [ref.current]);
 
-  const mouseDownHandler: MouseEventHandler = () => {
-    setCaret.current = true;
+  const mouseDownHandler: MouseEventHandler = (e) => {
+    hasMoveFired.current = false;
+    if (e.detail == 1 && !e.shiftKey) {
+      const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+      if (!range) return;
+      if (!hasMoveFired.current) setBrowserRangeToStateRange(range);
+    } else {
+      const range = window.getSelection()?.getRangeAt(0);
+      if (range) setBrowserRangeToStateRange(range);
+    }
     dispatch(setSelection(null));
   };
 
@@ -76,7 +84,7 @@ export function Document(): JSX.Element {
   };
 
   const mouseMoveHandler: MouseEventHandler = (e) => {
-    setCaret.current = false;
+    hasMoveFired.current = true;
     if (e.buttons == 0) return;
     e.preventDefault();
 
@@ -84,7 +92,7 @@ export function Document(): JSX.Element {
     if (!range) return;
     const item = itemFromNode(range.startContainer, range.startOffset);
     if (!item) return;
-    dispatch(selectionIncludeFully(item.absoluteIndex));
+    dispatch(moveSelectionHeadTo(item.absoluteIndex));
   };
 
   const setBrowserRangeToStateRange = (selectionRange: globalThis.Range) => {
@@ -111,27 +119,16 @@ export function Document(): JSX.Element {
     }
   };
 
-  const clickHandler: MouseEventHandler = (e) => {
-    if (e.detail == 1) {
-      const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-      if (!range) return;
-      if (setCaret.current) setBrowserRangeToStateRange(range);
-    } else {
-      const range = window.getSelection()?.getRangeAt(0);
-      if (range) setBrowserRangeToStateRange(range);
-    }
-  };
-
   const keyDownHandler: KeyboardEventHandler = (e) => {
     if (e.key === 'Backspace') {
       dispatch(deleteSomething('left'));
     } else if (e.key === 'Delete') {
       dispatch(deleteSomething('right'));
     } else if (e.key == 'ArrowLeft' && e.shiftKey) {
-      dispatch(moveHeadLeft());
+      dispatch(moveSelectionHeadLeft());
       e.preventDefault();
     } else if (e.key == 'ArrowRight' && e.shiftKey) {
-      dispatch(moveHeadRight());
+      dispatch(moveSelectionHeadRight());
       e.preventDefault();
     } else if (e.key == 'ArrowLeft') {
       dispatch(goLeft());
@@ -157,7 +154,6 @@ export function Document(): JSX.Element {
       displaySpeakerNames={displaySpeakerNames}
       onMouseDown={mouseDownHandler}
       onMouseMove={mouseMoveHandler}
-      onClick={clickHandler}
       tabIndex={-1}
       onKeyDown={keyDownHandler}
     >

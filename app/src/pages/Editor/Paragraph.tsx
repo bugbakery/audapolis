@@ -15,6 +15,7 @@ import {
 } from 'evergreen-ui';
 import { reassignParagraph, renameSpeaker, setWord } from '../../state/editor/edit';
 import { RootState } from '../../state';
+import { useTheme } from '../../components/theme';
 
 export function Paragraph({
   data,
@@ -96,8 +97,9 @@ function ParagraphSign({
   shown,
   ...props
 }: HTMLAttributes<HTMLSpanElement> & { shown: boolean }): JSX.Element {
+  const theme = useTheme();
   return (
-    <span className={'item'} style={{ color: 'gray' }} {...props}>
+    <span className={'item'} style={{ color: theme.colors.muted }} {...props}>
       {shown ? ' ¶' : ''}
     </span>
   );

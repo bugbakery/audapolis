@@ -12,6 +12,8 @@ import {
   speakerIndices,
   timedDocumentItems,
   renderItems,
+  firstPossibleCursorPosition,
+  currentIndexLeft,
 } from './selectors';
 import { produce } from 'immer';
 
@@ -242,10 +244,49 @@ test('selected items', () => {
   ]);
 });
 
+test('selected items: doesnt add para break if already selected', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.selection = {
+    startIndex: 1,
+    length: 3,
+    headPosition: 'right',
+  };
+  expect(selectedItems(state)).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 1 },
+    {
+      type: 'word',
+      source: 'source-1',
+      sourceStart: 2,
+      length: 1,
+      word: 'One',
+      conf: 1,
+      absoluteStart: 0,
+      absoluteIndex: 2,
+    },
+    {
+      type: 'word',
+      source: 'source-1',
+      sourceStart: 3,
+      length: 1,
+      word: 'Two',
+      conf: 1,
+      absoluteStart: 1,
+      absoluteIndex: 3,
+    },
+  ]);
+});
+
 test('selected items: empty selection', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
 
+  expect(selectedItems(state)).toStrictEqual([]);
+});
+
+test('selected items: empty content', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.selection = { headPosition: 'right', startIndex: 1, length: 1 };
   expect(selectedItems(state)).toStrictEqual([]);
 });
 
@@ -380,7 +421,7 @@ test('current item -> current Time -> current item roundtrips', () => {
   });
 });
 
-test('current items returns current item', () => {
+test('current item at t=1.5', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'player';
@@ -414,7 +455,7 @@ test('current item at t = 0', () => {
   });
 });
 
-test('current item skips through zero-length items', () => {
+test('current item with player time returns item with length', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'player';
@@ -964,7 +1005,7 @@ test('speakerIndices: empty doc', () => {
   expect(speakerIndices(contentMacros)).toStrictEqual({});
 });
 
-test('speakerIndices: empty doc', () => {
+test('speakerIndices: doc with only para breaks', () => {
   const contentMacros = macroItems([
     { type: 'paragraph_break', speaker: null },
     { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -978,4 +1019,61 @@ test('speakerIndices: empty doc', () => {
     'Speaker One': 1,
     'Speaker Two': 2,
   });
+});
+
+test('firstPossibleCursorPosition', () => {
+  expect(
+    firstPossibleCursorPosition([
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+    ])
+  ).toBe(1);
+
+  expect(
+    firstPossibleCursorPosition([
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'paragraph_break', speaker: 'Speaker Two' },
+      { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+    ])
+  ).toBe(1);
+
+  expect(
+    firstPossibleCursorPosition([
+      { type: 'heading', text: 'Heading One', level: 1 },
+      { type: 'paragraph_break', speaker: 'Speaker Two' },
+      { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
+    ])
+  ).toBe(0);
+});
+
+test('current index left with user cursor', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  expect(currentIndexLeft(state)).toStrictEqual(1);
+});
+
+test('current index left with user cursor', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 0;
+  expect(currentIndexLeft(state)).toStrictEqual(-1);
+});
+
+test('current index left with player cursor', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'player';
+  state.cursor.playerTime = 1;
+  expect(currentIndexLeft(state)).toStrictEqual(2);
+});
+
+test.each([1.1, 1.25, 1.5, 1.75, 2])('current index left with player cursor at t=%ds', (time) => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'player';
+  state.cursor.playerTime = time;
+  expect(currentIndexLeft(state)).toStrictEqual(3);
 });

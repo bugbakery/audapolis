@@ -1,7 +1,7 @@
 import { assertSome, EPSILON } from '../../util';
 import { createActionWithReducer } from '../util';
 import { EditorState } from './types';
-import { currentItem } from './selectors';
+import { currentItem, firstPossibleCursorPosition } from './selectors';
 
 export const setPlayerTime = createActionWithReducer<EditorState, number>(
   'editor/setTimePlayer',
@@ -41,9 +41,11 @@ export const togglePlaying = createActionWithReducer<EditorState>(
 
 export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (state) => {
   if (state.cursor.current == 'user') {
-    if (state.cursor.userIndex > 1) {
-      setUserIndex.reducer(state, state.cursor.userIndex - 1);
-    }
+    const newPosition = Math.max(
+      state.cursor.userIndex - 1,
+      firstPossibleCursorPosition(state.document.content)
+    );
+    setUserIndex.reducer(state, newPosition);
   } else {
     const item = currentItem(state);
     assertSome(item);

@@ -1259,6 +1259,82 @@ test('paste more complex', async () => {
   });
 });
 
+test('paste: unnamed empty paragraph', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [{ type: 'paragraph_break', speaker: null }];
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 1;
+  const pastedDocument: Document = {
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker Two' },
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    sources: {
+      'source-1': {
+        objectUrl: 'blob://source-1',
+        fileContents: new ArrayBuffer(0),
+      },
+    },
+  };
+  const reducer = paste.reducers?.fulfilled;
+
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+
+  reducer(state, pastedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  ]);
+  expect(state.document.sources).toStrictEqual({
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  });
+});
+
+test('paste: unnamed empty paragraph at idx=0', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [{ type: 'paragraph_break', speaker: null }];
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 0;
+  const pastedDocument: Document = {
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker Two' },
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    sources: {
+      'source-1': {
+        objectUrl: 'blob://source-1',
+        fileContents: new ArrayBuffer(0),
+      },
+    },
+  };
+  const reducer = paste.reducers?.fulfilled;
+
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+
+  reducer(state, pastedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  ]);
+  expect(state.document.sources).toStrictEqual({
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  });
+});
+
 test('paste: named empty paragraph', async () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [{ type: 'paragraph_break', speaker: 'Speaker One' }];
@@ -1383,6 +1459,215 @@ test('paste: pasting directly after a para break generates a new para break afte
       fileContents: new ArrayBuffer(0),
     },
   });
+});
+
+test('paste: replaces selection', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ];
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  state.selection = { headPosition: 'left', startIndex: 2, length: 2 };
+  const pastedDocument: Document = {
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker Two' },
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ],
+    sources: {
+      'source-1': {
+        objectUrl: 'blob://source-1',
+        fileContents: new ArrayBuffer(0),
+      },
+    },
+  };
+  const reducer = paste.reducers?.fulfilled;
+
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+
+  reducer(state, pastedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  ]);
+  expect(state.document.sources).toStrictEqual({
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  });
+});
+
+test('copy&paste roundtrips', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ];
+  state.document.sources = {
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  };
+  state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
+  await runAsyncThunkSync(copy(), state);
+
+  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
+  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
+  const copiedDocument: Document = mockedSerializeDocument.mock.calls[0][0];
+
+  const reducer = paste.reducers?.fulfilled;
+
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+
+  reducer(state, copiedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ]);
+  expect(state.selection).toStrictEqual(null);
+});
+
+test('copy&paste roundtrips at start of para', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ];
+  state.document.sources = {
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  };
+  state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
+  await runAsyncThunkSync(copy(), state);
+
+  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
+  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
+  const copiedDocument: Document = mockedSerializeDocument.mock.calls[0][0];
+
+  const reducer = paste.reducers?.fulfilled;
+
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+  reducer(state, copiedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ]);
+  expect(state.selection).toStrictEqual(null);
+});
+
+test('paste: merges paras if same speaker name', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ];
+  state.document.sources = {
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  };
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+
+  const copiedDocument: Document = {
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    ],
+    sources: {},
+  };
+
+  const reducer = paste.reducers?.fulfilled;
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+
+  reducer(state, copiedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ]);
+  expect(state.selection).toStrictEqual(null);
+});
+
+test('paste: merges paras if same speaker name', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ];
+  state.document.sources = {
+    'source-1': {
+      objectUrl: 'blob://source-1',
+      fileContents: new ArrayBuffer(0),
+    },
+  };
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 1;
+
+  const copiedDocument: Document = {
+    content: [
+      { type: 'paragraph_break', speaker: 'Speaker One' },
+      { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    ],
+    sources: {},
+  };
+
+  const reducer = paste.reducers?.fulfilled;
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+
+  reducer(state, copiedDocument);
+
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  ]);
+  expect(state.selection).toStrictEqual(null);
 });
 
 test('copySelectionText', async () => {

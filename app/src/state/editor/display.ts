@@ -8,6 +8,13 @@ export const toggleDisplaySpeakerNames = createActionWithReducer<EditorState>(
   }
 );
 
+export const setDisplaySpeakerNames = createActionWithReducer<EditorState, boolean>(
+  'editor/setDisplaySpeakerNames',
+  (state, payload) => {
+    state.displaySpeakerNames = payload;
+  }
+);
+
 export const toggleDisplayVideo = createActionWithReducer<EditorState>(
   'editor/toggleDisplayVideo',
   (state) => {

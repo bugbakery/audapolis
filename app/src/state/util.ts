@@ -91,3 +91,10 @@ export function createAsyncActionWithReducer<StateSlice, ThunkArg = void, Return
 
   return Object.assign(thunk, { reducers, handleAction, payloadCreator });
 }
+
+export function exposeReducersWindow(...reducers: Record<string, any>[]): void {
+  if (!window.reducers) window.reducers = {};
+  for (const reducerRecord of reducers) {
+    Object.assign(window.reducers, reducerRecord);
+  }
+}

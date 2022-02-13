@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import { app, dialog } from 'electron';
 import { publishServerInfo, publishServerStderr } from '../ipc/ipc_main';
 import { ServerInfo } from './types';
+import { isRunningInTest } from '../src/util';
 
 function findServer() {
   const possibilities = [
@@ -24,7 +25,8 @@ function findServer() {
 }
 
 function getServerProcess() {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || isRunningInTest()) {
+    console.log(process.cwd() + '/../server');
     return spawn('poetry', ['run', 'python', 'run.py'], {
       stdio: 'pipe',
       cwd: process.cwd() + '/../server',

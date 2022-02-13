@@ -33,22 +33,20 @@ export const createWindow = (): void => {
     }
   });
 
-  if (process.env.NODE_ENV === 'development' || isRunningInTest()) {
-    (async () => {
-      await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
-        .then((name: string) => console.log(`Added Extension:  ${name}`))
-        .catch((err: string) => console.log('An error occurred: ', err))
-        .finally(() => {
-          window.webContents.openDevTools();
-        });
-      await window.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
-    })();
+  if (process.env.NODE_ENV === 'development') {
+    installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
+      .then((name: string) => console.log(`Added Extension:  ${name}`))
+      .catch((err: string) => console.log('An error occurred: ', err))
+      .finally(() => {
+        window.webContents.openDevTools();
+        window.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
+      });
+  } else if (isRunningInTest()) {
+    window.loadURL(import.meta.env.VITE_DEV_SERVER_URL);
   } else {
-    (async () => {
-      await window.loadURL(
-        new URL('../build/renderer_process/index.html', 'file://' + __dirname).toString()
-      );
-    })();
+    window.loadURL(
+      new URL('../build/renderer_process/index.html', 'file://' + __dirname).toString()
+    );
   }
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

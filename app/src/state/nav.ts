@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { fetchModelState } from './models';
-import { RootState, store } from './index';
+import { RootState } from './index';
 import { subscribeOpenAbout } from '../../ipc/ipc_renderer';
 import { isRunningInTest } from '../util';
 
@@ -64,6 +64,6 @@ export default navSlice.reducer;
 
 if (!isRunningInTest()) {
   subscribeOpenAbout(() => {
-    store.dispatch(openAbout());
+    window.store.dispatch(openAbout());
   });
 }

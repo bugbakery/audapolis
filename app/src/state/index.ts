@@ -1,10 +1,11 @@
-import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
+import { player } from '../core/player';
+
 import nav from './nav';
 import transcribe from './transcribe';
 import editor from './editor';
 import models from './models';
 import server from './server';
-import { player } from '../core/player';
 
 export const store = configureStore({
   reducer: {
@@ -14,9 +15,10 @@ export const store = configureStore({
     models,
     server,
   },
-  middleware: getDefaultMiddleware({
-    serializableCheck: false,
-  }),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
 
 window.store = store;

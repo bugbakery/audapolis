@@ -167,10 +167,6 @@ export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
         case 'word': {
           const { absoluteStart, length, sourceStart, source } = item;
           if (current_speaker === null) {
-            console.error(
-              'ParagraphItem encountered before first paragraph break. What is the speaker?',
-              timedContent
-            );
             throw new Error(
               'ParagraphItem encountered before first paragraph break. What is the speaker?'
             );

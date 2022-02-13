@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { RootState, store } from './index';
+import { RootState } from './index';
 import { fetchModelState } from './models';
 import {
   requestLocalServerInfo,
@@ -75,7 +75,7 @@ if (!isRunningInTest()) {
   subscribeLocalServerInfo((info) => {
     assertSome(info.port);
 
-    store.dispatch(
+    window.store.dispatch(
       setLocalServer({
         hostname: 'http://localhost',
         port: info.port,

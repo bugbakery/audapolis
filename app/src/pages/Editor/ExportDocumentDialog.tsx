@@ -56,9 +56,11 @@ export function ExportDocumentDialog(): JSX.Element {
       const state: RootState = store.getState();
       dispatch(setExportState({ running: true, progress: 0 }));
       assertSome(state.editor.present);
-      await exportFnRef.current(state.editor.present.document, formState.path, (p) => {
-        dispatch(setExportState({ running: true, progress: p }));
-      });
+      await exportFnRef
+        .current(state.editor.present.document, formState.path, (p) => {
+          dispatch(setExportState({ running: true, progress: p }));
+        })
+        .finally(() => dispatch(setExportState({ running: false, progress: 1 })));
     };
 
     toast

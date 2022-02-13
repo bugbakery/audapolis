@@ -2,13 +2,13 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { openLanding, openModelManager, openTranscribe, openTranscribing } from './nav';
 import { RootState } from './index';
 import { readFileSync } from 'fs';
-import { basename } from 'path';
+import { basename, extname } from 'path';
 import { sleep } from '../util';
 import { DocumentItem } from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getServer } from './server';
 import { createHash } from 'crypto';
-import { convertToWav } from '../core/ffmpeg';
+import { copyToMp4, convertToWav } from '../core/ffmpeg';
 import {
   deleteTask,
   getTask,
@@ -53,6 +53,9 @@ export const transcribeFile = createAsyncThunk<string | undefined, void, { state
   }
 );
 
+function workingExtensions(extension: string): boolean {
+  return ['.wav', '.mp4'].indexOf(extension) != -1;
+}
 export const startTranscription = createAsyncThunk<
   void,
   { model: Model; diarize: boolean; diarize_max_speakers: number },
@@ -103,6 +106,19 @@ export const startTranscription = createAsyncThunk<
       if (state == 'done') {
         const fileContent = readFileSync(path);
         const fileContents = fileContent.buffer;
+
+        let storedFileContent = fileContent;
+        if (!workingExtensions(extname(path))) {
+          try {
+            storedFileContent = await copyToMp4(path);
+          } catch (err) {
+            alert(
+              'Error: Your file is not in a format that is known to work (.wav or .mp4) and could ' +
+                'not be copied to an mp4.\n\nContinue at your own risk.'
+            );
+          }
+        }
+
         const objectUrl = URL.createObjectURL(new Blob([fileContents]));
         const hash = createHash('sha256');
         hash.update(fileContent.slice(0));
@@ -110,7 +126,7 @@ export const startTranscription = createAsyncThunk<
         const sources = {
           [hashValue]: {
             fileName,
-            fileContents,
+            fileContents: storedFileContent,
             objectUrl,
           },
         };

@@ -278,6 +278,20 @@ export async function convertToWav(
   return fileData;
 }
 
+export async function copyToMp4(input_path: string): Promise<Buffer> {
+  const tempdir: string = await getTempDir();
+  const outputFile = path.join(tempdir, 'output.mp4');
+
+  const cmd = new FFmpegCommand({ y: undefined });
+  cmd.addInput(new FFmpegInput(input_path));
+  cmd.addOutput(new FFmpegOutput(outputFile, { c: 'copy' }));
+  await cmd.execute();
+
+  const fileData = fs.readFileSync(outputFile);
+  fs.rmdirSync(tempdir, { recursive: true });
+  return fileData;
+}
+
 function getFfmpegComandLine(cmd: Fessonia.FFmpegCommand) {
   return (
     cmd.toCommand().command +

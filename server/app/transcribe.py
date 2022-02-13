@@ -1,5 +1,6 @@
 import enum
 import json
+import traceback
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from typing import Optional
 
 import numpy as np
 from fastapi import UploadFile
-from pydiar.models import BinaryKeyDiarizationModel
+from pydiar.models import BinaryKeyDiarizationModel, Segment
 from pydiar.util.misc import optimize_segments
 from pydub import AudioSegment
 from vosk import KaldiRecognizer, Model
@@ -106,12 +107,18 @@ def process_audio(
 
     else:
         task.state = TranscriptionState.DIARIZING
-        diarization_model = BinaryKeyDiarizationModel()
-        diarization_model.CLUSTERING_SELECTION_MAX_SPEAKERS = diarize_max_speakers
-        segments = diarization_model.diarize(
-            SAMPLE_RATE, np.array(audio.get_array_of_samples())
-        )
-        optimized_segments = optimize_segments(segments)
+        try:
+            diarization_model = BinaryKeyDiarizationModel()
+            diarization_model.CLUSTERING_SELECTION_MAX_SPEAKERS = diarize_max_speakers
+            segments = diarization_model.diarize(
+                SAMPLE_RATE, np.array(audio.get_array_of_samples())
+            )
+            optimized_segments = optimize_segments(segments)
+        except:  # noqa: E722
+            traceback.print_exc()
+            optimized_segments = [
+                Segment(start=0, length=audio.duration_seconds, speaker_id=1)
+            ]
         with ThreadPoolExecutor() as executor:
             task.content = list(
                 executor.map(

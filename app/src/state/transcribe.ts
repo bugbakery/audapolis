@@ -17,6 +17,7 @@ import {
 } from '../server_api/api';
 import { openFile } from '../../ipc/ipc_renderer';
 import { openDocumentFromMemory } from './editor/io';
+import { setDisplaySpeakerNames } from './editor/display';
 
 export interface TranscribeState {
   file?: string;
@@ -128,6 +129,7 @@ export const startTranscription = createAsyncThunk<
           );
         }
         dispatch(openDocumentFromMemory({ sources: sources, content: flatContent }));
+        dispatch(setDisplaySpeakerNames(diarize));
         // Once the task is finished, try to delete it but ignore any errors
         await deleteTask(server, task);
         break;

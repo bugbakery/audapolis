@@ -19,7 +19,7 @@ import { goLeft, goRight, setUserIndex } from '../../state/editor/play';
 import { deleteSomething } from '../../state/editor/edit';
 import { Theme } from '../../components/theme';
 import { macroItems, speakerIndices, timedDocumentItems } from '../../state/editor/selectors';
-import { Selection } from '../../state/editor/types';
+import { Dispatch } from '@reduxjs/toolkit';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -52,70 +52,31 @@ export function Document(): JSX.Element {
   const speakerColorIndices = speakerIndices(contentMacros);
   const ref = useRef<HTMLDivElement>(null);
   const theme: Theme = useTheme();
-  const hasMoveFired = useRef(false);
 
   useEffect(() => {
     ref.current && ref.current.focus();
   }, [ref.current]);
 
   const mouseDownHandler: MouseEventHandler = (e) => {
-    hasMoveFired.current = false;
+    if (e.detail != 1) return;
+    e.preventDefault();
     if (e.detail == 1 && !e.shiftKey) {
-      const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-      if (!range) return;
-      if (!hasMoveFired.current) setBrowserRangeToStateRange(range);
-    } else {
-      const range = window.getSelection()?.getRangeAt(0);
-      if (range) setBrowserRangeToStateRange(range);
+      handleWordClick(dispatch, content, e);
+    } else if (e.detail == 1 && e.shiftKey) {
+      const index = indexAtPosition(content, e.clientX, e.clientY, 50);
+      if (index) {
+        dispatch(moveSelectionHeadTo(index));
+      }
     }
-    dispatch(setSelection(null));
-  };
-
-  const getAbsoluteItemIndex = (element: HTMLElement | null) =>
-    parseInt(element?.id?.replace('item-', '') || '');
-  const getItem = (element: HTMLElement | null): TimedDocumentItem | null => {
-    const itemIdx = getAbsoluteItemIndex(element);
-    return content[itemIdx];
-  };
-  const itemFromNode = (node: Node, n = 0) => {
-    const child = getChild(node, n);
-    const element = child?.parentElement;
-    return getItem(element);
   };
 
   const mouseMoveHandler: MouseEventHandler = (e) => {
-    hasMoveFired.current = true;
-    if (e.buttons == 0) return;
+    if (e.buttons != 1) return;
     e.preventDefault();
 
-    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-    if (!range) return;
-    const item = itemFromNode(range.startContainer, range.startOffset);
-    if (!item) return;
-    dispatch(moveSelectionHeadTo(item.absoluteIndex));
-  };
-
-  const setBrowserRangeToStateRange = (selectionRange: globalThis.Range) => {
-    if (selectionRange.collapsed) {
-      dispatch(setSelection(null));
-      const node =
-        selectionRange && getChild(selectionRange.startContainer, selectionRange.startOffset);
-      const element = node?.parentElement;
-      const item = getItem(element);
-      if (item) {
-        dispatch(setUserIndex(item.absoluteIndex));
-      }
-    } else {
-      const startItem = itemFromNode(selectionRange.startContainer, selectionRange.startOffset);
-      const endItem = itemFromNode(selectionRange.endContainer, selectionRange.endOffset);
-      if (!startItem || !endItem) return;
-      const range: Selection = {
-        startIndex: startItem.absoluteIndex,
-        length: endItem.absoluteIndex - startItem.absoluteIndex + 1,
-        // TODO: calculate this from selection anchor & focus node
-        headPosition: 'right',
-      };
-      dispatch(setSelection(range));
+    const index = indexAtPosition(content, e.clientX, e.clientY);
+    if (index) {
+      dispatch(moveSelectionHeadTo(index));
     }
   };
 
@@ -199,6 +160,70 @@ export function Document(): JSX.Element {
   );
 }
 
+function shouldPlaceCursorLeft(x: number, y: number, elem: Element, leftPercentage = 50): boolean {
+  const clientRects = elem.getClientRects();
+  if (clientRects.length == 1) {
+    const rect = clientRects[0];
+    return x < rect.left + (rect.right - rect.left) * (leftPercentage / 100);
+  } else if (clientRects.length > 1) {
+    const rect = clientRects[1];
+    return rect.top > y;
+  } else {
+    return false;
+  }
+}
+
+function handleWordClick(dispatch: Dispatch, content: TimedDocumentItem[], e: React.MouseEvent) {
+  const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+  if (!range) return;
+  const nodeLength = range.startContainer.textContent?.length;
+  if (nodeLength != null) {
+    const parent = range.startContainer.parentElement;
+    const placeLeft = parent == null ? false : shouldPlaceCursorLeft(e.clientX, e.clientY, parent);
+    dispatch(setSelection(null));
+    const node = range && getChild(range.startContainer, range.startOffset);
+    const element = node?.parentElement;
+    const item = getItem(content, element);
+    if (item) {
+      const idx = item.absoluteIndex + (placeLeft ? 0 : 1);
+      dispatch(setUserIndex(idx));
+    }
+  }
+}
+
+const getAbsoluteItemIndex = (element: HTMLElement | null) =>
+  parseInt(element?.id?.replace('item-', '') || '');
+
+const getItem = (
+  content: TimedDocumentItem[],
+  element: HTMLElement | null
+): TimedDocumentItem | null => {
+  const itemIdx = getAbsoluteItemIndex(element);
+  return content[itemIdx];
+};
+
+function indexAtPosition(
+  content: TimedDocumentItem[],
+  x: number,
+  y: number,
+  leftPercentage = 50
+): number | undefined {
+  const range = document.caretRangeFromPoint(x, y);
+  if (!range) return;
+  const item = itemFromNode(content, range.startContainer, range.startOffset);
+  if (!item) return;
+
+  const parent = range.startContainer.parentElement;
+  const placeLeft = parent == null ? false : shouldPlaceCursorLeft(x, y, parent, leftPercentage);
+  const off = placeLeft ? 0 : 1;
+  return item.absoluteIndex + off;
+}
+
+const itemFromNode = (content: TimedDocumentItem[], node: Node, n = 0) => {
+  const child = getChild(node, n);
+  const element = child?.parentElement;
+  return getItem(content, element);
+};
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   useEffect(() => {

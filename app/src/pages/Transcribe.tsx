@@ -102,11 +102,12 @@ export function TranscribePage(): JSX.Element {
           />
           {diarize ? (
             <TextInputField
-              description={'number of speakers'}
+              label={'Number of Speakers'}
               value={diarizationSpeakers}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setDiarizationSpeakers(e.target.value)
               }
+              type={'number'}
               isInvalid={!isFinite(parseInt(diarizationSpeakers))}
             />
           ) : (

@@ -1,4 +1,4 @@
-import { EditorState } from './types';
+import { EditorState, Selection } from './types';
 import {
   DocumentItem,
   HeadingItem,
@@ -12,9 +12,21 @@ import {
   TimedParagraphItem,
 } from '../../core/document';
 import _ from 'lodash';
-import memoize from '../../util/proxy-memoize';
 import { assertUnreachable, roughEq } from '../../util';
+import { isDraft, original } from 'immer';
 
+// Warning: We only care for state changes after they ran through immerjs once.
+// Because of this you now have to be careful when using the selectors after modifying the state.
+// If your current state is different from the memoized state, but immerjs didn't notice yet,
+// you will get the memoized value. See the 'memoize returns old value if called within immerjs'
+// test in selectors.spec.ts for an example
+export function memoize<T extends any[], R>(fn: (...a: T) => R): (...a: T) => R {
+  const immerAwareFn = (...args: T): R => {
+    const newArgs = args.map((obj) => (isDraft(obj) ? original(obj) : obj)) as T;
+    return fn(...newArgs);
+  };
+  return _.memoize(immerAwareFn);
+}
 export const timedDocumentItems = memoize((content: DocumentItem[]): TimedDocumentItem[] => {
   let absoluteTime = 0;
   return content.map((item, idx) => {
@@ -83,25 +95,32 @@ function isParagraphBreakAtStart(content: DocumentItem[]): boolean {
   }
   return true;
 }
-export const selectedItems = memoize((state: EditorState): TimedDocumentItem[] => {
-  if (!state.selection) {
-    return [];
-  } else {
-    const selectedItems = timedDocumentItems(state.document.content).slice(
-      state.selection.startIndex,
-      state.selection.startIndex + state.selection.length
-    );
-    if (!isParagraphBreakAtStart(selectedItems)) {
-      selectedItems.splice(0, 0, {
-        type: 'paragraph_break',
-        speaker: getSpeakerAtIndex(state.document.content, state.selection.startIndex),
-        absoluteIndex: selectedItems[0].absoluteIndex - 1,
-        absoluteStart: selectedItems[0].absoluteStart,
-      });
+
+export function selectedItems(state: EditorState): TimedDocumentItem[] {
+  return memoizedSelectedItems(state.document.content, state.selection);
+}
+
+const memoizedSelectedItems = memoize(
+  (content: DocumentItem[], selection: Selection | null): TimedDocumentItem[] => {
+    if (!selection) {
+      return [];
+    } else {
+      const selectedItems = timedDocumentItems(content).slice(
+        selection.startIndex,
+        selection.startIndex + selection.length
+      );
+      if (!isParagraphBreakAtStart(selectedItems)) {
+        selectedItems.splice(0, 0, {
+          type: 'paragraph_break',
+          speaker: getSpeakerAtIndex(content, selection.startIndex),
+          absoluteIndex: selectedItems[0].absoluteIndex - 1,
+          absoluteStart: selectedItems[0].absoluteStart,
+        });
+      }
+      return selectedItems;
     }
-    return selectedItems;
   }
-});
+);
 
 export const paragraphItems = memoize((content: DocumentItem[]): TimedParagraphItem[] => {
   return filterTimedParagraphItems(timedDocumentItems(content));

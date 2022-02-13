@@ -1,5 +1,5 @@
 import { DocumentItem } from '../../core/document';
-import { defaultEditorState } from './types';
+import { defaultEditorState, EditorState } from './types';
 import _ from 'lodash';
 import {
   currentCursorTime,
@@ -14,6 +14,7 @@ import {
   renderItems,
   firstPossibleCursorPosition,
   currentIndexLeft,
+  memoize,
 } from './selectors';
 import { produce } from 'immer';
 
@@ -1076,4 +1077,19 @@ test.each([1.1, 1.25, 1.5, 1.75, 2])('current index left with player cursor at t
   state.cursor.current = 'player';
   state.cursor.playerTime = time;
   expect(currentIndexLeft(state)).toStrictEqual(3);
+});
+
+test('memoize returns old value if called within immerjs', () => {
+  const memoize1 = memoize((state: EditorState) => state.playing);
+  let state = _.cloneDeep(defaultEditorState);
+  state.playing = false;
+  expect(memoize1(state)).toBe(false);
+  state = produce(state, (state) => {
+    state.playing = true;
+    // If you call a memoized selector from within produce, immer isn't aware of the change yet, so
+    // the memoized function will return the old value 😳
+    expect(memoize1(state)).toBe(false);
+  });
+  // But after immer noticed, everything is alright again 😊
+  expect(memoize1(state)).toBe(true);
 });

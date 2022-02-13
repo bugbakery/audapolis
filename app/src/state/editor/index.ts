@@ -1,7 +1,7 @@
 import { defaultEditorState, EditorState } from './types';
 import { AnyAction, Reducer } from '@reduxjs/toolkit';
 import { produce } from 'immer';
-import { ActionWithReducers, AsyncActionWithReducers } from '../util';
+import { ActionWithReducers, AsyncActionWithReducers, exposeReducersWindow } from '../util';
 import undoable, { includeAction, StateWithHistory } from 'redux-undo';
 import {
   deleteSelection,
@@ -17,6 +17,8 @@ import * as editReducers from './edit';
 import * as ioReducers from './io';
 import * as playReducers from './play';
 import * as selectionReducers from './selection';
+
+exposeReducersWindow(displayReducers, editReducers, ioReducers, playReducers, selectionReducers);
 
 export const reducers: (
   | ActionWithReducers<EditorState, any>

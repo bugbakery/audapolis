@@ -244,4 +244,4 @@ export class Player {
 }
 
 export const player = new Player();
-(window as any).player = player;
+window.player = player;

@@ -33,7 +33,7 @@ export const createWindow = (): void => {
     }
   });
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || isRunningInTest()) {
     (async () => {
       await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
         .then((name: string) => console.log(`Added Extension:  ${name}`))
@@ -102,3 +102,4 @@ import '../ipc/ipc_main';
 import './server';
 import { windowList } from './windowList';
 import { applyMenu, setMenu, unregisterAccelerators } from './menu';
+import { isRunningInTest } from '../src/util';

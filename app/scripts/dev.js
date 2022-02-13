@@ -45,7 +45,10 @@ const setupMainPackageWatcher = (viteDevServer) => {
         spawnProcess = null;
       }
 
-      spawnProcess = spawn(String(electronPath), [`${dir}/start.cjs.js`]);
+      spawnProcess = spawn(String(electronPath), [
+        `${dir}/start.cjs.js`,
+        `--remote-debugging-port=${process.env.DEBUGGER_PORT}`,
+      ]);
 
       spawnProcess.stdout.on(
         'data',

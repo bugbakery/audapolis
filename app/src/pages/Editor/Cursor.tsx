@@ -30,10 +30,13 @@ export function Cursor(): JSX.Element {
       justifyContent={'stretch'}
       height={'calc(1em + 8px)'}
       position={'absolute'}
-      transform={'translate(calc(-50% + 1px), -6px)'}
       userSelect={'none'}
       pointerEvents={'none'}
-      style={{ left, top } /* we inject this directly for performance reasons */}
+      top={0}
+      left={0}
+      style={{
+        transform: `translate(calc(-50% + 1px + ${left}px), calc(${top}px - 6px))`,
+      }}
       ref={(ref: HTMLDivElement) => setRef(ref)}
     >
       <Pane
@@ -67,8 +70,9 @@ function useComputeCursorPosition(): {
   const time = useSelector((state: RootState) =>
     state.editor.present ? currentCursorTime(state.editor.present) : 0
   );
+
   const item = useSelector((state: RootState) =>
-    state.editor.present && itemIdx != null
+    state.editor.present && itemIdx !== null
       ? timedDocumentItems(state.editor.present.document.content)[itemIdx]
       : null
   );

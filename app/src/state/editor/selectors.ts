@@ -46,20 +46,25 @@ export const currentItem = (state: EditorState): TimedDocumentItem | undefined =
   return timedItems[currentIndex(state)];
 };
 
+export function getIndexAtTime(content: DocumentItem[], time: number): number {
+  const timedItems = memoizedTimedDocumentItems(content);
+
+  return (
+    _.sortedLastIndexBy<{ absoluteStart: number }>(
+      timedItems,
+      { absoluteStart: time },
+      (item) => item.absoluteStart
+    ) - 1
+  );
+}
+
 export const currentIndex = (state: EditorState): number => {
-  const timedItems = memoizedTimedDocumentItems(state.document.content);
   switch (state.cursor.current) {
     case 'user':
       return state.cursor.userIndex;
     case 'player': {
       const currentTime = currentCursorTime(state);
-      return (
-        _.sortedLastIndexBy<{ absoluteStart: number }>(
-          timedItems,
-          { absoluteStart: currentTime },
-          (item) => item.absoluteStart
-        ) - 1
-      );
+      return getIndexAtTime(state.document.content, currentTime);
     }
   }
 };

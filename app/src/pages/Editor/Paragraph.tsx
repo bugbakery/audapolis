@@ -82,7 +82,7 @@ export function Paragraph({
 
 function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
-    <span style={{ fontFamily: 'quarter_rest' }} className={'item'} {...props}>
+    <span style={{ fontFamily: 'quarter_rest' }} {...props}>
       {' _'}
     </span>
   );
@@ -105,7 +105,7 @@ function ParagraphSign({
       selection.startIndex <= paraBreakIdx &&
       selection.startIndex + selection.length > paraBreakIdx);
   return (
-    <span className={'item'} style={{ color: theme.colors.muted }} {...props}>
+    <span style={{ color: theme.colors.muted }} {...props}>
       {showParSign ? ' ¶' : ''}
     </span>
   );
@@ -117,7 +117,6 @@ function ShortSilence({
 }: { preserve: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
   return (
     <span
-      className={'item'}
       style={{
         ...(preserve && { whiteSpace: 'pre' }),
       }}
@@ -186,13 +185,7 @@ export function Word({
     : {};
 
   return (
-    <span
-      {...props}
-      {...editableProps}
-      ref={ref}
-      onContextMenu={handleContextMenu}
-      className={'item'}
-    >
+    <span {...props} {...editableProps} ref={ref} onContextMenu={handleContextMenu}>
       {' ' + word}
     </span>
   );

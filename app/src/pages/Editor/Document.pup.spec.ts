@@ -97,3 +97,41 @@ test('Dragging from 10 to 4 sets selection', async () => {
   expect(state.editor.present?.selection?.length).toBe(6);
   expect(state.editor.present?.selection?.headPosition).toBe('left');
 });
+
+test('Shift+Click from 4 to 10 sets selection', async () => {
+  await moveMouseToElement('#item-4');
+  await page.mouse.down();
+  await page.mouse.up();
+
+  await moveMouseToElement('#item-10');
+  await page.keyboard.down('Shift');
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+
+  const state = await getState();
+  expect(state.editor.present?.cursor.current).toBe('user');
+  expect(state.editor.present?.cursor.userIndex).toBe(10);
+  expect(state.editor.present?.selection?.startIndex).toBe(4);
+  expect(state.editor.present?.selection?.length).toBe(6);
+  expect(state.editor.present?.selection?.headPosition).toBe('right');
+});
+
+test('Shift+Click from 10 to 4 sets selection', async () => {
+  await moveMouseToElement('#item-10');
+  await page.mouse.down();
+  await page.mouse.up();
+
+  await moveMouseToElement('#item-4');
+  await page.keyboard.down('Shift');
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+
+  const state = await getState();
+  expect(state.editor.present?.cursor.current).toBe('user');
+  expect(state.editor.present?.cursor.userIndex).toBe(4);
+  expect(state.editor.present?.selection?.startIndex).toBe(4);
+  expect(state.editor.present?.selection?.length).toBe(6);
+  expect(state.editor.present?.selection?.headPosition).toBe('left');
+});

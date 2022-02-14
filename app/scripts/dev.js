@@ -25,7 +25,7 @@ const setupMainPackageWatcher = (viteDevServer) => {
   {
     const protocol = `http${viteDevServer.config.server.https ? 's' : ''}:`;
     const host = viteDevServer.config.server.host || 'localhost';
-    const port = viteDevServer.config.server.port; // Vite searches for and occupies the first free port: 3000, 3001, 3002 and so on
+    const port = viteDevServer.config.server.port;
     const path = '/';
     process.env.VITE_DEV_SERVER_URL = `${protocol}//${host}:${port}${path}`;
   }
@@ -69,7 +69,10 @@ const setupMainPackageWatcher = (viteDevServer) => {
       configFile: 'src/vite_renderer.config.js',
     });
 
-    await viteDevServer.listen();
+    // we start with a random port because spawning multiple audapolis instances could be racy.
+    // this reduces the flakiness of puppeteer tests
+    const basePort = 1000 + Math.round(Math.random() * 5000);
+    await viteDevServer.listen(basePort);
 
     await setupMainPackageWatcher(viteDevServer);
   } catch (e) {

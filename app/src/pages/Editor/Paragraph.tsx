@@ -29,13 +29,7 @@ export function Paragraph({
   paraBreakIdx: number;
 }): JSX.Element {
   const dispatch = useDispatch();
-  const selection = useSelector((state: RootState) => state.editor.present?.selection);
-  const showParSign =
-    data.content.length == 0 ||
-    (selection !== null &&
-      selection !== undefined &&
-      selection.startIndex <= paraBreakIdx &&
-      selection.startIndex + selection.length > paraBreakIdx);
+
   return (
     <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
       <Speaker
@@ -47,11 +41,7 @@ export function Paragraph({
         flexShrink={0}
         marginRight={majorScale(1)}
       />
-      {data.absoluteIndex == 0 ? (
-        <ParagraphSign key={data.content.length} id={`item-0`} shown={false} />
-      ) : (
-        <></>
-      )}
+      {data.absoluteIndex == 0 ? <span key={data.content.length} id={`item-0`} /> : <></>}
       <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 0.5s'}>
         {data.content.map((item, i) => {
           const commonProps = {
@@ -79,7 +69,12 @@ export function Paragraph({
             }
           }
         })}
-        <ParagraphSign key={data.content.length} id={`item-${paraBreakIdx}`} shown={showParSign} />
+        <ParagraphSign
+          key={data.content.length}
+          id={`item-${paraBreakIdx}`}
+          data={data}
+          paraBreakIdx={paraBreakIdx}
+        />
       </Pane>
     </Pane>
   );
@@ -94,16 +89,28 @@ function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
 }
 
 function ParagraphSign({
-  shown,
+  paraBreakIdx,
+  data,
   ...props
-}: HTMLAttributes<HTMLSpanElement> & { shown: boolean }): JSX.Element {
+}: HTMLAttributes<HTMLSpanElement> & {
+  paraBreakIdx: number;
+  data: ParagraphType & TimedItemExtension;
+}): JSX.Element {
   const theme = useTheme();
+  const selection = useSelector((state: RootState) => state.editor.present?.selection);
+  const showParSign =
+    data.content.length == 0 ||
+    (selection !== null &&
+      selection !== undefined &&
+      selection.startIndex <= paraBreakIdx &&
+      selection.startIndex + selection.length > paraBreakIdx);
   return (
     <span className={'item'} style={{ color: theme.colors.muted }} {...props}>
-      {shown ? ' ¶' : ''}
+      {showParSign ? ' ¶' : ''}
     </span>
   );
 }
+
 function ShortSilence({
   preserve,
   ...props

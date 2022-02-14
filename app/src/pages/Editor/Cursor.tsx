@@ -7,10 +7,9 @@ import { useElementSize } from '../../components/useElementSize';
 import { useTheme } from '../../components/theme';
 import {
   currentCursorTime,
-  currentIndex,
+  getIndexAtTime,
   memoizedTimedDocumentItems,
 } from '../../state/editor/selectors';
-import { EditorState } from '../../state/editor/types';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
@@ -41,6 +40,7 @@ export function Cursor(): JSX.Element {
       style={{
         transform: `translate(calc(-50% + 1px + ${left}px), calc(${top}px - 6px))`,
       }}
+      transition={'transform .1s linear'}
       ref={(ref: HTMLDivElement) => setRef(ref)}
     >
       <Pane
@@ -55,25 +55,26 @@ export function Cursor(): JSX.Element {
   );
 }
 
-function getCursorPositionIndex(state: EditorState): number {
-  switch (state.cursor.current) {
-    case 'player':
-      return currentIndex(state);
-    case 'user':
-      return state.cursor.userIndex;
-  }
-}
-
 function useComputeCursorPosition(): {
   left: number;
   top: number;
 } | null {
-  const itemIdx = useSelector((state: RootState) =>
-    state.editor.present ? getCursorPositionIndex(state.editor.present) : null
-  );
   const time = useSelector((state: RootState) =>
     state.editor.present ? currentCursorTime(state.editor.present) : 0
   );
+  const useRoundedTime = useSelector((state: RootState) => state.editor.present?.playing);
+  const roundedTime = Math.ceil(time * 10) / 10;
+  const showTime = useRoundedTime ? roundedTime : time;
+  const itemIdx = useSelector((state: RootState) => {
+    if (state.editor.present == null) return null;
+    switch (state.editor.present.cursor.current) {
+      case 'player': {
+        return getIndexAtTime(state.editor.present.document.content, showTime);
+      }
+      case 'user':
+        return state.editor.present.cursor.userIndex;
+    }
+  });
 
   const item = useSelector((state: RootState) =>
     state.editor.present && itemIdx !== null
@@ -88,7 +89,7 @@ function useComputeCursorPosition(): {
   let left = itemElement.offsetLeft;
   const top = itemElement.offsetTop;
   if (item && item.absoluteStart <= time && 'length' in item) {
-    const timeInWord = time - item.absoluteStart;
+    const timeInWord = showTime - item.absoluteStart;
     left += (timeInWord / item.length) * itemElement.offsetWidth;
   }
   return { left, top };

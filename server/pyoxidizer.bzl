@@ -256,7 +256,7 @@ def make_exe():
     # instead manually add them to the bundle. Our heuristic for "library" is
     # "anything that contains '.so.'".
     for resource in exe.pip_install(["-r", "requirements.txt"]):
-        if type(resource) == "File" and ".so." in resource.path:
+        if type(resource) == "File" and ".so" in resource.path:
             print("Adding " + resource.path + " to bundle")
             resource.add_include = True
         exe.add_python_resource(resource)

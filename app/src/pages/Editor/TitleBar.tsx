@@ -31,7 +31,7 @@ import { saveDocument } from '../../state/editor/io';
 import { setPlay } from '../../state/editor/play';
 import { useTheme } from '../../components/theme';
 import { Circle } from 'rc-progress';
-import { currentCursorTime, paragraphItems } from '../../state/editor/selectors';
+import { currentCursorTime, memoizedParagraphItems } from '../../state/editor/selectors';
 
 function ProgressButton({
   progress,
@@ -74,7 +74,7 @@ export function EditorTitleBar(): JSX.Element {
   const canExport = useSelector(
     (state: RootState) =>
       state.editor.present?.document.content != undefined &&
-      paragraphItems(state.editor.present?.document.content).length > 0
+      memoizedParagraphItems(state.editor.present?.document.content).length > 0
   );
 
   const exportState = useSelector(

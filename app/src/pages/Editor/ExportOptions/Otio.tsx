@@ -8,7 +8,7 @@ import { exportOtio } from '../../../core/otio';
 import path from 'path';
 import { ExportType } from './index';
 import { ProgressCallback } from '../../../core/ffmpeg';
-import { documentRenderItems } from '../../../state/editor/selectors';
+import { memoizedDocumentRenderItems } from '../../../state/editor/selectors';
 
 export const exportDefinition: ExportType = {
   type: 'OpenTimelineIO',
@@ -33,7 +33,7 @@ export function Otio({
     assertSome(state.editor.present);
     const server = state.server.servers[state.server.selectedServer];
 
-    const ris = documentRenderItems(document.content);
+    const ris = memoizedDocumentRenderItems(document.content);
     const sources = document.sources;
     await exportOtio(
       documentBaseName,

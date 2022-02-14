@@ -5,11 +5,11 @@ import { setPlay, setPlayerTime } from '../state/editor/play';
 import { RootState } from '../state';
 import { assertSome } from '../util';
 import {
-  documentRenderItems,
+  memoizedDocumentRenderItems,
   isParagraphItem,
   renderItems,
   selectedItems,
-  timedDocumentItems,
+  memoizedTimedDocumentItems,
 } from '../state/editor/selectors';
 
 export class Player {
@@ -30,7 +30,8 @@ export class Player {
         this.playing = playing;
         if (playing) {
           if (selection) {
-            this.currentTime = timedDocumentItems(content)[selection.startIndex].absoluteStart;
+            this.currentTime =
+              memoizedTimedDocumentItems(content)[selection.startIndex].absoluteStart;
           }
           this.play();
         } else {
@@ -46,7 +47,7 @@ export class Player {
         if (selectedItems.length > 0) {
           this.renderItems = renderItems(selectedItems);
         } else {
-          this.renderItems = documentRenderItems(content);
+          this.renderItems = memoizedDocumentRenderItems(content);
         }
         if (this.playing) this.play();
       }
@@ -61,7 +62,7 @@ export class Player {
         }
         this.pause();
 
-        const timedDocument = timedDocumentItems(content);
+        const timedDocument = memoizedTimedDocumentItems(content);
         if (userIndex >= timedDocument.length) {
           const lastItem = timedDocument[timedDocument.length - 1];
           const itemLength = isParagraphItem(lastItem) ? lastItem.length : 0;

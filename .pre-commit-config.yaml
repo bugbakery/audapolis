@@ -50,7 +50,7 @@ repos:
     hooks:
       - id: npm_test
         name: npm test
-        entry: npm --prefix app/ run test
+        entry: npm --prefix app/ run test:fast
         language: node
         files: app/.*
         pass_filenames: false

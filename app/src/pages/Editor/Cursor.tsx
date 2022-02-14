@@ -5,7 +5,11 @@ import { RootState } from '../../state';
 import { Pane } from 'evergreen-ui';
 import { useElementSize } from '../../components/useElementSize';
 import { useTheme } from '../../components/theme';
-import { currentCursorTime, currentIndex, timedDocumentItems } from '../../state/editor/selectors';
+import {
+  currentCursorTime,
+  currentIndex,
+  memoizedTimedDocumentItems,
+} from '../../state/editor/selectors';
 import { EditorState } from '../../state/editor/types';
 
 export function Cursor(): JSX.Element {
@@ -73,7 +77,7 @@ function useComputeCursorPosition(): {
 
   const item = useSelector((state: RootState) =>
     state.editor.present && itemIdx !== null
-      ? timedDocumentItems(state.editor.present.document.content)[itemIdx]
+      ? memoizedTimedDocumentItems(state.editor.present.document.content)[itemIdx]
       : null
   );
 

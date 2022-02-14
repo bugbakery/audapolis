@@ -7,7 +7,7 @@ import {
 } from '@audapolis/webvtt-writer';
 import fs from 'fs';
 import { DocumentItem, Paragraph, TimedItemExtension, Word } from './document';
-import { macroItems } from '../state/editor/selectors';
+import { memoizedMacroItems } from '../state/editor/selectors';
 
 function paragraphToCue(
   paragraph: Paragraph,
@@ -68,7 +68,7 @@ export function contentToVtt(
     content = items;
   }
 
-  const paragraphItems: Paragraph[] = macroItems(content).filter(
+  const paragraphItems: Paragraph[] = memoizedMacroItems(content).filter(
     (x): x is Paragraph & TimedItemExtension => x.type == 'paragraph'
   );
 

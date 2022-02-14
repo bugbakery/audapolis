@@ -18,7 +18,11 @@ import {
 import { goLeft, goRight, setUserIndex } from '../../state/editor/play';
 import { deleteSomething } from '../../state/editor/edit';
 import { Theme } from '../../components/theme';
-import { macroItems, speakerIndices, timedDocumentItems } from '../../state/editor/selectors';
+import {
+  memoizedMacroItems,
+  memoizedSpeakerIndices,
+  memoizedTimedDocumentItems,
+} from '../../state/editor/selectors';
 import { Dispatch } from '@reduxjs/toolkit';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
@@ -42,14 +46,14 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
 export function Document(): JSX.Element {
   const dispatch = useDispatch();
   const content = useSelector((state: RootState) =>
-    state.editor.present ? timedDocumentItems(state.editor.present.document.content) : []
+    state.editor.present ? memoizedTimedDocumentItems(state.editor.present.document.content) : []
   );
-  const contentMacros = macroItems(content);
+  const contentMacros = memoizedMacroItems(content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
 
-  const speakerColorIndices = speakerIndices(contentMacros);
+  const speakerColorIndices = memoizedSpeakerIndices(contentMacros);
   const ref = useRef<HTMLDivElement>(null);
   const theme: Theme = useTheme();
 

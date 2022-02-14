@@ -27,24 +27,27 @@ export function memoize<T extends any[], R>(fn: (...a: T) => R): (...a: T) => R 
   };
   return _.memoize(immerAwareFn);
 }
-export const timedDocumentItems = memoize((content: DocumentItem[]): TimedDocumentItem[] => {
-  let absoluteTime = 0;
-  return content.map((item, idx) => {
-    const timedItem = { ...item, absoluteStart: absoluteTime, absoluteIndex: idx };
-    if ('length' in item) {
-      absoluteTime += item.length;
-    }
-    return timedItem;
-  });
-});
 
-export const currentItem = memoize((state: EditorState): TimedDocumentItem | undefined => {
-  const timedItems = timedDocumentItems(state.document.content);
+export const memoizedTimedDocumentItems = memoize(
+  (content: DocumentItem[]): TimedDocumentItem[] => {
+    let absoluteTime = 0;
+    return content.map((item, idx) => {
+      const timedItem = { ...item, absoluteStart: absoluteTime, absoluteIndex: idx };
+      if ('length' in item) {
+        absoluteTime += item.length;
+      }
+      return timedItem;
+    });
+  }
+);
+
+export const currentItem = (state: EditorState): TimedDocumentItem | undefined => {
+  const timedItems = memoizedTimedDocumentItems(state.document.content);
   return timedItems[currentIndex(state)];
-});
+};
 
-export const currentIndex = memoize((state: EditorState): number => {
-  const timedItems = timedDocumentItems(state.document.content);
+export const currentIndex = (state: EditorState): number => {
+  const timedItems = memoizedTimedDocumentItems(state.document.content);
   switch (state.cursor.current) {
     case 'user':
       return state.cursor.userIndex;
@@ -59,10 +62,10 @@ export const currentIndex = memoize((state: EditorState): number => {
       );
     }
   }
-});
+};
 
 export const currentIndexLeft = (state: EditorState): number => {
-  const timedItems = timedDocumentItems(state.document.content);
+  const timedItems = memoizedTimedDocumentItems(state.document.content);
   switch (state.cursor.current) {
     case 'user':
       return state.cursor.userIndex - 1;
@@ -76,14 +79,14 @@ export const currentIndexLeft = (state: EditorState): number => {
   }
 };
 
-export const currentCursorTime = memoize((state: EditorState): number => {
+export const currentCursorTime = (state: EditorState): number => {
   switch (state.cursor.current) {
     case 'player':
       return state.cursor.playerTime;
     case 'user':
       return currentItem(state)?.absoluteStart || 0;
   }
-});
+};
 
 function isParagraphBreakAtStart(content: DocumentItem[]): boolean {
   for (const item of content) {
@@ -105,7 +108,7 @@ const memoizedSelectedItems = memoize(
     if (!selection) {
       return [];
     } else {
-      const selectedItems = timedDocumentItems(content).slice(
+      const selectedItems = memoizedTimedDocumentItems(content).slice(
         selection.startIndex,
         selection.startIndex + selection.length
       );
@@ -122,8 +125,8 @@ const memoizedSelectedItems = memoize(
   }
 );
 
-export const paragraphItems = memoize((content: DocumentItem[]): TimedParagraphItem[] => {
-  return filterTimedParagraphItems(timedDocumentItems(content));
+export const memoizedParagraphItems = memoize((content: DocumentItem[]): TimedParagraphItem[] => {
+  return filterTimedParagraphItems(memoizedTimedDocumentItems(content));
 });
 
 const getRenderType = (type: 'silence' | 'artificial_silence' | 'word'): 'media' | 'silence' => {
@@ -155,8 +158,8 @@ function isSubsequentSourceSegment(
   }
 }
 
-export const documentRenderItems = memoize((content: DocumentItem[]): RenderItem[] => {
-  const timedContent = timedDocumentItems(content);
+export const memoizedDocumentRenderItems = memoize((content: DocumentItem[]): RenderItem[] => {
+  const timedContent = memoizedTimedDocumentItems(content);
   return renderItems(timedContent);
 });
 
@@ -231,8 +234,8 @@ export const isTimedParagraphItem = (item: TimedDocumentItem): item is TimedPara
 const filterTimedParagraphItems = (content: TimedDocumentItem[]): TimedParagraphItem[] =>
   content.filter(isTimedParagraphItem);
 
-export const macroItems = memoize((content: DocumentItem[]): TimedMacroItem[] => {
-  const timedContent = timedDocumentItems(content);
+export const memoizedMacroItems = memoize((content: DocumentItem[]): TimedMacroItem[] => {
+  const timedContent = memoizedTimedDocumentItems(content);
   for (const item of timedContent) {
     if (item.type == 'paragraph_break') {
       break;
@@ -275,13 +278,13 @@ export function getSpeakerAtIndex(items: DocumentItem[], index: number): string 
   return null;
 }
 
-export const currentSpeaker = memoize((state: EditorState): string | null => {
+export const currentSpeaker = (state: EditorState): string | null => {
   const curItem = currentItem(state);
-  const timedItems = timedDocumentItems(state.document.content);
+  const timedItems = memoizedTimedDocumentItems(state.document.content);
   return getSpeakerAtIndex(timedItems, curItem?.absoluteIndex || 0);
-});
+};
 
-export const speakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
+export const memoizedSpeakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
   const uniqueSpeakerNames = new Set(
     contentMacros
       .filter((x): x is ParagraphType & TimedItemExtension => x.type == 'paragraph')
@@ -290,9 +293,9 @@ export const speakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
   return Object.fromEntries(Array.from(uniqueSpeakerNames).map((name, i) => [name, i]));
 });
 
-export const firstPossibleCursorPosition = memoize((content: DocumentItem[]): number => {
+export const firstPossibleCursorPosition = (content: DocumentItem[]): number => {
   if (content.length >= 1 && content[0].type == 'paragraph_break') {
     return 1;
   }
   return 0;
-});
+};

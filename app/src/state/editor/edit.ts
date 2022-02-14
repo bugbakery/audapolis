@@ -19,7 +19,7 @@ import {
   getSpeakerAtIndex,
   isParagraphItem,
   isTimedParagraphItem,
-  macroItems,
+  memoizedMacroItems,
   selectedItems,
 } from './selectors';
 
@@ -358,7 +358,7 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
       });
     }
 
-    const selectionText = macroItems(timedDocumentSlice)
+    const selectionText = memoizedMacroItems(timedDocumentSlice)
       .map((paragraph) => {
         switch (paragraph.type) {
           case 'heading':

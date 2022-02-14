@@ -19,7 +19,7 @@ import {
 } from '../../../core/ffmpeg';
 import { contentToVtt } from '../../../core/webvtt';
 import { ExportType } from './index';
-import { documentRenderItems } from '../../../state/editor/selectors';
+import { memoizedDocumentRenderItems } from '../../../state/editor/selectors';
 
 export const exportDefinition: ExportType = {
   type: 'video',
@@ -44,7 +44,7 @@ export function Video({
   const [limitLineLength, setLimitLineLength] = useState(false);
   const [lineLimit, setLineLimit] = useState(60);
   exportCallbackRef.current = async (document, path, progressCallback) => {
-    const ris = documentRenderItems(document.content);
+    const ris = memoizedDocumentRenderItems(document.content);
     const sources = document.sources;
     const vtt = contentToVtt(document.content, false, false, limitLineLength ? lineLimit : null);
     await exportVideo(

@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { readFileSync, createWriteStream } from 'fs';
 import { basename } from 'path';
-import { paragraphItems } from '../state/editor/selectors';
+import { memoizedParagraphItems } from '../state/editor/selectors';
 
 /**
  * The file versions of audapolis are not the same as the actual release versions of the app.
@@ -177,7 +177,7 @@ export async function deserializeDocument(
       )
     );
 
-    for (const v of paragraphItems(content)) {
+    for (const v of memoizedParagraphItems(content)) {
       if ('source' in v && sources[v.source] === undefined) {
         throw new Error(
           `Source ${v.source} is referenced in audapolis file but not present. Your Audapolis file is corrupt :(`
@@ -204,7 +204,7 @@ export function serializeDocument(document: Document): JSZip {
   const zip = JSZip();
 
   const neededSources = new Set(
-    paragraphItems(document.content)
+    memoizedParagraphItems(document.content)
       .map((v) => ('source' in v ? v.source : undefined))
       .filter((x) => x !== undefined)
   );

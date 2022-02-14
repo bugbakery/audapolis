@@ -5,12 +5,12 @@ import {
   currentCursorTime,
   currentItem,
   currentSpeaker,
-  macroItems,
-  paragraphItems,
-  documentRenderItems,
+  memoizedMacroItems,
+  memoizedParagraphItems,
+  memoizedDocumentRenderItems,
   selectedItems,
-  speakerIndices,
-  timedDocumentItems,
+  memoizedSpeakerIndices,
+  memoizedTimedDocumentItems,
   renderItems,
   firstPossibleCursorPosition,
   currentIndexLeft,
@@ -36,7 +36,7 @@ const testContent: DocumentItem[] = [
 ];
 
 test('convert document to timed items', () => {
-  expect(timedDocumentItems(testContent)).toStrictEqual([
+  expect(memoizedTimedDocumentItems(testContent)).toStrictEqual([
     { type: 'heading', level: 1, text: 'First big heading', absoluteStart: 0, absoluteIndex: 0 },
     { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 1 },
     {
@@ -127,7 +127,7 @@ test('convert document to timed items', () => {
 });
 
 test('convert document to paragraph items', () => {
-  expect(paragraphItems(testContent)).toStrictEqual([
+  expect(memoizedParagraphItems(testContent)).toStrictEqual([
     {
       type: 'word',
       source: 'source-1',
@@ -519,7 +519,7 @@ test('current item at t = 0', () => {
 });
 
 test('paragraphs', () => {
-  expect(macroItems(testContent)).toStrictEqual([
+  expect(memoizedMacroItems(testContent)).toStrictEqual([
     { type: 'heading', level: 1, text: 'First big heading', absoluteStart: 0, absoluteIndex: 0 },
     {
       type: 'paragraph',
@@ -625,7 +625,7 @@ test('paragraphs', () => {
 
 test('paragraphs fails if no para break before first word', () => {
   expect(() =>
-    macroItems([
+    memoizedMacroItems([
       { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
     ])
   ).toThrowError('paragraph');
@@ -633,7 +633,7 @@ test('paragraphs fails if no para break before first word', () => {
 
 test('paragraph from heading without prior para break', () => {
   expect(
-    macroItems([
+    memoizedMacroItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'heading', level: 1, text: 'First big heading' },
@@ -682,7 +682,7 @@ test('paragraph from heading without prior para break', () => {
 });
 
 test('renderItems', () => {
-  expect(documentRenderItems(testContent)).toStrictEqual([
+  expect(memoizedDocumentRenderItems(testContent)).toStrictEqual([
     {
       type: 'media',
       absoluteStart: 0,
@@ -705,7 +705,7 @@ test('renderItems', () => {
 
 test('render items: source silence', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'silence', source: 'source-1', sourceStart: 3, length: 1 },
@@ -724,7 +724,7 @@ test('render items: source silence', () => {
 
 test('render items: same source, not-matching time', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3.1, length: 1, word: 'Two', conf: 1 },
@@ -751,7 +751,7 @@ test('render items: same source, not-matching time', () => {
 
 test('render items: same source, not-matching time', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 2.9, length: 1, word: 'Two', conf: 1 },
@@ -778,7 +778,7 @@ test('render items: same source, not-matching time', () => {
 
 test('render items: same source, matching time', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
@@ -797,7 +797,7 @@ test('render items: same source, matching time', () => {
 
 test('render items: missing paragraph break', () => {
   expect(() =>
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
     ])
@@ -806,7 +806,7 @@ test('render items: missing paragraph break', () => {
 
 test('render items: same source, matching time, matching speaker-name', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -826,7 +826,7 @@ test('render items: same source, matching time, matching speaker-name', () => {
 
 test('render items: same source, matching time, mismatching speaker-name', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -854,7 +854,7 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
 
 test('render items: two silences', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'artificial_silence', length: 1 },
       { type: 'artificial_silence', length: 1 },
@@ -870,7 +870,7 @@ test('render items: two silences', () => {
 
 test('render items: word after silence', () => {
   expect(
-    documentRenderItems([
+    memoizedDocumentRenderItems([
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'artificial_silence', length: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
@@ -993,8 +993,8 @@ test('current item at t=4', () => {
 
 test('speakerIndices', () => {
   const content = _.cloneDeep(testContent);
-  const contentMacros = macroItems(content);
-  expect(speakerIndices(contentMacros)).toStrictEqual({
+  const contentMacros = memoizedMacroItems(content);
+  expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
     'Speaker One': 0,
     null: 1,
     'Speaker Two': 2,
@@ -1002,12 +1002,12 @@ test('speakerIndices', () => {
 });
 
 test('speakerIndices: empty doc', () => {
-  const contentMacros = macroItems([]);
-  expect(speakerIndices(contentMacros)).toStrictEqual({});
+  const contentMacros = memoizedMacroItems([]);
+  expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({});
 });
 
 test('speakerIndices: doc with only para breaks', () => {
-  const contentMacros = macroItems([
+  const contentMacros = memoizedMacroItems([
     { type: 'paragraph_break', speaker: null },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'paragraph_break', speaker: null },
@@ -1015,7 +1015,7 @@ test('speakerIndices: doc with only para breaks', () => {
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
   ]);
-  expect(speakerIndices(contentMacros)).toStrictEqual({
+  expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
     null: 0,
     'Speaker One': 1,
     'Speaker Two': 2,

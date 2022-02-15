@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import puppeteer from 'puppeteer-core';
 import { getPortPromise } from 'portfinder';
 import { sleep } from './index';
+import treeKill from 'tree-kill';
 
 const startTimeout = 30_000;
 
@@ -62,7 +63,11 @@ class CustomEnvironment extends NodeEnvironment {
   }
 
   async teardown() {
-    process.kill(-this.process.pid);
+    if (process.platform === 'win32') {
+      treeKill(this.process.pid);
+    } else {
+      process.kill(-this.process.pid);
+    }
   }
 
   getVmContext() {

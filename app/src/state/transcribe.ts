@@ -58,7 +58,7 @@ function workingExtensions(extension: string): boolean {
 }
 export const startTranscription = createAsyncThunk<
   void,
-  { model: Model; diarize: boolean; diarize_max_speakers: number },
+  { model: Model; diarize: boolean; diarize_max_speakers: number | null },
   { state: RootState }
 >(
   'transcribing/upload',

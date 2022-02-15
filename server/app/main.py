@@ -1,7 +1,7 @@
 import base64
 import json
 import os
-from typing import List
+from typing import List, Optional
 
 from fastapi import (
     BackgroundTasks,
@@ -59,8 +59,8 @@ async def start_transcription(
     background_tasks: BackgroundTasks,
     lang: str,
     model: str,
+    diarize_max_speakers: Optional[int] = None,
     diarize: bool = False,
-    diarize_max_speakers: int = 16,
     file: UploadFile = File(...),
     fileName: str = Form(...),
     auth: str = Depends(token_auth),

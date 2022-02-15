@@ -7,9 +7,31 @@ import { useEffect, useState } from 'react';
 import pf_funding_svg from '../../../doc/pf_funding_logos.svg';
 import { Heading, Link, majorScale, Paragraph } from 'evergreen-ui';
 import { getAbout, openTextInSystem } from '../../ipc/ipc_renderer';
+import path from 'path';
+import process from 'process';
 
+function findLicenseFile() {
+  const possibilities = [
+    // In development
+    path.join(process.cwd(), 'generated', 'licenses.zip'),
+    // In packaged app
+    path.join(process.resourcesPath, 'generated', 'licenses.zip'),
+  ];
+  for (const path of possibilities) {
+    console.log(path);
+    if (fs.existsSync(path)) {
+      return path;
+    }
+  }
+  return null;
+}
 function openLicenses() {
-  const data = fs.readFileSync('generated/licenses.zip');
+  const licenseFile = findLicenseFile();
+  if (licenseFile == null) {
+    alert('Failed to open acknowledgements. Could not find licenses.zip.');
+    return;
+  }
+  const data = fs.readFileSync(licenseFile);
   JSZip.loadAsync(data).then((zip) =>
     zip
       .file('licenses.txt')

@@ -8,10 +8,10 @@ import { RootState } from '../state';
 import { openLanding, openModelManager } from '../state/nav';
 import {
   Button,
-  Checkbox,
   Combobox,
   Dialog,
   FormField,
+  Group,
   Link,
   majorScale,
   Text,
@@ -28,8 +28,8 @@ export function TranscribePage(): JSX.Element {
     Object.values(state.models.downloaded).flatMap((x) => x)
   );
   const [selectedModel, setSelectedModel] = useState(models[0]);
-  const [diarize, setDiarize] = useState(true);
-  const [diarizationSpeakers, setDiarizationSpeakers] = useState('2');
+  const [diarizationMode, setDiarizationMode] = useState('on' as 'off' | 'on' | 'advanced');
+  const [diarizationSpeakers, setDiarizationSpeakers] = useState('4');
   const [animationDone, setAnimationDone] = useState(false);
 
   return (
@@ -55,12 +55,16 @@ export function TranscribePage(): JSX.Element {
               appearance="primary"
               onClick={() => {
                 const parsedSpeakers = parseInt(diarizationSpeakers);
-                if ((diarize && isFinite(parsedSpeakers)) || !diarize) {
+                if (
+                  (diarizationMode != 'off' && isFinite(parsedSpeakers)) ||
+                  diarizationMode == 'off'
+                ) {
                   dispatch(
                     startTranscription({
                       model: selectedModel,
-                      diarize: diarize,
-                      diarize_max_speakers: diarize ? parsedSpeakers - 1 : 0,
+                      diarize: diarizationMode != 'off',
+                      diarize_max_speakers:
+                        diarizationMode == 'advanced' ? parsedSpeakers - 1 : null,
                     })
                   );
                 } else {
@@ -94,15 +98,44 @@ export function TranscribePage(): JSX.Element {
             onChange={(selected) => setSelectedModel(selected)}
           />
         </FormField>
-        <FormField label={'Speaker Separation'}>
-          <Checkbox
-            label="Automatically separate speakers"
-            checked={diarize}
-            onChange={(e) => setDiarize(e.target.checked)}
-          />
-          {diarize ? (
+        <FormField
+          marginBottom={majorScale(1)}
+          label="Speaker Seperation"
+          description={'Audapolis can automatically seperate different speakers in the audio file.'}
+        >
+          <Group width={'100%'}>
+            <Button
+              flex={1}
+              isActive={diarizationMode == 'off'}
+              onClick={() => setDiarizationMode('off')}
+            >
+              Off
+            </Button>
+            <Button
+              flex={1}
+              isActive={diarizationMode == 'on'}
+              onClick={() => setDiarizationMode('on')}
+            >
+              On
+            </Button>
+            <Button
+              flex={1}
+              isActive={diarizationMode == 'advanced'}
+              onClick={() => setDiarizationMode('advanced')}
+            >
+              Advanced
+            </Button>
+          </Group>
+        </FormField>
+        {diarizationMode == 'advanced' ? (
+          <>
             <TextInputField
-              label={'Number of Speakers'}
+              label={'Maximum Number Of Speakers'}
+              description={
+                'This specifies an upper limit of speakers. It might be beneficial to set this ' +
+                'higher than the actual number of speakers in your document, for example if it ' +
+                'includes noises or music.'
+              }
               value={diarizationSpeakers}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setDiarizationSpeakers(e.target.value)
@@ -110,10 +143,10 @@ export function TranscribePage(): JSX.Element {
               type={'number'}
               isInvalid={!isFinite(parseInt(diarizationSpeakers))}
             />
-          ) : (
-            <></>
-          )}
-        </FormField>
+          </>
+        ) : (
+          <></>
+        )}
       </Dialog>
     </AppContainer>
   );

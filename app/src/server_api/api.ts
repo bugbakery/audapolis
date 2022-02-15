@@ -41,17 +41,17 @@ export function startTranscription(
   lang: string,
   model: string,
   diarize: boolean,
-  diarize_max_speakers: number,
+  diarize_max_speakers: number | null,
   file: File,
   fileName: string
 ): Promise<TranscriptionTask> {
-  return fetchFromServer(
-    server,
-    'POST',
-    'tasks/start_transcription',
-    { lang, model, diarize, diarize_max_speakers },
-    { form: { file, fileName } }
-  ).then((x) => x.json());
+  const opts: Record<string, string | boolean | number> = { lang, model, diarize };
+  if (diarize_max_speakers !== null) {
+    opts['diarize_max_speakers'] = diarize_max_speakers;
+  }
+  return fetchFromServer(server, 'POST', 'tasks/start_transcription', opts, {
+    form: { file, fileName },
+  }).then((x) => x.json());
 }
 
 export function downloadModel(

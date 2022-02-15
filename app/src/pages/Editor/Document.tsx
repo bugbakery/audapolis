@@ -63,7 +63,10 @@ export function Document(): JSX.Element {
 
   const mouseDownHandler: MouseEventHandler = (e) => {
     if (e.detail != 1) return;
+
     e.preventDefault();
+    ref.current?.focus(); // sometimes we loose focus and then it is nice to be able to gain it back
+
     if (e.detail == 1 && !e.shiftKey) {
       handleWordClick(dispatch, content, e);
     } else if (e.detail == 1 && e.shiftKey) {

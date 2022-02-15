@@ -8,8 +8,8 @@ import { EditorPage } from '../pages/Editor';
 import { TranscribingPage } from '../pages/Transcribing';
 import { ModelManagerPage } from '../pages/ModelManager';
 import styled from 'styled-components';
-// import { useMediaPredicate } from 'react-media-hook';
-import { lightTheme } from './theme';
+import { useMediaPredicate } from 'react-media-hook';
+import { darkTheme, lightTheme } from './theme';
 import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
 import { Toaster } from 'react-hot-toast';
@@ -31,13 +31,17 @@ const AppContainer = styled.div<{ theme: Theme }>`
   & ::-webkit-scrollbar-thumb {
     background-color: darkgray; /* color of the scroll thumb */
     border-radius: 20px; /* roundness of the scroll thumb */
-    border: 5px solid white; /* creates padding around scroll thumb */
+    border: 5px solid ${({ theme }) => theme.colors.overlayBackgroundColor}; /* creates padding around scroll thumb */
+  }
+
+  & ::selection {
+    background: ${({ theme }) => theme.colors.selectionBackgroundColor};
+    color: ${({ theme }) => theme.colors.selectionTextColor};
   }
 `;
 export default function App(): JSX.Element {
-  // TODO: re-enable dark theme
-  // const isDark = useMediaPredicate('(prefers-color-scheme: dark)');
-  const theme = lightTheme; //isDark ? darkTheme : lightTheme;
+  const isDark = useMediaPredicate('(prefers-color-scheme: dark)');
+  const theme = isDark ? darkTheme : lightTheme;
 
   return (
     <EvergreenThemeProvider value={theme}>

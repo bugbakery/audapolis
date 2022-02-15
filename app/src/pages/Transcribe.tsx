@@ -20,6 +20,7 @@ import {
 } from 'evergreen-ui';
 import * as path from 'path';
 import { TranscribeTour } from '../tour/TranscribeTour';
+import { useTheme } from '../components/theme';
 
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
@@ -32,6 +33,8 @@ export function TranscribePage(): JSX.Element {
   const [diarizationSpeakers, setDiarizationSpeakers] = useState('4');
   const [animationDone, setAnimationDone] = useState(false);
 
+  const theme = useTheme();
+
   return (
     <AppContainer>
       <TranscribeTour animationDone={animationDone} />
@@ -42,6 +45,7 @@ export function TranscribePage(): JSX.Element {
         title="Transcription Options"
         onCloseComplete={() => dispatch(openLanding())}
         onOpenComplete={() => setAnimationDone(true)}
+        containerProps={{ backgroundColor: theme.colors.overlayBackgroundColor }}
         footer={({ close }) => (
           <>
             <Button tabIndex={0} onClick={() => close()}>

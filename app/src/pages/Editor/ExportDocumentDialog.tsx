@@ -16,6 +16,7 @@ import { ExportType } from './ExportOptions';
 import { setExportPopup } from '../../state/editor/display';
 import { setExportState } from '../../state/editor/io';
 import { ProgressCallback } from '../../core/ffmpeg';
+import { useTheme } from '../../components/theme';
 
 const exportValues: ExportType[] = [
   audioExportDefinition,
@@ -85,11 +86,14 @@ export function ExportDocumentDialog(): JSX.Element {
       });
   };
   const ExportOptionComponent = formState.component;
+
+  const theme = useTheme();
   return (
     <Dialog
       onCloseComplete={() => dispatch(setExportPopup(false))}
       isShown={popupState}
       title={'Export document'}
+      containerProps={{ backgroundColor: theme.colors.overlayBackgroundColor }}
       footer={({ close }) => (
         <>
           <Button onClick={() => dispatch(setExportPopup(false))}>abort</Button>

@@ -10,6 +10,7 @@ import { Button, CommentIcon, IconButton, SettingsIcon, Tooltip } from 'evergree
 import { LandingTour } from '../tour/LandingTour';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor/io';
 import { emptyDocument } from '../core/document';
+import { MenuBar, MenuGroup, MenuItem } from '../components/MenuBar';
 
 const BottomRightContainer = styled.div`
   position: absolute;
@@ -26,6 +27,26 @@ export function LandingPage(): JSX.Element {
 
   return (
     <AppContainer>
+      <MenuBar>
+        <MenuGroup label={'File'}>
+          <MenuItem
+            callback={() => dispatch(openDocumentFromDisk())}
+            accelerator={'CommandOrControl+O'}
+            label={'Open'}
+          />
+          <MenuItem
+            callback={() => dispatch(transcribeFile())}
+            accelerator={'CommandOrControl+I'}
+            label={'Import & Transcribe'}
+          />
+          <MenuItem
+            callback={() => dispatch(openDocumentFromMemory(emptyDocument))}
+            accelerator={'CommandOrControl+Shift+N'}
+            label={'New blank document'}
+          />
+        </MenuGroup>
+      </MenuBar>
+
       <LandingTour />
       <TitleBar />
       <MainCenterColumn>

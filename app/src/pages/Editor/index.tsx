@@ -10,6 +10,7 @@ import { ExportDocumentDialog } from './ExportDocumentDialog';
 import { EditorTour } from '../../tour/EditorTour';
 import { togglePlaying } from '../../state/editor/play';
 import { insertParagraphBreak } from '../../state/editor/edit';
+import { EditorMenuBar } from './MenuBar';
 
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
@@ -32,6 +33,7 @@ export function EditorPage(): JSX.Element {
 
   return (
     <AppContainer tabIndex={-1} onKeyDown={handleKeyPress} ref={(ref) => ref?.focus()}>
+      <EditorMenuBar />
       <EditorTour />
       <Player />
 

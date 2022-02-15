@@ -10,7 +10,6 @@ import { ModelManagerPage } from '../pages/ModelManager';
 import styled from 'styled-components';
 import { useMediaPredicate } from 'react-media-hook';
 import { darkTheme, lightTheme } from './theme';
-import { editorMenu, nonEditorMenu, setMenu } from './menu';
 import { AboutPage } from '../pages/About';
 import { Toaster } from 'react-hot-toast';
 import { Theme, ThemeProvider as EvergreenThemeProvider } from 'evergreen-ui';
@@ -57,7 +56,6 @@ export default function App(): JSX.Element {
 
 function CurrentPage(): JSX.Element {
   const page = useSelector((state: RootState) => state.nav.page);
-  setMenu(page == Page.Editor ? editorMenu : nonEditorMenu);
 
   switch (page) {
     case Page.Landing:

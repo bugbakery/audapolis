@@ -29,6 +29,7 @@ export function Paragraph({
   paraBreakIdx: number;
 }): JSX.Element {
   const dispatch = useDispatch();
+  const theme = useTheme();
 
   return (
     <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
@@ -42,7 +43,7 @@ export function Paragraph({
         marginRight={majorScale(1)}
       />
       {data.absoluteIndex == 0 ? <span key={data.content.length} id={`item-0`} /> : <></>}
-      <Pane color={displaySpeakerNames ? color : 'none'} transition={'color 0.5s'}>
+      <Pane color={displaySpeakerNames ? color : theme.colors.default} transition={'color 0.5s'}>
         {data.content.map((item, i) => {
           const commonProps = {
             key: i,

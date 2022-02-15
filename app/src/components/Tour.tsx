@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Button, CrossIcon, Heading, IconButton, majorScale, Pane, Popover } from 'evergreen-ui';
 import { useElemRect } from '@reactour/utils';
 import { Mask } from '@reactour/mask';
+import { useTheme } from './theme';
 
 export interface Step {
   title?: JSX.Element;
@@ -148,6 +149,8 @@ export function StepComponent({
     }, 10);
   }, [JSON.stringify(targetRect)]);
 
+  const theme = useTheme();
+
   return (
     <>
       <Mask
@@ -163,8 +166,22 @@ export function StepComponent({
         }}
       />
       {renderPopup && (
-        <Popover content={children} isShown={true} statelessProps={{ zIndex: 1001, maxWidth: 560 }}>
-          <div style={{ position: 'fixed', pointerEvents: 'none', ...targetRect }} />
+        <Popover
+          content={children}
+          isShown={true}
+          statelessProps={{
+            zIndex: 1001,
+            maxWidth: 560,
+            backgroundColor: theme.colors.overlayBackgroundColor,
+          }}
+        >
+          <div
+            style={{
+              position: 'fixed',
+              pointerEvents: 'none',
+              ...targetRect,
+            }}
+          />
         </Popover>
       )}
     </>

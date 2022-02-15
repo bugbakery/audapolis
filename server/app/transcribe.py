@@ -116,6 +116,12 @@ def process_audio(
             optimized_segments = optimize_segments(segments)
         except:  # noqa: E722
             traceback.print_exc()
+            optimized_segments = []
+        if optimized_segments:
+            optimized_segments[-1].length = (
+                audio.duration_seconds - optimized_segments[-1].start
+            )
+        else:
             optimized_segments = [
                 Segment(start=0, length=audio.duration_seconds, speaker_id=1)
             ]

@@ -79,7 +79,14 @@ export const startTranscription = createAsyncThunk<
     try {
       wavFileContent = await convertToWav(path, (p) => dispatch(setProgress(p)));
     } catch (err) {
-      alert(err);
+      if (err.code == 'ENOSPC') {
+        alert(
+          'The import failed because your disk is (almost) full.\n' +
+            'Note: During import, audapolis may need some additional free disk space.'
+        );
+      } else {
+        alert(err);
+      }
       dispatch(openLanding());
       return;
     }

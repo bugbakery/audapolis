@@ -22,7 +22,14 @@ ipcMain.handle('save-file', (event, options) => {
 ipcMain.handle('open-text-in-system', (event, options) => {
   const tempdir = app.getPath('temp');
   const filepath = path.join(tempdir, options.name);
-  fs.writeFileSync(filepath, options.text);
+  try {
+    fs.writeFileSync(filepath, options.text);
+  } catch (e) {
+    dialog.showMessageBoxSync({
+      type: 'error',
+      message: 'Failed to open licenses because there is not enough space left on your disk.',
+    });
+  }
   shell.openPath(filepath);
 });
 

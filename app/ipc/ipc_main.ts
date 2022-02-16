@@ -34,9 +34,17 @@ ipcMain.handle('open-text-in-system', (event, options) => {
 });
 
 ipcMain.handle('get-about', () => {
-  return {
-    version: app.getVersion(),
-  };
+  if (process.env.NODE_ENV === 'development') {
+    return {
+      // this gets bundeled to `build/main_process/start.cjs.js` thus this path is a bit wiered
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      version: require('../../get_version.js')(),
+    };
+  } else {
+    return {
+      version: app.getVersion(),
+    };
+  }
 });
 
 ipcMain.on('set-menu', (event, args) => {

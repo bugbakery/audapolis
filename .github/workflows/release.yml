@@ -38,12 +38,11 @@ jobs:
         with:
           paths: '[".github/workflows/release.yml","app/package.json","app/package-lock.json","app/electron-builder.config.js","app/src/vite_main.config.js","app/src/vite_renderer.config.js","app/src/scripts/*","server/build_server.sh","server/poetry.lock","server/pyoxidizer.bzl","server/pyproject.toml","server/requirements.txt"]'
 
-  get_version:
+  get_metadata:
     runs-on: ubuntu-latest
     needs: pre_job
     if: ${{ needs.pre_job.outputs.should_skip != 'true' || github.event_name == 'push' }}
     outputs:
-      version: ${{ steps.version.outputs.build-version }}
       branch: ${{ steps.extract_branch.outputs.branch }}
 
     steps:
@@ -54,10 +53,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16
-
-      - name: Get version from current date
-        id: version
-        run: echo "::set-output name=build-version::$(node -e "try{console.log(require('./app/electron-builder.config.js').extraMetadata.version)}catch(e){console.error(e);process.exit(1)}")"
 
       - name: Extract branch name
         shell: bash
@@ -70,7 +65,7 @@ jobs:
 
   upload_artifacts:
     name: Build
-    needs: [ get_version, pre_job ]
+    needs: [ get_metadata, pre_job ]
 
     strategy:
       matrix:
@@ -143,8 +138,6 @@ jobs:
       # Compile app and upload artifacts
       - name: Compile & release Electron app
         uses: samuelmeuli/action-electron-builder@v1
-        env:
-          VITE_APP_VERSION: ${{ needs.get_version.outputs.version }}
         with:
           build_script_name: build
           package_root: app/
@@ -155,7 +148,7 @@ jobs:
           github_token: ${{ secrets.github_token }}
 
           # If the commit is in the main branch and this does not run on a PR, release
-          release: ${{ github.event_name == 'push' && needs.get_version.outputs.branch == 'main' }}
+          release: ${{ github.event_name == 'push' && needs.get_metadata.outputs.branch == 'main' }}
 
           # Sometimes the build may fail due to a connection problem with Apple, GitHub, etc. servers.
           # This option will restart the build as many attempts as possible

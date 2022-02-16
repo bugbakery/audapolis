@@ -1,9 +1,5 @@
-if (process.env.VITE_APP_VERSION === undefined) {
-  const now = new Date();
-  process.env.VITE_APP_VERSION =
-    `${now.getUTCFullYear() - 2000}.${now.getUTCMonth() + 1}.${now.getUTCDate()}` +
-    `-${now.getUTCHours() * 100 + now.getUTCMinutes()}`;
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const getVersion = require('./get_version.js');
 
 /**
  * @type {import('electron-builder').Configuration}
@@ -16,7 +12,7 @@ const config = {
   },
   files: ['build/**'],
   extraMetadata: {
-    version: process.env.VITE_APP_VERSION,
+    version: getVersion(),
   },
   mac: {
     category: 'public.app-category.productivity', // this is also where libreoffice lives

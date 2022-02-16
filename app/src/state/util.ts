@@ -82,7 +82,7 @@ export function createAsyncActionWithReducer<StateSlice, ThunkArg = void, Return
       if (reducers.pending && action.type == thunk.pending.type) {
         reducers.pending(state);
       } else if (reducers.rejected && action.type == thunk.rejected.type) {
-        reducers.rejected(state, action.payload);
+        reducers.rejected(state, action.error);
       } else if (reducers.fulfilled && action.type == thunk.fulfilled.type) {
         reducers.fulfilled(state, action.payload);
       }

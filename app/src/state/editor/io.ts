@@ -49,8 +49,13 @@ export const saveDocument = createAsyncActionWithReducer<
       state.lastSavedDocument = document;
       if (path) state.path = path;
     },
-    rejected: (state, payload) => {
-      console.log('saving document failed: ', payload);
+    rejected: (state, err: NodeJS.ErrnoException | Error) => {
+      if ('code' in err && err.code == 'ENOSPC') {
+        alert('Saving the document failed because your disk is (almost) full.');
+      } else {
+        alert('Saving the document failed. See the development console for more details.');
+      }
+      console.log('saving document failed: ', err);
     },
   }
 );

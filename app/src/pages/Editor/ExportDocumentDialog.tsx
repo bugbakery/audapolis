@@ -71,10 +71,18 @@ export function ExportDocumentDialog(): JSX.Element {
         {
           loading: `Exporting...`,
           success: <b>Export successful!</b>,
-          error: <b>Export failed.</b>,
+          error: <b>Export failed. See debugging console for more details.</b>,
         }
       )
-      .catch((e) => console.log(e));
+      .catch((e) => {
+        console.log(e);
+        if (e?.code == 'ENOSPC') {
+          alert(
+            'The export failed because your disk is (almost) full.\n' +
+              'Note: During export, audapolis may need some additional free disk space.'
+          );
+        }
+      });
   };
   const ExportOptionComponent = formState.component;
   return (

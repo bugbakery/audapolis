@@ -220,9 +220,13 @@ export function serializeDocument(document: Document): JSZip {
   return zip;
 }
 
-export async function serializeDocumentToFile(document: Document, path: string): Promise<void> {
+export function serializeDocumentToFile(document: Document, path: string): Promise<void> {
   const zip = serializeDocument(document);
-  await zip
-    .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-    .pipe(createWriteStream(path));
+  return new Promise((resolve, reject) => {
+    zip
+      .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+      .pipe(createWriteStream(path))
+      .on('finish', resolve)
+      .on('error', reject);
+  });
 }

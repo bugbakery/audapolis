@@ -801,7 +801,7 @@ test('render items: missing paragraph break', () => {
       { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
       { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
     ])
-  ).toThrow(/ParagraphItem encountered before first paragraph break/);
+  ).toThrow(/who is the speaker/i);
 });
 
 test('render items: same source, matching time, matching speaker-name', () => {

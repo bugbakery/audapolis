@@ -91,7 +91,7 @@ export const reassignParagraph = createActionWithReducer<
 
 export const renameSpeaker = createActionWithReducer<
   EditorState,
-  { oldName: string | null; newName: string | null }
+  { oldName: string | null; newName: string }
 >('editor/renameSpeaker', (state, payload) => {
   const { oldName, newName } = payload;
 
@@ -189,6 +189,7 @@ export const copy = createAsyncActionWithReducer<EditorState>(
       timedDocumentSlice.length > 0 &&
       timedDocumentSlice[timedDocumentSlice.length - 1].type == 'heading'
     ) {
+      // TODO: revisit this code when adding heading functionality
       timedDocumentSlice.push({
         type: 'paragraph_break',
         speaker: null,

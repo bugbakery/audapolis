@@ -194,9 +194,7 @@ export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
         case 'word': {
           const { absoluteStart, length, sourceStart, source } = item;
           if (current_speaker === null) {
-            throw new Error(
-              'ParagraphItem encountered before first paragraph break. What is the speaker?'
-            );
+            throw new Error('Current speaker is null. Who is the speaker?');
           }
           current = {
             type: 'media',

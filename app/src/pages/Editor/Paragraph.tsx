@@ -197,7 +197,7 @@ enum EditingType {
 }
 type SpeakerEditing = null | {
   type: EditingType;
-  currentText: string | null;
+  currentText: string;
   isNew: boolean;
 };
 
@@ -209,7 +209,7 @@ const EditingStartButton = ({
   ...props
 }: {
   setEditing: (next: SpeakerEditing) => void;
-  name: string | null;
+  name: string;
   type: EditingType;
   children: string;
   bottom?: boolean;
@@ -248,13 +248,17 @@ function Speaker({
           position={Position.RIGHT}
           content={
             <Pane display={'flex'} flexDirection={'column'}>
-              <EditingStartButton type={EditingType.Rename} setEditing={setEditing} name={name}>
+              <EditingStartButton
+                type={EditingType.Rename}
+                setEditing={setEditing}
+                name={name || ''}
+              >
                 Rename Speaker
               </EditingStartButton>
               <EditingStartButton
                 type={EditingType.Reassign}
                 setEditing={setEditing}
-                name={name}
+                name={name || ''}
                 bottom
               >
                 Reassign Speaker
@@ -282,7 +286,7 @@ function Speaker({
         <TextInput
           width={'100%'}
           placeholder={'Enter speaker name'}
-          value={editing.currentText || ''}
+          value={editing.currentText}
           ref={(ref: HTMLInputElement) => {
             if (editing.isNew) {
               ref?.focus();

@@ -57,6 +57,9 @@ export function contentToVtt(
       }
       if (item.type == 'word') {
         if (currentCharacterLength + item.word.length > limitLineLength) {
+          if (currentSpeaker === null) {
+            throw new Error('Current speaker is null. Who is the speaker?');
+          }
           items.push({ type: 'paragraph_break', speaker: currentSpeaker });
           currentCharacterLength = 0;
         }

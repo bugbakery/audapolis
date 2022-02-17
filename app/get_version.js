@@ -17,7 +17,7 @@ function getVersion() {
     execOptions
   );
   const noCommitsSinceBump = commitListSinceBump.trim().split('\n').length;
-  return `${baseVersion}+${noCommitsSinceBump}`;
+  return `${baseVersion}.${noCommitsSinceBump}`;
 }
 
 module.exports = getVersion;

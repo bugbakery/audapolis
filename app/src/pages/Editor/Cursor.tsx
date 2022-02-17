@@ -15,14 +15,27 @@ export function Cursor(): JSX.Element {
   const theme = useTheme();
 
   const [ref, setRef] = useState<HTMLDivElement | null>(null);
+  const now = Date.now();
+  const [scrollBlockedLast, setScrollBlockedLast] = useState(now);
 
   // we do this to re-render the cursor when the parent container size changes
   const _parentSize = useElementSize(ref?.parentElement);
 
-  const { left, top } = useComputeCursorPosition() || {
-    left: -100,
-    top: -100,
-  };
+  const cursorPosition = useComputeCursorPosition();
+  if (cursorPosition == null) return <></>;
+
+  const scrollContainer = document.getElementById('scroll-container');
+  if (
+    scrollContainer &&
+    now - scrollBlockedLast > 1000 &&
+    (scrollContainer.scrollTop > cursorPosition.top - 20 ||
+      scrollContainer.scrollTop + scrollContainer.clientHeight - 20 < cursorPosition.top)
+  ) {
+    setTimeout(() => {
+      scrollContainer.scrollTo({ top: cursorPosition.top - 30, behavior: 'smooth' });
+      setScrollBlockedLast(now);
+    });
+  }
 
   return (
     <Pane
@@ -38,7 +51,7 @@ export function Cursor(): JSX.Element {
       top={0}
       left={0}
       style={{
-        transform: `translate(calc(-50% + 1px + ${left}px), calc(${top}px - 6px))`,
+        transform: `translate(calc(-50% + 1px + ${cursorPosition.left}px), calc(${cursorPosition.top}px - 6px))`,
       }}
       transition={'transform .1s linear'}
       ref={(ref: HTMLDivElement) => setRef(ref)}

@@ -290,7 +290,9 @@ export const currentSpeaker = (state: EditorState): string | null => {
 export const memoizedSpeakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
   const uniqueSpeakerNames = new Set(
     contentMacros
-      .filter((x): x is ParagraphType & TimedItemExtension => x.type == 'paragraph')
+      .filter(
+        (x): x is ParagraphType & TimedItemExtension => x.type == 'paragraph' && x.speaker != null
+      )
       .map((p) => p.speaker)
   );
   return Object.fromEntries(Array.from(uniqueSpeakerNames).map((name, i) => [name, i]));

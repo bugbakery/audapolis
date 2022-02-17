@@ -108,10 +108,8 @@ export function Document(): JSX.Element {
     }
   };
   function getSpeakerColor(speaker: string | null) {
-    // TODO: Handle speaker == null everywhere properly
-    const color_idx =
-      speakerColorIndices[speaker !== null ? speaker : 'null'] %
-      Object.keys(theme.colors.speakers).length;
+    if (speaker == null) return theme.colors.muted;
+    const color_idx = speakerColorIndices[speaker] % Object.keys(theme.colors.speakers).length;
     return theme.colors.speakers[color_idx];
   }
 

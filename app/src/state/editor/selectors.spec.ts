@@ -996,8 +996,7 @@ test('speakerIndices', () => {
   const contentMacros = memoizedMacroItems(content);
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
     'Speaker One': 0,
-    null: 1,
-    'Speaker Two': 2,
+    'Speaker Two': 1,
   });
 });
 
@@ -1016,9 +1015,8 @@ test('speakerIndices: doc with only para breaks', () => {
     { type: 'paragraph_break', speaker: 'Speaker One' },
   ]);
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
-    null: 0,
-    'Speaker One': 1,
-    'Speaker Two': 2,
+    'Speaker One': 0,
+    'Speaker Two': 1,
   });
 });
 

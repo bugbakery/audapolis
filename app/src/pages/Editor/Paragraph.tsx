@@ -275,7 +275,7 @@ function Speaker({
               (e.target as HTMLSpanElement).click()
             }
           >
-            {name}
+            {name || 'click to set speaker'}
           </Text>
         </Popover>
       </Pane>

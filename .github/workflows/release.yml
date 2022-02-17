@@ -125,6 +125,7 @@ jobs:
 
       - name: Delete outdated drafts
         uses: hugo19941994/delete-draft-releases@v1.0.0
+        continue-on-error: true
         with:
           threshold: 5d
         env:

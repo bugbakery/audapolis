@@ -38,7 +38,7 @@ export function EditorPage(): JSX.Element {
       <EditorTitleBar />
       <ExportDocumentDialog />
 
-      <MainContainer>
+      <MainContainer id={'scroll-container'}>
         <Document />
       </MainContainer>
     </AppContainer>

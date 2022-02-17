@@ -8,10 +8,10 @@ function getVersion() {
     cwd: __dirname,
     encoding: 'utf-8',
   };
-  const lastBumpCommit = child_process.execSync(
-    `git log --no-patch --pretty="%H" -L /version/,+1:package.json`,
-    execOptions
-  );
+  const lastBumpCommit = child_process
+    .execSync(`git log --no-patch --pretty="%H" -L /version/,+1:package.json`, execOptions)
+    .trim()
+    .split('\n')[0];
   const commitListSinceBump = child_process.execSync(
     `git rev-list ${lastBumpCommit.trim()}..HEAD`,
     execOptions

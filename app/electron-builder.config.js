@@ -14,6 +14,8 @@ const config = {
   extraMetadata: {
     version: getVersion(),
   },
+
+  dmg: { artifactName: '${name}-mac-${arch}-v${version}.${ext}' },
   mac: {
     category: 'public.app-category.productivity', // this is also where libreoffice lives
     darkModeSupport: true,

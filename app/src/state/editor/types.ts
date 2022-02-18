@@ -46,8 +46,10 @@ export interface EditorState {
   displayVideo: boolean;
 
   exportState: ExportState;
-  exportPopup: boolean;
+  exportPopup: ExportPopupState;
 }
+
+export type ExportPopupState = false | 'document' | 'selection';
 
 export class NoFileSelectedError extends Error {
   constructor() {

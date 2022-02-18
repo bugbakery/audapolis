@@ -13,10 +13,10 @@ import { exportDefinition as otioExportDefinition } from './ExportOptions/Otio';
 import { exportDefinition as subtitleExportDefinition } from './ExportOptions/Subtitles';
 import { getHomePath } from '../../../ipc/ipc_renderer';
 import { ExportType } from './ExportOptions';
-import { setExportPopup } from '../../state/editor/display';
-import { setExportState } from '../../state/editor/io';
+import { setExportPopup, setExportState } from '../../state/editor/display';
 import { ProgressCallback } from '../../core/ffmpeg';
 import { useTheme } from '../../components/theme';
+import { selectedItems, selectionDocument } from '../../state/editor/selectors';
 
 const exportValues: ExportType[] = [
   audioExportDefinition,
@@ -41,24 +41,45 @@ export function ExportDocumentDialog(): JSX.Element {
     });
   });
 
+  const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
+
+  const twoFirstSelectionWords = useSelector((state: RootState) => {
+    const result = [];
+    const editorState = state.editor.present;
+    if (!editorState || popupState != 'selection') return '';
+    console.log(selectedItems(editorState));
+    for (const item of selectedItems(editorState)) {
+      if (result.length >= 2) return '_' + result.join('_');
+      if (item.type == 'word') {
+        result.push(item.word);
+        console.log(item.word);
+      }
+    }
+
+    return '';
+  });
+
   const [formState, setFormState] = useState({
     ...exportValues[0],
-    path: documentBasePath + exportValues[0].defaultExtension,
+    path: documentBasePath + twoFirstSelectionWords + exportValues[0].defaultExtension,
   });
 
   useEffect(() => {
     setFormState((state) => ({ ...state, path: documentBasePath + state.defaultExtension }));
   }, [documentBasePath]);
 
-  const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
   const exportFn = (close: () => void) => {
     const action = async () => {
       close();
       const state: RootState = store.getState();
       dispatch(setExportState({ running: true, progress: 0 }));
       assertSome(state.editor.present);
+      const exportDocument =
+        popupState == 'document'
+          ? state.editor.present.document
+          : selectionDocument(state.editor.present);
       await exportFnRef
-        .current(state.editor.present.document, formState.path, (p) => {
+        .current(exportDocument, formState.path, (p) => {
           dispatch(setExportState({ running: true, progress: p }));
         })
         .finally(() => dispatch(setExportState({ running: false, progress: 1 })));
@@ -91,8 +112,8 @@ export function ExportDocumentDialog(): JSX.Element {
   return (
     <Dialog
       onCloseComplete={() => dispatch(setExportPopup(false))}
-      isShown={popupState}
-      title={'Export document'}
+      isShown={popupState != false}
+      title={`Export ${popupState == 'document' ? 'Document' : 'Selection'}`}
       containerProps={{ backgroundColor: theme.colors.overlayBackgroundColor }}
       footer={({ close }) => (
         <>

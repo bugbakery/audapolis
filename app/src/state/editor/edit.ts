@@ -21,6 +21,7 @@ import {
   isTimedParagraphItem,
   memoizedMacroItems,
   selectedItems,
+  selectionDocument,
 } from './selectors';
 
 function getInsertPos(state: EditorState): number {
@@ -157,13 +158,6 @@ export const deleteSomething = createActionWithReducer<EditorState, 'left' | 'ri
   }
 );
 
-function untimeDocumentItems(items: TimedDocumentItem[]): DocumentItem[] {
-  return items.map((item) => {
-    const { absoluteStart: _aS, absoluteIndex: _aI, ...untimedIcon } = item;
-    return untimedIcon;
-  });
-}
-
 export const copy = createAsyncActionWithReducer<EditorState>(
   'editor/copy',
   async (arg, { getState }) => {
@@ -175,35 +169,7 @@ export const copy = createAsyncActionWithReducer<EditorState>(
       return;
     }
 
-    const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
-    if (timedDocumentSlice.length > 0 && isTimedParagraphItem(timedDocumentSlice[0])) {
-      timedDocumentSlice.unshift({
-        type: 'paragraph_break',
-        speaker: getSpeakerAtIndex(state.document.content, timedDocumentSlice[0].absoluteIndex),
-        absoluteStart: 0,
-        absoluteIndex: 0,
-      });
-    }
-
-    if (
-      timedDocumentSlice.length > 0 &&
-      timedDocumentSlice[timedDocumentSlice.length - 1].type == 'heading'
-    ) {
-      // TODO: revisit this code when adding heading functionality
-      timedDocumentSlice.push({
-        type: 'paragraph_break',
-        speaker: null,
-        absoluteStart: 0,
-        absoluteIndex: 0,
-      });
-    }
-
-    const documentSlice = untimeDocumentItems(timedDocumentSlice);
-
-    const serializedSlice = await serializeDocument({
-      content: documentSlice,
-      sources: state.document.sources,
-    }).generateAsync({
+    const serializedSlice = await serializeDocument(selectionDocument(state)).generateAsync({
       type: 'nodebuffer',
       streamFiles: true,
     });

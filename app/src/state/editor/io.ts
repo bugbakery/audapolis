@@ -5,13 +5,11 @@ import {
   Source,
 } from '../../core/document';
 import { openEditor, openLanding } from '../nav';
-import { assertSome } from '../../util';
-import * as ffmpeg_exporter from '../../core/ffmpeg';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState, NoFileSelectedError } from './types';
 import { setPlay } from './play';
 import { openFile, saveFile } from '../../../ipc/ipc_renderer';
-import { firstPossibleCursorPosition, renderItems, selectedItems } from './selectors';
+import { firstPossibleCursorPosition } from './selectors';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
@@ -133,36 +131,3 @@ export const openDocumentFromMemory = createAsyncActionWithReducer<EditorState, 
     },
   }
 );
-
-export const exportSelection = createAsyncActionWithReducer<EditorState>(
-  'editor/exportSelection',
-  async (arg, { getState }) => {
-    const state = getState().editor.present;
-    assertSome(state);
-
-    const selection = state.selection;
-    if (!selection) {
-      return;
-    }
-
-    const render_items = renderItems(selectedItems(state));
-    const path = await saveFile({
-      title: 'Export selection',
-      properties: ['showOverwriteConfirmation', 'createDirectory'],
-      filters: [
-        { name: 'mp3 Files', extensions: ['mp3'] },
-        { name: 'wav Files', extensions: ['wav'] },
-        { name: 'All Files', extensions: ['*'] },
-      ],
-    }).then((x) => x.filePath);
-    if (!path) return;
-    await ffmpeg_exporter.exportAudio(render_items, state.document.sources, path);
-  }
-);
-
-export const setExportState = createActionWithReducer<
-  EditorState,
-  { running: boolean; progress: number }
->('editor/setExportState', (state, exportState) => {
-  state.exportState = exportState;
-});

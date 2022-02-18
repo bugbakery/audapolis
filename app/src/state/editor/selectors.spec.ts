@@ -1091,3 +1091,47 @@ test('memoize returns old value if called within immerjs', () => {
   // But after immer noticed, everything is alright again 😊
   expect(memoize1(state)).toBe(true);
 });
+
+function getCountingFunction(
+  cache_size = 4
+): [{ current: number }, (...args: any) => any[], (...args: any) => any[]] {
+  const counter = { current: 0 };
+  const countingFn = (...args: any) => {
+    counter.current += 1;
+    return args;
+  };
+  const memoizedCountingFunction = memoize(countingFn, cache_size);
+  return [counter, memoizedCountingFunction, countingFn];
+}
+
+test('memoize works for one argument ☝️', () => {
+  const [counter, memoizedCountingFunction, _] = getCountingFunction();
+  expect(counter.current).toBe(0);
+  expect(memoizedCountingFunction(1)).toStrictEqual([1]);
+  expect(counter.current).toBe(1);
+  expect(memoizedCountingFunction(1)).toStrictEqual([1]);
+  expect(counter.current).toBe(1);
+  expect(memoizedCountingFunction(2)).toStrictEqual([2]);
+  expect(counter.current).toBe(2);
+  expect(memoizedCountingFunction(2)).toStrictEqual([2]);
+  expect(counter.current).toBe(2);
+});
+
+test('memoize works for two arguments ✌️', () => {
+  const [counter, memoizedCountingFunction, _] = getCountingFunction(2);
+  expect(counter.current).toBe(0);
+  expect(memoizedCountingFunction(1, 0)).toStrictEqual([1, 0]);
+  expect(counter.current).toBe(1);
+  expect(memoizedCountingFunction(1, 0)).toStrictEqual([1, 0]);
+  expect(counter.current).toBe(1);
+  expect(memoizedCountingFunction(1, 1)).toStrictEqual([1, 1]);
+  expect(counter.current).toBe(2);
+  expect(memoizedCountingFunction(2, 1)).toStrictEqual([2, 1]);
+  expect(counter.current).toBe(3);
+  // cache size = 2, so the previous one is still in cache...
+  expect(memoizedCountingFunction(1, 1)).toStrictEqual([1, 1]);
+  expect(counter.current).toBe(3);
+  // ... but the pre-previous isn't
+  expect(memoizedCountingFunction(1, 0)).toStrictEqual([1, 0]);
+  expect(counter.current).toBe(4);
+});

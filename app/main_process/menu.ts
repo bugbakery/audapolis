@@ -65,9 +65,10 @@ export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsI
         },
         { role: 'togglefullscreen' },
         ...onMac(
-          [{ type: 'separator' }, { role: 'front' }, { type: 'separator' }],
+          [{ type: 'separator' }, { role: 'front' }, { role: 'close' }],
           [{ role: 'close' }]
         ),
+        { type: 'separator' },
         { role: 'toggleDevTools', accelerator: 'CommandOrControl+Alt+I' },
         {
           label: 'New Window',

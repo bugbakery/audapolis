@@ -15,17 +15,38 @@ import _ from 'lodash';
 import { assertUnreachable, roughEq } from '../../util';
 import { isDraft, original } from 'immer';
 
+function isSame<T extends any[]>(a: T, b: T): boolean {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Warning: We only care for state changes after they ran through immerjs once.
 // Because of this you now have to be careful when using the selectors after modifying the state.
 // If your current state is different from the memoized state, but immerjs didn't notice yet,
 // you will get the memoized value. See the 'memoize returns old value if called within immerjs'
 // test in selectors.spec.ts for an example
-export function memoize<T extends any[], R>(fn: (...a: T) => R): (...a: T) => R {
+export function memoize<T extends any[], R>(fn: (...a: T) => R, size = 4): (...a: T) => R {
+  const cache: { key: T; value: R }[] = [];
   const immerAwareFn = (...args: T): R => {
     const newArgs = args.map((obj) => (isDraft(obj) ? original(obj) : obj)) as T;
-    return fn(...newArgs);
+    for (const entry of cache) {
+      if (isSame(entry.key, newArgs)) {
+        return entry.value;
+      }
+    }
+    const newEntry = { key: newArgs, value: fn(...newArgs) };
+    cache.splice(0, Math.max(0, cache.length + 1 - size));
+    cache.push(newEntry);
+    return newEntry.value;
   };
-  return _.memoize(immerAwareFn);
+  return immerAwareFn;
 }
 
 export const memoizedTimedDocumentItems = memoize(

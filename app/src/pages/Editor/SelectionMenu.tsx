@@ -5,8 +5,8 @@ import styled, { css } from 'styled-components';
 import { useDocumentEvent } from '../../components/useListener';
 import { Button, Group } from 'evergreen-ui';
 import { useElementSize } from '../../components/useElementSize';
-import { exportSelection } from '../../state/editor/io';
 import { copySelectionText } from '../../state/editor/edit';
+import { setExportPopup } from '../../state/editor/display';
 const SelectionMenuContainer = styled.div<{ noMouse: boolean; centerHorizontally: boolean }>`
   position: absolute;
   display: block;
@@ -70,8 +70,22 @@ export function SelectionMenu({
         {...props}
       >
         <Group>
-          <Button onMouseDown={() => dispatch(exportSelection())}>Export</Button>
-          <Button onMouseDown={() => dispatch(copySelectionText())}>Copy text</Button>
+          <Button
+            onMouseDown={(e: React.MouseEvent) => {
+              dispatch(setExportPopup('selection'));
+              e.stopPropagation();
+            }}
+          >
+            Export
+          </Button>
+          <Button
+            onMouseDown={(e: React.MouseEvent) => {
+              dispatch(copySelectionText());
+              e.stopPropagation();
+            }}
+          >
+            Copy text
+          </Button>
         </Group>
       </SelectionMenuContainer>
     );

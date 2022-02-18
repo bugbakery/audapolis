@@ -1,5 +1,6 @@
 import { EditorState, Selection } from './types';
 import {
+  Document,
   DocumentItem,
   HeadingItem,
   Paragraph as ParagraphType,
@@ -150,6 +151,40 @@ const memoizedSelectedItems = memoize(
     }
   }
 );
+
+export function selectionDocument(state: EditorState): Document {
+  const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
+
+  if (
+    timedDocumentSlice.length > 0 &&
+    timedDocumentSlice[timedDocumentSlice.length - 1].type == 'heading'
+  ) {
+    // TODO: revisit this code when adding heading functionality
+    timedDocumentSlice.push({
+      type: 'paragraph_break',
+      speaker: null,
+      absoluteStart: 0,
+      absoluteIndex: 0,
+    });
+  }
+
+  const documentSlice = untimeDocumentItems(timedDocumentSlice);
+  const neededSources = new Set(documentSlice.map((x) => 'source' in x && x.source));
+  const filteredSources = Object.fromEntries(
+    Object.entries(state.document.sources).filter(([k, _]) => neededSources.has(k))
+  );
+  return {
+    content: documentSlice,
+    sources: filteredSources,
+  };
+}
+
+function untimeDocumentItems(items: TimedDocumentItem[]): DocumentItem[] {
+  return items.map((item) => {
+    const { absoluteStart: _aS, absoluteIndex: _aI, ...untimedIcon } = item;
+    return untimedIcon;
+  });
+}
 
 export const memoizedParagraphItems = memoize((content: DocumentItem[]): TimedParagraphItem[] => {
   return filterTimedParagraphItems(memoizedTimedDocumentItems(content));

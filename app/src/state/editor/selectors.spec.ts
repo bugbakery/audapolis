@@ -1,4 +1,4 @@
-import { DocumentItem } from '../../core/document';
+import { DocumentItem, Source } from '../../core/document';
 import { defaultEditorState, EditorState } from './types';
 import _ from 'lodash';
 import {
@@ -15,6 +15,7 @@ import {
   firstPossibleCursorPosition,
   currentIndexLeft,
   memoize,
+  selectionDocument,
 } from './selectors';
 import { produce } from 'immer';
 
@@ -34,6 +35,16 @@ const testContent: DocumentItem[] = [
   { type: 'word', source: 'source-2', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
   { type: 'artificial_silence', length: 10 },
 ];
+const testSources: Record<string, Source> = {
+  'source-1': {
+    fileContents: new ArrayBuffer(0),
+    objectUrl: 'blob://source-1',
+  },
+  'source-2': {
+    fileContents: new ArrayBuffer(0),
+    objectUrl: 'blob://source-2',
+  },
+};
 
 test('convert document to timed items', () => {
   expect(memoizedTimedDocumentItems(testContent)).toStrictEqual([
@@ -332,6 +343,83 @@ test('selected render items', () => {
       speaker: 'Speaker One',
       type: 'media',
     },
+  ]);
+});
+
+test('selectionDocument: strips unused sources', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.document.sources = _.cloneDeep(testSources);
+  state.selection = {
+    startIndex: 3,
+    length: 2,
+    headPosition: 'right',
+  };
+  const selDocument = selectionDocument(state);
+  expect(selDocument.sources).toStrictEqual({
+    'source-1': {
+      fileContents: new ArrayBuffer(0),
+      objectUrl: 'blob://source-1',
+    },
+  });
+});
+
+test('selectionDocument: packs all used sources', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.document.sources = _.cloneDeep(testSources);
+  state.selection = {
+    startIndex: 3,
+    length: 10,
+    headPosition: 'right',
+  };
+  const selDocument = selectionDocument(state);
+  expect(selDocument.sources).toStrictEqual({
+    'source-1': {
+      fileContents: new ArrayBuffer(0),
+      objectUrl: 'blob://source-1',
+    },
+    'source-2': {
+      fileContents: new ArrayBuffer(0),
+      objectUrl: 'blob://source-2',
+    },
+  });
+});
+
+test('selectionDocument adds para-break before first word', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
+
+  expect(selectionDocument(state).content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  ]);
+});
+
+test('selectionDocument adds para break if selections end in heading', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = [
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  ];
+  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
+
+  expect(selectionDocument(state).content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'heading', level: 1, text: 'Heading One' },
+    { type: 'paragraph_break', speaker: null },
   ]);
 });
 

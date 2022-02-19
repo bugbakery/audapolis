@@ -62,6 +62,7 @@ export const createWindow = (): void => {
 
   windowList.push(window);
   window.on('close', () => {
+    setMenu(window, []);
     const i = windowList.findIndex((x) => x == window);
     windowList.splice(i, 1);
   });

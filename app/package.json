@@ -82,6 +82,7 @@
     "appdirectory": "^0.1.0",
     "electron-devtools-installer": "^3.2.0",
     "electron-squirrel-startup": "^1.0.0",
+    "electron-updater": "^4.6.5",
     "evergreen-ui": "^6.7.0",
     "ffmpeg-static": "^4.4.0",
     "immer": "^9.0.6",

@@ -1,8 +1,9 @@
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session, dialog } from 'electron';
 import installExtension, {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
+import { autoUpdater } from 'electron-updater';
 
 export const createWindow = (): void => {
   const window = new BrowserWindow({
@@ -78,7 +79,56 @@ export const createWindow = (): void => {
   window.on('ready-to-show', () => window.show());
 };
 
-app.on('ready', createWindow);
+function configureUpdater() {
+  autoUpdater.autoDownload = false;
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('updater info', info);
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: 'New Version found',
+        message: `A new version of audapolis (v${info.version}) was found. Do you want to upgrade?`,
+        buttons: ['Yes', 'No'],
+        cancelId: 1,
+      })
+      .then((val) => {
+        if (val.response === 0) {
+          autoUpdater.downloadUpdate();
+        }
+      });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log(info);
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: 'Restart now?',
+        message: `Version ${info.version} of audapolis was downloaded successfully. Do you want to restart audapolis now to upgrade?`,
+        detail:
+          'You can also choose to not upgrade now. In this case the new version will be installed once you restart audapolis.',
+        buttons: ['Yes', 'No'],
+        cancelId: 1,
+      })
+      .then((val) => {
+        if (val.response === 0) {
+          setTimeout(() => autoUpdater.quitAndInstall());
+        }
+      });
+  });
+
+  autoUpdater.on('error', (error) => {
+    dialog.showErrorBox('Error: ', error == null ? 'unknown' : (error.stack || error).toString());
+  });
+
+  autoUpdater.checkForUpdatesAndNotify();
+}
+
+app.on('ready', () => {
+  createWindow();
+  configureUpdater();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

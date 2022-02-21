@@ -11,6 +11,7 @@ import { exportDefinition as audioExportDefinition } from './ExportOptions/Audio
 import { exportDefinition as videoExportDefinition } from './ExportOptions/Video';
 import { exportDefinition as otioExportDefinition } from './ExportOptions/Otio';
 import { exportDefinition as subtitleExportDefinition } from './ExportOptions/Subtitles';
+import { exportDefinition as textExportDefinition } from './ExportOptions/Text';
 import { getHomePath } from '../../../ipc/ipc_renderer';
 import { ExportType } from './ExportOptions';
 import { setExportPopup, setExportState } from '../../state/editor/display';
@@ -22,8 +23,9 @@ import _ from 'lodash';
 const exportValues: ExportType[] = [
   audioExportDefinition,
   videoExportDefinition,
-  otioExportDefinition,
   subtitleExportDefinition,
+  textExportDefinition,
+  otioExportDefinition,
 ];
 
 export function ExportDocumentDialog(): JSX.Element {

@@ -10,7 +10,7 @@ import { ExportType } from './index';
 import { ProgressCallback } from '../../../core/ffmpeg';
 
 export const exportDefinition: ExportType = {
-  type: 'Subtitles',
+  type: 'subtitles',
   defaultExtension: '.vtt',
   filters: [
     { name: 'WebVTT Files', extensions: ['vtt'] },

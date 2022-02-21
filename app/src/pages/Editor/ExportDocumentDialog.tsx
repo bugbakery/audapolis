@@ -4,7 +4,7 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 import path from 'path';
 import { FilePickerWithText } from '../../components/FilePicker';
 import { toast } from 'react-hot-toast';
-import { Document } from '../../core/document';
+import { Document, TimedItemExtension, Word } from '../../core/document';
 import { assertSome, switchExtension } from '../../util';
 import { Button, Combobox, Dialog, FormField, majorScale } from 'evergreen-ui';
 import { exportDefinition as audioExportDefinition } from './ExportOptions/Audio';
@@ -17,6 +17,7 @@ import { setExportPopup, setExportState } from '../../state/editor/display';
 import { ProgressCallback } from '../../core/ffmpeg';
 import { useTheme } from '../../components/theme';
 import { selectedItems, selectionDocument } from '../../state/editor/selectors';
+import _ from 'lodash';
 
 const exportValues: ExportType[] = [
   audioExportDefinition,
@@ -43,30 +44,29 @@ export function ExportDocumentDialog(): JSX.Element {
 
   const popupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
 
-  const twoFirstSelectionWords = useSelector((state: RootState) => {
-    const result = [];
+  const firstSelectionWordsString = useSelector((state: RootState) => {
     const editorState = state.editor.present;
-    if (!editorState || popupState != 'selection') return '';
-    console.log(selectedItems(editorState));
-    for (const item of selectedItems(editorState)) {
-      if (result.length >= 2) return '_' + result.join('_');
-      if (item.type == 'word') {
-        result.push(item.word);
-        console.log(item.word);
-      }
-    }
-
-    return '';
+    if (popupState != 'selection' || !editorState) return '';
+    const selectionItems = _(selectedItems(editorState))
+      .filter((x): x is Word & TimedItemExtension => x.type == 'word')
+      .map((x) => x.word)
+      .slice(0, 3)
+      .value();
+    if (selectionItems.length == 0) return '';
+    return '_' + selectionItems.join('_');
   });
 
   const [formState, setFormState] = useState({
     ...exportValues[0],
-    path: documentBasePath + twoFirstSelectionWords + exportValues[0].defaultExtension,
+    path: documentBasePath + firstSelectionWordsString + exportValues[0].defaultExtension,
   });
 
   useEffect(() => {
-    setFormState((state) => ({ ...state, path: documentBasePath + state.defaultExtension }));
-  }, [documentBasePath]);
+    setFormState((state) => ({
+      ...state,
+      path: documentBasePath + firstSelectionWordsString + state.defaultExtension,
+    }));
+  }, [documentBasePath, firstSelectionWordsString]);
 
   const exportFn = (close: () => void) => {
     const action = async () => {
@@ -97,7 +97,6 @@ export function ExportDocumentDialog(): JSX.Element {
         }
       )
       .catch((e) => {
-        console.log(e);
         if (e?.code == 'ENOSPC') {
           alert(
             'The export failed because your disk is (almost) full.\n' +
@@ -111,13 +110,13 @@ export function ExportDocumentDialog(): JSX.Element {
   const theme = useTheme();
   return (
     <Dialog
-      onCloseComplete={() => dispatch(setExportPopup(false))}
-      isShown={popupState != false}
+      onCloseComplete={() => dispatch(setExportPopup('hidden'))}
+      isShown={popupState != 'hidden'}
       title={`Export ${popupState == 'document' ? 'Document' : 'Selection'}`}
       containerProps={{ backgroundColor: theme.colors.overlayBackgroundColor }}
       footer={({ close }) => (
         <>
-          <Button onClick={() => dispatch(setExportPopup(false))}>abort</Button>
+          <Button onClick={() => dispatch(setExportPopup('hidden'))}>abort</Button>
           <Button marginLeft={majorScale(1)} appearance={'primary'} onClick={() => exportFn(close)}>
             Start Export
           </Button>

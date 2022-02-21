@@ -49,7 +49,7 @@ export interface EditorState {
   exportPopup: ExportPopupState;
 }
 
-export type ExportPopupState = false | 'document' | 'selection';
+export type ExportPopupState = 'hidden' | 'document' | 'selection';
 
 export class NoFileSelectedError extends Error {
   constructor() {
@@ -75,5 +75,5 @@ export const defaultEditorState: EditorState = {
 
   displaySpeakerNames: false,
   displayVideo: false,
-  exportPopup: false,
+  exportPopup: 'hidden',
 };

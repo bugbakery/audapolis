@@ -1,5 +1,5 @@
-# <div align="center">🎤 audapolis</span>
-> **<div align="center">An editor for spoken-word media with transcription.</span>**
+# <div align="center">🎤 audapolis</div>
+> **<div align="center">An editor for spoken-word media with transcription.</div>**
 
 ![screenshot of audapolis](doc/screenshot.png)
 
@@ -10,17 +10,14 @@
 * It is **free**
 * It keeps the data in your hands - **no cloud** whatsoever.
 
+## ✨ Try it now! ✨
+
+You can download the newest version for Windows, Linux and macOS [here](https://github.com/audapolis/audapolis/releases/latest).
+If you find any bugs or UX inconveniences, we would be happy for you to [report them to us](https://github.com/audapolis/audapolis/issues/new).
 
 ## Survey
 
 It would be really nice if you could help us out by answering [our short survey](https://docs.google.com/forms/d/e/1FAIpQLSerdLMYw3C3sfCyliGTal_CfeH5_jw4l2Zv-NmYc8GEabpHnA/viewform) about your needs & expectations so that we can build actually usefull software and know what you need.
-
-
-## Get It!
-
-For end users, the latest Windows and macOS and linux builds [are available as github releases](https://github.com/audapolis/audapolis/releases). Currently `audapolis` is alpha-quality software so please expect bugs / UX inconveniences and report them :).
-
-
 
 ## Acknowledgements
 

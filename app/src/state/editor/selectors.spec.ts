@@ -1,4 +1,4 @@
-import { DocumentItem, Source } from '../../core/document';
+import { DocumentItem, Source, UntimedMacroItem } from '../../core/document';
 import { defaultEditorState, EditorState } from './types';
 import _ from 'lodash';
 import {
@@ -16,6 +16,7 @@ import {
   currentIndexLeft,
   memoize,
   selectionDocument,
+  macroItemsToText,
 } from './selectors';
 import { produce } from 'immer';
 
@@ -1222,4 +1223,117 @@ test('memoize works for two arguments ✌️', () => {
   // ... but the pre-previous isn't
   expect(memoizedCountingFunction(1, 0)).toStrictEqual([1, 0]);
   expect(counter.current).toBe(4);
+});
+
+test('macroItemsToText empty', () => {
+  expect(macroItemsToText([], false)).toBe('');
+});
+
+const testMacroItems: UntimedMacroItem[] = [
+  { type: 'paragraph', speaker: 'Something Something', content: [] },
+  {
+    type: 'paragraph',
+    speaker: 'Speaker One',
+    content: [
+      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
+      { type: 'word', word: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
+      {
+        type: 'word',
+        word: 'Three Four',
+        conf: 1,
+        source: 'source-1',
+        sourceStart: 2,
+        length: 1,
+      },
+    ],
+  },
+  { type: 'heading', level: 1, text: 'Heading One' },
+  {
+    type: 'paragraph',
+    speaker: 'Speaker Two',
+    content: [
+      { type: 'word', word: 'Five', conf: 1, source: 'source-2', sourceStart: 0, length: 1 },
+      { type: 'word', word: 'Six', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      {
+        type: 'word',
+        word: 'Seven Eight',
+        conf: 1,
+        source: 'source-2',
+        sourceStart: 2,
+        length: 1,
+      },
+    ],
+  },
+  { type: 'heading', level: 2, text: 'Heading Two' },
+  { type: 'paragraph', speaker: 'Speaker Two', content: [] },
+  { type: 'heading', level: 3, text: 'Heading Three' },
+  {
+    type: 'paragraph',
+    speaker: 'Speaker Three',
+    content: [
+      {
+        type: 'word',
+        word: 'Something',
+        conf: 1,
+        source: 'source-4',
+        sourceStart: 0,
+        length: 1,
+      },
+      {
+        type: 'word',
+        word: 'Something',
+        conf: 1,
+        source: 'source-4',
+        sourceStart: 1,
+        length: 1,
+      },
+    ],
+  },
+];
+test('macroItemsToText speaker names', () => {
+  expect(macroItemsToText(testMacroItems, true)).toBe(
+    'Something Something:\n\nSpeaker One:\n' +
+      'One Two Three Four\n' +
+      '\n' +
+      '# Heading One\n' +
+      '\n' +
+      'Speaker Two:\nFive Six Seven Eight\n' +
+      '\n' +
+      '## Heading Two\n' +
+      '\n' +
+      'Speaker Two:\n' +
+      '\n' +
+      '### Heading Three\n' +
+      '\n' +
+      'Speaker Three:\nSomething Something'
+  );
+});
+
+test('macroItemsToText no speaker names', () => {
+  expect(macroItemsToText(testMacroItems, false)).toBe(
+    'One Two Three Four\n' +
+      '\n' +
+      '# Heading One\n' +
+      '\n' +
+      'Five Six Seven Eight\n' +
+      '\n' +
+      '## Heading Two\n' +
+      '\n' +
+      '### Heading Three\n' +
+      '\n' +
+      'Something Something'
+  );
+});
+
+test('memoize recalculated if more arguments are passed', () => {
+  const [counter, memoizedCountingFunction, _] = getCountingFunction();
+  expect(counter.current).toBe(0);
+  expect(memoizedCountingFunction(1)).toStrictEqual([1]);
+  expect(counter.current).toBe(1);
+  expect(memoizedCountingFunction(1)).toStrictEqual([1]);
+  expect(counter.current).toBe(1);
+  expect(memoizedCountingFunction(1, 2)).toStrictEqual([1, 2]);
+  expect(counter.current).toBe(2);
+  expect(memoizedCountingFunction(1, 2)).toStrictEqual([1, 2]);
+  expect(counter.current).toBe(2);
 });

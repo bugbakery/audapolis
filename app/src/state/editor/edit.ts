@@ -6,7 +6,6 @@ import {
   serializeDocument,
   Source,
   TimedDocumentItem,
-  Word,
 } from '../../core/document';
 import { clipboard } from 'electron';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
@@ -18,7 +17,7 @@ import {
   currentSpeaker,
   getSpeakerAtIndex,
   isParagraphItem,
-  isTimedParagraphItem,
+  macroItemsToText,
   memoizedMacroItems,
   selectedItems,
   selectionDocument,
@@ -310,41 +309,14 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
     const state = getState().editor.present;
     assertSome(state);
 
-    const selection = state.selection;
-    if (!selection) {
+    if (!state.selection) {
       return;
     }
 
     const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
-    if (timedDocumentSlice.length > 0 && isTimedParagraphItem(timedDocumentSlice[0])) {
-      timedDocumentSlice.unshift({
-        type: 'paragraph_break',
-        speaker: getSpeakerAtIndex(state.document.content, timedDocumentSlice[0].absoluteIndex),
-        absoluteStart: 0,
-        absoluteIndex: 0,
-      });
-    }
 
-    const selectionText = memoizedMacroItems(timedDocumentSlice)
-      .map((paragraph) => {
-        switch (paragraph.type) {
-          case 'heading':
-            return '#'.repeat(paragraph.level) + ` ${paragraph.text}`;
-          case 'paragraph': {
-            let paragraphText = '';
-            if (state.displaySpeakerNames) {
-              paragraphText += `${paragraph.speaker}:\n`;
-            }
-            paragraphText += paragraph.content
-              .filter((x): x is Word & TimedDocumentItem => x.type == 'word')
-              .map((x) => x.word)
-              .join(' ');
-            return paragraphText.trim();
-          }
-        }
-      })
-      .join('\n\n');
-
-    clipboard.writeText(selectionText);
+    clipboard.writeText(
+      macroItemsToText(memoizedMacroItems(timedDocumentSlice), state.displaySpeakerNames)
+    );
   }
 );

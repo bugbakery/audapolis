@@ -11,6 +11,8 @@ import {
   TimedItemExtension,
   TimedMacroItem,
   TimedParagraphItem,
+  UntimedMacroItem,
+  Word,
 } from '../../core/document';
 import _ from 'lodash';
 import { assertUnreachable, roughEq } from '../../util';
@@ -360,3 +362,29 @@ export const firstPossibleCursorPosition = (content: DocumentItem[]): number => 
   }
   return 0;
 };
+
+export function macroItemsToText(
+  macroItems: UntimedMacroItem[],
+  displaySpeakerNames: boolean
+): string {
+  return macroItems
+    .map((paragraph) => {
+      switch (paragraph.type) {
+        case 'heading':
+          return '#'.repeat(paragraph.level) + ` ${paragraph.text}`;
+        case 'paragraph': {
+          let paragraphText = '';
+          if (displaySpeakerNames) {
+            paragraphText += `${paragraph.speaker}:\n`;
+          }
+          paragraphText += paragraph.content
+            .filter((x): x is Word & TimedDocumentItem => x.type == 'word')
+            .map((x) => x.word)
+            .join(' ');
+          return paragraphText.trim();
+        }
+      }
+    })
+    .filter((x) => x !== '')
+    .join('\n\n');
+}

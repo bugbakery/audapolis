@@ -59,6 +59,7 @@ export interface ArtificialSilence {
 }
 
 type MacroItem = HeadingItem | Paragraph;
+export type UntimedMacroItem = HeadingItem | Paragraph<DocumentItem>;
 export type TimedMacroItem = MacroItem & TimedItemExtension;
 export type TimedParagraphItem = ParagraphItem & TimedItemExtension;
 export interface Paragraph<I = TimedParagraphItem> {

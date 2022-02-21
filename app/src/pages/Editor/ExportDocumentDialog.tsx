@@ -128,13 +128,16 @@ export function ExportDocumentDialog(): JSX.Element {
           width={'100%'}
           initialSelectedItem={formState}
           items={exportValues}
-          itemToString={(x) => x.type}
-          onChange={(selected) =>
-            setFormState((state) => ({
-              ...selected,
-              path: switchExtension(state.path, selected.defaultExtension),
-            }))
-          }
+          itemToString={(x) => (x ? x.type : '')}
+          onChange={(selected) => {
+            if (!selected) return;
+            setFormState((state) => {
+              return {
+                ...state,
+                path: switchExtension(state.path, selected.defaultExtension),
+              };
+            });
+          }}
         />
       </FormField>
       <FormField label="Export Path" marginBottom={majorScale(3)}>
@@ -145,7 +148,6 @@ export function ExportDocumentDialog(): JSX.Element {
           filters={formState.filters}
         />
       </FormField>
-
       <ExportOptionComponent
         exportCallbackRef={exportFnRef}
         outputPath={formState.path}

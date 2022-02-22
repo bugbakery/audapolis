@@ -13,6 +13,7 @@ import { darkTheme, lightTheme } from './theme';
 import { AboutPage } from '../pages/About';
 import { Toaster } from 'react-hot-toast';
 import { Theme, ThemeProvider as EvergreenThemeProvider } from 'evergreen-ui';
+import { LanguageSettingsPage } from '../pages/LanguageSettings';
 
 const AppContainer = styled.div<{ theme: Theme }>`
   width: 100%;
@@ -70,5 +71,7 @@ function CurrentPage(): JSX.Element {
       return <ModelManagerPage />;
     case Page.About:
       return <AboutPage />;
+    case Page.LanguageSettings:
+      return <LanguageSettingsPage />;
   }
 }

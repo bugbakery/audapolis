@@ -3,32 +3,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, BackButton, MainMaxWidthContainer } from '../components/Util';
 import { RootState } from '../state';
-import { cancelDownload, deleteModel, downloadModel, Model } from '../state/models';
-import {
-  Button,
-  CloudDownloadIcon,
-  Heading,
-  IconButton,
-  majorScale,
-  Table,
-  Tooltip,
-  TrashIcon,
-} from 'evergreen-ui';
-import { Circle } from 'rc-progress';
+import { ChevronRightIcon, Heading, Icon, majorScale, Table, Tooltip } from 'evergreen-ui';
 import { ModelManagerTour } from '../tour/ModelManagerTour';
+import { useTheme } from '../components/theme';
+import { openLanguageSettings } from '../state/nav';
+import { Model } from '../state/models';
 
 export function ModelManagerPage(): JSX.Element {
   const dispatch = useDispatch();
-  const all = useSelector((state: RootState) => state.models.all);
   const downloaded = useSelector((state: RootState) => state.models.downloaded);
-  const downloading = useSelector((state: RootState) => state.models.downloading);
-
-  const notDownloaded = all.filter((x) => {
-    const predicate = (candidate: Model) => candidate.lang == x.lang && candidate.name == x.name;
-    const downloadedModel = downloaded.find(predicate);
-    const downloadingModel = downloading.find(predicate);
-    return !(downloadedModel || downloadingModel);
-  });
+  const languages = useSelector((state: RootState) => state.models.languages);
 
   const lastColumnProps = {
     flexGrow: 0,
@@ -36,12 +20,14 @@ export function ModelManagerPage(): JSX.Element {
   };
 
   const firstColumnProps = {
-    flexBasis: '30%',
+    flexBasis: '5%',
   };
+
+  const theme = useTheme();
 
   return (
     <AppContainer>
-      <ModelManagerTour hasDownloaded={downloaded.length > 0} />
+      <ModelManagerTour hasDownloaded={Object.keys(downloaded).length > 0} />
 
       <TitleBar />
       <MainMaxWidthContainer>
@@ -54,66 +40,37 @@ export function ModelManagerPage(): JSX.Element {
         <Table>
           <Table.Head padding={0}>
             <Table.TextHeaderCell {...firstColumnProps}>Language</Table.TextHeaderCell>
-            <Table.TextHeaderCell>Variant</Table.TextHeaderCell>
-            <Table.TextHeaderCell>Size</Table.TextHeaderCell>
+            <Table.TextHeaderCell>Transcription Models</Table.TextHeaderCell>
+            <Table.TextHeaderCell>Punctuation Models</Table.TextHeaderCell>
             <Table.TextHeaderCell {...lastColumnProps} />
           </Table.Head>
 
           <Table.Body>
-            {downloaded.map((model, i) => (
+            {/*sorting*/}
+            {Object.values(languages).map((lang, i) => (
               <Table.Row
-                id={`${model.lang}-${model.name}` /* for tour */}
-                className={'downloaded' /* for tour */}
+                isSelectable
+                onSelect={() => {
+                  console.log('clicked', lang.lang);
+                  dispatch(openLanguageSettings(lang.lang));
+                }}
+                id={lang.lang}
                 key={i}
               >
-                <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
-                <Table.TextCell>{model.name}</Table.TextCell>
-                <Table.TextCell isNumber>{model.size}</Table.TextCell>
+                <Table.TextCell {...firstColumnProps}>{lang.lang}</Table.TextCell>
+                <ModelNumberTextCell
+                  models={lang.transcription_models}
+                  lang={lang.lang}
+                  downloaded={downloaded}
+                />
+                <ModelNumberTextCell
+                  models={lang.punctuation_models}
+                  lang={lang.lang}
+                  downloaded={downloaded}
+                />
                 <Table.Cell {...lastColumnProps}>
-                  <Tooltip content={'delete model'}>
-                    <IconButton icon={TrashIcon} onClick={() => dispatch(deleteModel(model))} />
-                  </Tooltip>
-                </Table.Cell>
-              </Table.Row>
-            ))}
-
-            {downloading.map((model, i) => (
-              <Table.Row id={`${model.lang}-${model.name}` /* for tour */} key={i}>
-                <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
-                <Table.TextCell>{model.name}</Table.TextCell>
-                <Table.TextCell isNumber>{model.size}</Table.TextCell>
-                <Table.Cell {...lastColumnProps}>
-                  <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
-                    <Button
-                      padding={0}
-                      appearance={'minimal'}
-                      onClick={() => dispatch(cancelDownload(model.task_uuid))}
-                    >
-                      <Circle
-                        style={{ height: majorScale(3) }}
-                        percent={model.progress * 100}
-                        strokeWidth={50}
-                        trailWidth={0}
-                        strokeLinecap={'butt'}
-                      />
-                    </Button>
-                  </Tooltip>
-                </Table.Cell>
-              </Table.Row>
-            ))}
-
-            {notDownloaded.map((model, i) => (
-              <Table.Row id={`${model.lang}-${model.name}` /* for tour */} key={i}>
-                <Table.TextCell {...firstColumnProps}>{model.lang}</Table.TextCell>
-                <Table.TextCell>{model.name}</Table.TextCell>
-                <Table.TextCell isNumber>{model.size}</Table.TextCell>
-                <Table.Cell {...lastColumnProps}>
-                  <Tooltip content={'download model'}>
-                    <IconButton
-                      className={'download' /* for tour */}
-                      icon={CloudDownloadIcon}
-                      onClick={() => dispatch(downloadModel(model))}
-                    />
+                  <Tooltip content={'manage language'}>
+                    <Icon color={theme.colors.default} icon={ChevronRightIcon} />
                   </Tooltip>
                 </Table.Cell>
               </Table.Row>
@@ -125,4 +82,33 @@ export function ModelManagerPage(): JSX.Element {
       </MainMaxWidthContainer>
     </AppContainer>
   );
+}
+
+function ModelNumberTextCell({
+  models,
+  lang,
+  downloaded,
+}: {
+  models: Model[];
+  lang: string;
+  downloaded: Record<string, Model>;
+}): JSX.Element {
+  const downloaded_models = models.filter((x) => x.model_id in downloaded);
+  if (models.length == 0) {
+    return <Table.TextCell>Unsupported for {lang}</Table.TextCell>;
+  } else if (models.length == downloaded_models.length) {
+    return (
+      <Table.TextCell>
+        {models.length > 1 ? `All ${models.length} models downloaded` : 'Downloaded'}
+      </Table.TextCell>
+    );
+  } else {
+    return (
+      <Table.TextCell>
+        {models.length} available
+        <br />
+        {downloaded_models.length} downloaded
+      </Table.TextCell>
+    );
+  }
 }

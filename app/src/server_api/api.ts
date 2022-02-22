@@ -1,6 +1,6 @@
 import { fetchFromServer } from './index';
 import { ServerConfig } from '../state/server';
-import { Model } from '../state/models';
+import { Language, Model } from '../state/models';
 import { V1Paragraph, V1ParagraphItem } from '../core/document';
 
 export interface Task {
@@ -38,28 +38,29 @@ export interface DownloadModelTask extends Task {
 
 export function startTranscription(
   server: ServerConfig,
-  lang: string,
-  model: string,
+  transcription_model: string,
+  punctuation_model: string | null,
   diarize: boolean,
   diarize_max_speakers: number | null,
   file: File,
   fileName: string
 ): Promise<TranscriptionTask> {
-  const opts: Record<string, string | boolean | number> = { lang, model, diarize };
+  const opts: Record<string, string | boolean | number> = { transcription_model, diarize };
   if (diarize_max_speakers !== null) {
     opts['diarize_max_speakers'] = diarize_max_speakers;
   }
+  if (punctuation_model !== null) {
+    opts['punctuation_model'] = punctuation_model;
+  }
   return fetchFromServer(server, 'POST', 'tasks/start_transcription', opts, {
     form: { file, fileName },
-  }).then((x) => x.json());
+  })
+    .then((x) => x.json())
+    .catch((e) => console.error(e));
 }
 
-export function downloadModel(
-  server: ServerConfig,
-  lang: string,
-  model: string
-): Promise<DownloadModelTask> {
-  return fetchFromServer(server, 'POST', 'tasks/download_model', { lang, model }).then((x) =>
+export function downloadModel(server: ServerConfig, model_id: string): Promise<DownloadModelTask> {
+  return fetchFromServer(server, 'POST', 'tasks/download_model', { model_id }).then((x) =>
     x.json()
   );
 }
@@ -72,11 +73,11 @@ export function deleteTask(server: ServerConfig, uuid: string): Promise<void> {
   return fetchFromServer(server, 'DELETE', `tasks/${uuid}`).then(() => {});
 }
 
-export function deleteModel(server: ServerConfig, lang: string, model: string): Promise<void> {
-  return fetchFromServer(server, 'POST', 'models/delete', { lang, model }).then(() => {});
+export function deleteModel(server: ServerConfig, model_id: string): Promise<void> {
+  return fetchFromServer(server, 'POST', 'models/delete', { model_id }).then(() => {});
 }
 
-export function getAvailableModels(server: ServerConfig): Promise<Record<string, Model>> {
+export function getAvailableModels(server: ServerConfig): Promise<Record<string, Language>> {
   return fetchFromServer(server, 'GET', 'models/available').then((x) => x.json());
 }
 

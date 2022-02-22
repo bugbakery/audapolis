@@ -2,7 +2,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { TimedDocumentItem } from '../../core/document';
 import * as React from 'react';
-import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef } from 'react';
+import {
+  KeyboardEventHandler,
+  MouseEventHandler,
+  RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
@@ -230,6 +237,16 @@ const itemFromNode = (content: TimedDocumentItem[], node: Node, n = 0) => {
   return getItem(content, element);
 };
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
+  const [updateCount, setUpdateCount] = useState(0);
+  useEffect(() => {
+    const listener = (e: Event) => {
+      console.log(e);
+      setUpdateCount((x) => x + 1);
+    };
+    document.addEventListener('selectionchange', listener);
+    return () => document.removeEventListener('selectionchange', listener);
+  }, []);
+
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
   useEffect(() => {
     if (selection) {
@@ -247,7 +264,13 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     } else {
       window.getSelection()?.removeAllRanges();
     }
-  }, [selection?.startIndex, selection?.length, selection?.headPosition, documentRef.current]);
+  }, [
+    selection?.startIndex,
+    selection?.length,
+    selection?.headPosition,
+    documentRef.current,
+    updateCount,
+  ]);
   return <></>;
 }
 

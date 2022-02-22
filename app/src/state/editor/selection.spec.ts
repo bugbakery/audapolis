@@ -145,6 +145,21 @@ test('moveSelectionHeadLeft: at idx=0 is noop', () => {
   expect(state.cursor.userIndex).toBe(0);
 });
 
+test('moveSelectionHeadLeft: does not extend beyond document', () => {
+  const state = _.cloneDeep(testState);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
+  moveSelectionHeadLeft.reducer(state);
+  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 1, length: 2 });
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(1);
+  moveSelectionHeadLeft.reducer(state);
+  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 1, length: 2 });
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(1);
+});
+
 // move head right
 
 test('moveSelectionHeadRight: no selection, selects item right of cursor', () => {
@@ -256,6 +271,29 @@ test('moveSelectionHeadRight: multiple para breaks to right', () => {
   expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 3, length: 2 });
   expect(state.cursor.current).toBe('user');
   expect(state.cursor.userIndex).toBe(5);
+});
+
+test('moveSelectionHeadRight: does not extend beyond document', () => {
+  const state = _.cloneDeep(testState);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 6;
+  state.selection = { headPosition: 'right', startIndex: 5, length: 1 };
+  moveSelectionHeadRight.reducer(state);
+  expect(state.selection).toStrictEqual({
+    headPosition: 'right',
+    startIndex: 5,
+    length: 2,
+  });
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(7);
+  moveSelectionHeadRight.reducer(state);
+  expect(state.selection).toStrictEqual({
+    headPosition: 'right',
+    startIndex: 5,
+    length: 2,
+  });
+  expect(state.cursor.current).toBe('user');
+  expect(state.cursor.userIndex).toBe(7);
 });
 
 // selectAll

@@ -10,7 +10,12 @@
 import { assertSome } from '../../util';
 import { createActionWithReducer } from '../util';
 import { EditorState, Selection } from './types';
-import { currentIndex, currentIndexLeft, memoizedTimedDocumentItems } from './selectors';
+import {
+  currentIndex,
+  currentIndexLeft,
+  firstPossibleCursorPosition,
+  memoizedTimedDocumentItems,
+} from './selectors';
 
 export const setSelection = createActionWithReducer<EditorState, Selection | null>(
   'editor/setSelection',
@@ -35,6 +40,9 @@ function setCursorToSelectionHead(state: EditorState) {
 export const moveSelectionHeadLeft = createActionWithReducer<EditorState>(
   'editor/moveSelectionHeadLeft',
   (state) => {
+    if (currentIndexLeft(state) < firstPossibleCursorPosition(state.document.content)) {
+      return;
+    }
     if (state.selection !== null) {
       changeSelectionHeadLeft(state);
     } else {
@@ -72,6 +80,9 @@ function createSelectionLeft(state: EditorState) {
 export const moveSelectionHeadRight = createActionWithReducer<EditorState>(
   'editor/moveSelectionHeadRight',
   (state) => {
+    if (currentIndex(state) + 1 >= state.document.content.length) {
+      return;
+    }
     if (state.selection) {
       changeSelectionHeadRight(state);
     } else {

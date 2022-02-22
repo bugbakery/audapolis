@@ -40,7 +40,7 @@ export const transcribeFile = createAsyncThunk<string | undefined, void, { state
       filters: [
         {
           name: 'Audio & Video Files',
-          extensions: ['mp3', 'wav', 'ogg', 'wma', 'aac', 'mp4', 'mkv', 'mov'],
+          extensions: ['mp3', 'wav', 'ogg', 'wma', 'aac', 'mp4', 'mkv', 'mov', 'webm'],
         },
         { name: 'All Files', extensions: ['*'] },
       ],

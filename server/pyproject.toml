@@ -16,11 +16,12 @@ requests = "^2.26.0"
 OpenTimelineIO = "^0.14.0"
 pydantic = "^1.8.2"
 python_speech_features = "^0.6"
-numpy = "^1.21.1"
+numpy = ">=1.22"
 scipy = "^1.7.3"
 webrtcvad = "^2.0.10"
 scikit-learn = "^1.0.1"
 pydiar = "^0.0.6"
+punctuator = {git = "https://github.com/audapolis/punctuator2", rev = "b91b4fd5d19debb4af3d52b564ad8ffa2a8c75b7"}
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"

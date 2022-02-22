@@ -5,6 +5,39 @@ import requests
 import yaml
 from bs4 import BeautifulSoup
 
+HARDCODED_MODELS = [
+    {
+        "lang": "German",
+        "name": "punctuator2-subtitle2go",
+        "url": (
+            "https://github.com/audapolis/model-hub/releases/download/2"
+            "/Model_subs_norm1_filt_5M_tageschau_euparl_h256_lr0.02.zip"
+        ),
+        "description": (
+            "Punctuation Model trained by the "
+            "Language Technology Group of the Universität Hamburg (UHH)"
+        ),
+        "size": "213M",
+        "type": "punctuation",
+        "compressed": False,
+    },
+    {
+        "lang": "English",
+        "name": "punctuator2-europarl",
+        "url": (
+            "https://github.com/audapolis/model-hub/releases/download/2/"
+            "Demo-EUROPARL-EN.zip"
+        ),
+        "description": (
+            "Model trained on the Europarl dataset by Ottokar Tilk and Tanel Alumäe "
+            "of the Language Technology Laboratory at Tallinn University of Technology"
+        ),
+        "size": "138M",
+        "type": "punctuation",
+        "compressed": False,
+    },
+]
+
 r = requests.get("https://alphacephei.com/vosk/models")
 assert r.status_code == 200
 soup = BeautifulSoup(r.content, "html.parser")
@@ -13,7 +46,7 @@ table = soup.find("table")
 columns = [x.text for x in table.find_all("th")]
 rows = table.find("tbody").find_all("tr")
 
-models = []
+models = HARDCODED_MODELS
 current_lang = None
 for row in rows:
     if strong := row.find("strong"):
@@ -43,7 +76,8 @@ for row in rows:
             url=raw["Model"].find("a").get("href"),
             description=raw["Notes"].decode_contents(),
             size=raw["Size"].text,
-            wer_speed=raw["Word error rate/Speed"].text,
+            type="transcription",
+            compressed=True,
         )
         models += [model]
 

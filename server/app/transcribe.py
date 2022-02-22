@@ -1,3 +1,11 @@
+# TODO for punctuation
+# - collect models
+# x safe model loading
+# x ui in frontend
+#   x model manager
+#   x transcribe page
+#   x select default models
+
 import enum
 import json
 import traceback
@@ -24,10 +32,12 @@ VOSK_BLOCK_SIZE = 2
 
 class TranscriptionState(str, enum.Enum):
     QUEUED = "queued"
+    LOADING_TRANSCRIPTION_MODEL = "loading transcription model"
     LOADING = "loading"
     DIARIZING = "diarizing"
     TRANSCRIBING = "transcribing"
-    POST_PROCESSING = "post_processing"
+    LOADING_PUNCTUATION_MODEL = "loading punctuation model"
+    PUNCTUATING = "punctuating"
     DONE = "done"
 
 
@@ -35,15 +45,22 @@ class TranscriptionState(str, enum.Enum):
 class TranscriptionTask(Task):
     filename: str
     state: TranscriptionState
+    punctuate: bool
     total: float = 0
     processed: float = 0
     content: Optional[dict] = None
     progress: float = 0
 
-    def set_progress(self, processed, state):
+    def set_transcription_progress(self, processed):
         self.processed += processed
-        self.state = state
-        self.progress = self.processed / self.total
+        if not self.punctuate:
+            self.progress = self.processed / self.total
+        else:
+            self.progress = (self.processed / self.total) * 0.9
+
+    def set_punctuation_progress(self, processed):
+        self.processed = processed
+        self.progress = 0.9 + (processed / self.total)
 
 
 def transcribe_raw_data(model: Model, name, audio, offset, duration, process_callback):
@@ -61,7 +78,7 @@ def transcribe_raw_data(model: Model, name, audio, offset, duration, process_cal
         data = audio[block_start * 1000 : block_end * 1000]
         rec.AcceptWaveform(data.get_array_of_samples().tobytes())
         processed = block_end
-        process_callback(processed - block_start, TranscriptionState.TRANSCRIBING)
+        process_callback(processed - block_start)
 
     vosk_result = json.loads(rec.FinalResult())
     return transform_vosk_result(name, vosk_result, duration, offset)
@@ -71,19 +88,64 @@ EPSILON = 0.00001
 
 
 def process_audio(
-    lang: str,
-    model: str,
+    transcription_model: str,
+    punctuation_model: Optional[str],
     file: UploadFile,
     fileName: str,
     task_uuid: str,
     diarize: bool,
     diarize_max_speakers: Optional[int],
 ):
-    # TODO: Set error state if model does not exist
-    model = models.get(lang, model)
-
     task = tasks.get(task_uuid)
-    task.state = TranscriptionState.LOADING
+
+    content = transcribe(
+        task,
+        transcription_model,
+        file,
+        fileName,
+        task_uuid,
+        diarize,
+        diarize_max_speakers,
+    )
+
+    if punctuation_model is not None:
+        content = punctuate(task, punctuation_model, content)
+
+    task.content = content
+    task.state = TranscriptionState.DONE
+
+
+def punctuate(task, punctuation_model, content):
+    task.state = TranscriptionState.LOADING_PUNCTUATION_MODEL
+    model = models.get(punctuation_model)
+    task.state = TranscriptionState.PUNCTUATING
+    for para_idx, para in enumerate(content):
+        words = [x for x in para["content"] if x["type"] == "word"]
+        full_text = " ".join(x["word"] for x in words)
+        punctuated = model.punctuate(
+            full_text, titleize=False, heuristic_corrections=False
+        )
+
+        for word, puncted in zip(words, punctuated.split(" ")):
+            word["word"] = puncted
+        task.set_punctuation_progress(para_idx / len(content))
+
+    return content
+
+
+def transcribe(
+    task: TranscriptionTask,
+    transcription_model: str,
+    file: UploadFile,
+    fileName: str,
+    task_uuid: str,
+    diarize: bool,
+    diarize_max_speakers: Optional[int],
+):
+    task.state = TranscriptionState.LOADING_TRANSCRIPTION_MODEL
+
+    # TODO: Set error state if model does not exist
+    model = models.get(transcription_model)
 
     with warnings.catch_warnings():
         # we ignore the warning that ffmpeg is not found as we
@@ -99,11 +161,16 @@ def process_audio(
 
     if not diarize:
         task.state = TranscriptionState.TRANSCRIBING
-        content = transcribe_raw_data(
-            model, fileName, audio, 0, audio.duration_seconds, task.set_progress
-        )
-        task.content = [content]
-        task.state = TranscriptionState.DONE
+        return [
+            transcribe_raw_data(
+                model,
+                fileName,
+                audio,
+                0,
+                audio.duration_seconds,
+                task.set_transcription_progress,
+            )
+        ]
 
     else:
         task.state = TranscriptionState.DIARIZING
@@ -129,7 +196,8 @@ def process_audio(
                 Segment(start=0, length=audio.duration_seconds, speaker_id=1)
             ]
         with ThreadPoolExecutor() as executor:
-            task.content = list(
+            task.state = TranscriptionState.TRANSCRIBING
+            return list(
                 executor.map(
                     lambda segment: transcribe_raw_data(
                         model,
@@ -137,13 +205,11 @@ def process_audio(
                         audio,
                         segment.start,
                         segment.length,
-                        task.set_progress,
+                        task.set_transcription_progress,
                     ),
                     optimized_segments,
                 )
             )
-
-        task.state = TranscriptionState.DONE
 
 
 def transform_vosk_result(
@@ -151,6 +217,7 @@ def transform_vosk_result(
 ) -> dict:
     content = []
     current_time = 0
+
     for word in result.get("result", []):
         word_start = word["start"]
 

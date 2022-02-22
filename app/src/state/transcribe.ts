@@ -58,11 +58,19 @@ function workingExtensions(extension: string): boolean {
 }
 export const startTranscription = createAsyncThunk<
   void,
-  { model: Model; diarize: boolean; diarize_max_speakers: number | null },
+  {
+    transcription_model: Model;
+    punctuation_model: Model | null;
+    diarize: boolean;
+    diarize_max_speakers: number | null;
+  },
   { state: RootState }
 >(
   'transcribing/upload',
-  async ({ model, diarize, diarize_max_speakers }, { dispatch, getState }) => {
+  async (
+    { transcription_model, punctuation_model, diarize, diarize_max_speakers },
+    { dispatch, getState }
+  ) => {
     const state = getState();
     const server = getServer(state);
     const path = state?.transcribe?.file;
@@ -94,8 +102,8 @@ export const startTranscription = createAsyncThunk<
     const file = new File([wavFileContent], 'input.wav');
     const task = await startTranscriptionApiCall(
       server,
-      model.lang,
-      model.name,
+      transcription_model.model_id,
+      punctuation_model !== null ? punctuation_model.model_id : null,
       diarize,
       diarize_max_speakers,
       file,

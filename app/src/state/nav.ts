@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { fetchModelState } from './models';
+import { fetchModelState, setLanguage } from './models';
 import { RootState } from './index';
 import { subscribeOpenAbout } from '../../ipc/ipc_renderer';
 import { isRunningInTest } from '../util';
@@ -10,6 +10,7 @@ export enum Page {
   Editor,
   Transcribing,
   ModelManager,
+  LanguageSettings,
   About,
 }
 export interface NavState {
@@ -27,6 +28,13 @@ export const openTranscribe = createAsyncThunk<void, void, { state: RootState }>
   'nav/openTranscribe',
   async (_, { dispatch }) => {
     dispatch(fetchModelState());
+  }
+);
+
+export const openLanguageSettings = createAsyncThunk<void, string, { state: RootState }>(
+  'nav/openLanguageSettings',
+  async (language, { dispatch }) => {
+    dispatch(setLanguage(language));
   }
 );
 
@@ -55,6 +63,9 @@ export const navSlice = createSlice({
     });
     builder.addCase(openTranscribe.pending, (state) => {
       state.page = Page.Transcribe;
+    });
+    builder.addCase(openLanguageSettings.fulfilled, (state) => {
+      state.page = Page.LanguageSettings;
     });
   },
 });

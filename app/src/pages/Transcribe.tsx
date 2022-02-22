@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { startTranscription } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
@@ -8,12 +8,15 @@ import { RootState } from '../state';
 import { openLanding, openModelManager } from '../state/nav';
 import {
   Button,
+  Checkbox,
   Combobox,
   Dialog,
   FormField,
   Group,
   Link,
   majorScale,
+  minorScale,
+  Pane,
   Text,
   TextInputField,
   toaster,
@@ -21,14 +24,95 @@ import {
 import * as path from 'path';
 import { TranscribeTour } from '../tour/TranscribeTour';
 import { useTheme } from '../components/theme';
+import { getDefaultModel, Model } from '../state/models';
 
+function getDefaultModelInstance(models: Model[], lang: string, type: string) {
+  const default_model_id = getDefaultModel(lang, type);
+  for (const model of models) {
+    if (model.model_id == default_model_id) {
+      return model;
+    }
+  }
+  return models[0];
+}
+function ModelSelector({
+  models,
+  selectedModel,
+  setSelectedModel,
+}: {
+  models: Model[];
+  selectedModel: Model;
+  setSelectedModel: (m: Model) => void;
+}): JSX.Element {
+  if (models.length == 1) {
+    return <Text size={300}>Selected model: {selectedModel.name}</Text>;
+  }
+  return (
+    <Combobox
+      width={'100%'}
+      selectedItem={selectedModel}
+      items={models}
+      itemToString={(model) => `${model.name}`}
+      onChange={(selected) => {
+        if (selected !== null) setSelectedModel(selected);
+      }}
+    />
+  );
+}
 export function TranscribePage(): JSX.Element {
   const dispatch = useDispatch();
   const file = useSelector((state: RootState) => state.transcribe.file) || '';
-  const models = useSelector((state: RootState) =>
-    Object.values(state.models.downloaded).flatMap((x) => x)
+
+  const languages = useSelector((state: RootState) => {
+    return Object.values(state.models.languages)
+      .map((lang) => {
+        return {
+          ...lang,
+          punctuation_models: lang.punctuation_models.filter(
+            (x) => x.model_id in state.models.downloaded
+          ),
+          transcription_models: lang.transcription_models.filter(
+            (x) => x.model_id in state.models.downloaded
+          ),
+        };
+      })
+      .filter((lang) => lang.transcription_models.length > 0);
+  });
+  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+  const [selectedTranscriptionModel, setSelectedTranscriptionModel] = useState(
+    getDefaultModelInstance(
+      selectedLanguage.transcription_models,
+      selectedLanguage.lang,
+      'transcription'
+    )
   );
-  const [selectedModel, setSelectedModel] = useState(models[0]);
+  useEffect(() => {
+    setSelectedTranscriptionModel(
+      getDefaultModelInstance(
+        selectedLanguage.transcription_models,
+        selectedLanguage.lang,
+        'transcription'
+      )
+    );
+  }, [selectedLanguage]);
+  const [punctuate, setPunctuate] = useState(selectedLanguage.punctuation_models.length > 0);
+  const [selectedPunctuationModel, setSelectedPunctuationModel] = useState(
+    getDefaultModelInstance(
+      selectedLanguage.punctuation_models,
+      selectedLanguage.lang,
+      'punctuation'
+    )
+  );
+  useEffect(() => {
+    setSelectedPunctuationModel(
+      getDefaultModelInstance(
+        selectedLanguage.punctuation_models,
+        selectedLanguage.lang,
+        'punctuation'
+      )
+    );
+    setPunctuate(selectedLanguage.punctuation_models.length > 0);
+  }, [selectedLanguage]);
   const [diarizationMode, setDiarizationMode] = useState('on' as 'off' | 'on' | 'advanced');
   const [diarizationSpeakers, setDiarizationSpeakers] = useState('4');
   const [animationDone, setAnimationDone] = useState(false);
@@ -60,12 +144,13 @@ export function TranscribePage(): JSX.Element {
               onClick={() => {
                 const parsedSpeakers = parseInt(diarizationSpeakers);
                 if (
-                  (diarizationMode != 'off' && isFinite(parsedSpeakers)) ||
-                  diarizationMode == 'off'
+                  (diarizationMode == 'advanced' && isFinite(parsedSpeakers)) ||
+                  diarizationMode != 'advanced'
                 ) {
                   dispatch(
                     startTranscription({
-                      model: selectedModel,
+                      transcription_model: selectedTranscriptionModel,
+                      punctuation_model: selectedPunctuationModel,
                       diarize: diarizationMode != 'off',
                       diarize_max_speakers:
                         diarizationMode == 'advanced' ? parsedSpeakers - 1 : null,
@@ -85,23 +170,74 @@ export function TranscribePage(): JSX.Element {
           <Text color="muted">{path.basename(file)}</Text>
         </FormField>
         <FormField
-          label="Transcription Model"
-          hint={
-            <Link onClick={() => dispatch(openModelManager())}>
-              Download More Transcription Models
-            </Link>
+          label="Language"
+          description={
+            <Link onClick={() => dispatch(openModelManager())}>Manage Languages & Models</Link>
           }
-          marginBottom={majorScale(3)}
           id={'model' /* for tour */}
+          marginBottom={majorScale(3)}
         >
           <Combobox
             width={'100%'}
-            initialSelectedItem={selectedModel}
-            items={models}
-            itemToString={(model) => `${model.lang} - ${model.name}`}
-            onChange={(selected) => setSelectedModel(selected)}
+            selectedItem={selectedLanguage}
+            items={languages}
+            itemToString={(lang) => `${lang.lang}`}
+            onChange={(selected) => setSelectedLanguage(selected)}
+            marginBottom={majorScale(1)}
           />
+          <details style={{ marginBottom: majorScale(3) }}>
+            <summary style={{ color: theme.colors.default, marginBottom: majorScale(1) }}>
+              <Text size={300}>Advanced Language Settings</Text>
+            </summary>
+            <Pane
+              padding={majorScale(1)}
+              borderRadius={minorScale(1)}
+              backgroundColor={theme.intents.info.background}
+            >
+              <FormField
+                label={'Transcription'}
+                description={
+                  'If there are multiple transcription models for the selected language, you can choose between them here. ' +
+                  'They often differ in speed, needed RAM and accuracy.'
+                }
+              >
+                <ModelSelector
+                  selectedModel={selectedTranscriptionModel}
+                  models={selectedLanguage.transcription_models}
+                  setSelectedModel={setSelectedTranscriptionModel}
+                />
+              </FormField>
+              {selectedLanguage.punctuation_models.length > 0 ? (
+                <FormField
+                  marginTop={majorScale(2)}
+                  label={'Punctuation Reconstruction'}
+                  description={
+                    'Audapolis can try to automatically guess the punctuation. This requires a punctuation model, which is only supported for a few languages'
+                  }
+                >
+                  <Checkbox
+                    label={'Enable Punctuation Reconstruction'}
+                    checked={punctuate}
+                    disabled={selectedLanguage.punctuation_models.length == 0}
+                    onChange={(e) => setPunctuate(e.target.checked)}
+                  />
+                  {punctuate ? (
+                    <ModelSelector
+                      selectedModel={selectedPunctuationModel}
+                      models={selectedLanguage.punctuation_models}
+                      setSelectedModel={setSelectedPunctuationModel}
+                    />
+                  ) : (
+                    <></>
+                  )}
+                </FormField>
+              ) : (
+                <></>
+              )}
+            </Pane>
+          </details>
         </FormField>
+
         <FormField
           marginBottom={majorScale(1)}
           label="Speaker Seperation"

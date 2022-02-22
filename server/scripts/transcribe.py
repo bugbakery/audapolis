@@ -9,8 +9,8 @@ import requests
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", type=Path)
-parser.add_argument("lang", type=str)
-parser.add_argument("model", type=str)
+parser.add_argument("transcription_model_id")
+parser.add_argument("--punctuation-model")
 parser.add_argument("--server", default="http://127.0.0.1:8000")
 parser.add_argument("--token")
 parser.add_argument("--diarize", action="store_true")
@@ -24,7 +24,11 @@ print(f"Uploading {args.file}")
 upload_req = requests.post(
     f"{args.server}/tasks/start_transcription/",
     files={"file": open(args.file, "rb")},
-    params={"lang": args.lang, "model": args.model, "diarize": args.diarize},
+    params={
+        "transcription_model": args.transcription_model_id,
+        "punctuation_model": args.punctuation_model,
+        "diarize": args.diarize,
+    },
     data={"fileName": str(args.file)},
     headers=headers,
 )

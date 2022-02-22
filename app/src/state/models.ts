@@ -18,7 +18,14 @@ export interface Model {
   url: string;
   description: string;
   size: string;
-  wer_speed: string;
+  type: 'transcription' | 'punctuation';
+  model_id: string;
+}
+
+export interface Language {
+  lang: string;
+  transcription_models: Model[];
+  punctuation_models: Model[];
 }
 
 export type DownloadingModel = Model & {
@@ -28,13 +35,15 @@ export type DownloadingModel = Model & {
 };
 
 export interface ModelsState {
-  downloaded: Model[];
+  downloaded: Record<string, Model>;
   downloading: DownloadingModel[];
   all: Model[];
+  languages: Record<string, Language>;
+  selectedLanguage: string | null;
 }
 
 export const fetchModelState = createAsyncThunk<
-  { downloaded: Model[]; all: Model[] },
+  { downloaded: Record<string, Model>; all: Model[] },
   void,
   { state: RootState }
 >('models/fetchModelState', async (_, { getState }) => {
@@ -43,9 +52,12 @@ export const fetchModelState = createAsyncThunk<
   const all = await getAvailableModels(server);
   const downloaded = await getDownloadedModels(server);
 
-  const flatten = (x: Record<string, Model>) => Object.values(x).flatMap((x) => x);
+  const flattenLanguages = (x: Record<string, Language>) =>
+    Object.values(x).flatMap((x) => {
+      return x.punctuation_models.concat(x.transcription_models);
+    });
 
-  return { all: flatten(all), downloaded: flatten(downloaded) };
+  return { all: flattenLanguages(all), downloaded: downloaded, languages: all };
 });
 
 export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>(
@@ -53,7 +65,7 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
   async (model, { dispatch, getState }) => {
     const server = getServer(getState());
     assertSome(server);
-    const task = await downloadModelApiCall(server, model.lang, model.name);
+    const task = await downloadModelApiCall(server, model.model_id);
 
     while (true) {
       const { state, progress } = await getTask(server, task);
@@ -69,11 +81,11 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
 );
 
 export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
-  'models/downloadModel',
+  'models/deleteModel',
   async (model, { dispatch, getState }) => {
     const server = getServer(getState());
     assertSome(server);
-    await deleteModelApiCall(server, model.lang, model.name);
+    await deleteModelApiCall(server, model.model_id);
     dispatch(fetchModelState());
   }
 );
@@ -88,12 +100,22 @@ export const cancelDownload = createAsyncThunk<string, string, { state: RootStat
     return uuid;
   }
 );
+export function setDefaultModel(lang: string, type: string, model_id: string): void {
+  localStorage.setItem(`model-defaults/${lang}/${type}`, model_id);
+}
+
+export function getDefaultModel(lang: string, type: string): string | null {
+  return localStorage.getItem(`model-defaults/${lang}/${type}`);
+}
+
 export const modelsSlice = createSlice({
   name: 'models',
   initialState: {
-    downloaded: [],
+    downloaded: {},
     downloading: [],
     all: [],
+    languages: {},
+    selectedLanguage: null,
   } as ModelsState,
   reducers: {
     setProgress: (
@@ -108,19 +130,20 @@ export const modelsSlice = createSlice({
       const { progress, state, model, task_uuid } = payload.payload;
 
       if (state == DownloadingModelState.DONE) {
-        slice.downloading = slice.downloading.filter(
-          (x) => !(x.lang == model.lang && x.name == model.name)
-        );
+        slice.downloading = slice.downloading.filter((x) => !(x.model_id == model.model_id));
         return;
       }
 
       const newDownloadingRow = { progress, state, task_uuid, ...model };
-      const idx = slice.downloading.findIndex((x) => x.lang == model.lang && x.name == model.name);
+      const idx = slice.downloading.findIndex((x) => x.model_id == model.model_id);
       if (idx === -1) {
         slice.downloading.push(newDownloadingRow);
       } else {
         slice.downloading[idx] = newDownloadingRow;
       }
+    },
+    setLanguage: (slice, payload: PayloadAction<string>) => {
+      slice.selectedLanguage = payload.payload;
     },
   },
   extraReducers: (builder) => {
@@ -130,7 +153,7 @@ export const modelsSlice = createSlice({
     builder.addCase(fetchModelState.rejected, (state, action) => {
       console.error('something went wrong while fetching the model state', action.error);
       alert(
-        `something went wrong while comunicating with the transcription server:\n${action.error.message}`
+        `something went wrong while communicating with the transcription server:\n${action.error.message}`
       );
     });
     builder.addCase(cancelDownload.fulfilled, (state, action) => {
@@ -139,5 +162,5 @@ export const modelsSlice = createSlice({
   },
 });
 
-export const { setProgress } = modelsSlice.actions;
+export const { setProgress, setLanguage } = modelsSlice.actions;
 export default modelsSlice.reducer;

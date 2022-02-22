@@ -22,6 +22,7 @@ from .models import (
     LanguageDoesNotExist,
     ModelDoesNotExist,
     ModelNotDownloaded,
+    ModelTypeNotSupported,
     models,
 )
 from .otio import Segment, convert_otio
@@ -57,19 +58,25 @@ def startup_event():
 @app.post("/tasks/start_transcription/")
 async def start_transcription(
     background_tasks: BackgroundTasks,
-    lang: str,
-    model: str,
+    transcription_model: str,
+    punctuation_model: Optional[str] = None,
     diarize_max_speakers: Optional[int] = None,
     diarize: bool = False,
     file: UploadFile = File(...),
     fileName: str = Form(...),
     auth: str = Depends(token_auth),
 ):
-    task = tasks.add(TranscriptionTask(file.filename, TranscriptionState.QUEUED))
+    task = tasks.add(
+        TranscriptionTask(
+            file.filename,
+            TranscriptionState.QUEUED,
+            punctuate=punctuation_model is not None,
+        )
+    )
     background_tasks.add_task(
         process_audio,
-        lang,
-        model,
+        transcription_model,
+        punctuation_model,
         file.file,
         fileName,
         task.uuid,
@@ -82,12 +89,11 @@ async def start_transcription(
 @app.post("/tasks/download_model/")
 async def download_model(
     background_tasks: BackgroundTasks,
-    lang: str,
-    model: str,
+    model_id: str,
     auth: str = Depends(token_auth),
 ):
-    task = tasks.add(DownloadModelTask(lang, model))
-    background_tasks.add_task(models.download, lang, model, task.uuid)
+    task = tasks.add(DownloadModelTask(model_id))
+    background_tasks.add_task(models.download, model_id, task.uuid)
     return task
 
 
@@ -113,8 +119,8 @@ async def get_all_models(auth: str = Depends(token_auth)):
 
 
 @app.post("/models/delete")
-async def delete_model(lang: str, model: str, auth: str = Depends(token_auth)):
-    models.delete(lang, model)
+async def delete_model(model_id: str, auth: str = Depends(token_auth)):
+    models.delete(model_id)
     return PlainTextResponse("", status_code=200)
 
 
@@ -151,4 +157,9 @@ async def model_does_not_exist_handler(request, exc):
 
 @app.exception_handler(ModelNotDownloaded)
 async def model_not_downloaded_handler(request, exc):
+    return PlainTextResponse(str(exc), status_code=412)
+
+
+@app.exception_handler(ModelTypeNotSupported)
+async def model_type_not_supported(request, exc):
     return PlainTextResponse(str(exc), status_code=412)

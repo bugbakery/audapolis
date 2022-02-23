@@ -17,6 +17,7 @@ import * as editReducers from './edit';
 import * as ioReducers from './io';
 import * as playReducers from './play';
 import * as selectionReducers from './selection';
+import * as transcripCorrectionReducers from './transcript_correction';
 
 exposeReducersWindow(displayReducers, editReducers, ioReducers, playReducers, selectionReducers);
 
@@ -29,6 +30,7 @@ export const reducers: (
   ...Object.values(ioReducers),
   ...Object.values(playReducers),
   ...Object.values(selectionReducers),
+  ...Object.values(transcripCorrectionReducers),
 ];
 
 function editorReducer(state: EditorState | undefined, action: AnyAction): EditorState {

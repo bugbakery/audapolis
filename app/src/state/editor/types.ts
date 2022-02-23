@@ -47,6 +47,8 @@ export interface EditorState {
 
   exportState: ExportState;
   exportPopup: ExportPopupState;
+
+  transcriptCorrectionState: string | null;
 }
 
 export type ExportPopupState = 'hidden' | 'document' | 'selection';
@@ -76,4 +78,6 @@ export const defaultEditorState: EditorState = {
   displaySpeakerNames: false,
   displayVideo: false,
   exportPopup: 'hidden',
+
+  transcriptCorrectionState: null,
 };

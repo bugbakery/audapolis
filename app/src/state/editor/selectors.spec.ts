@@ -15,8 +15,9 @@ import {
   firstPossibleCursorPosition,
   currentIndexLeft,
   memoize,
-  selectionDocument,
+  selectionSpansMultipleParagraphs,
   macroItemsToText,
+  selectionDocument,
 } from './selectors';
 import { produce } from 'immer';
 
@@ -422,6 +423,28 @@ test('selectionDocument adds para break if selections end in heading', async () 
     { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: null },
   ]);
+});
+
+test('selection spans multiple paragraphs: true', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.selection = {
+    startIndex: 3,
+    length: 7,
+    headPosition: 'right',
+  };
+  expect(selectionSpansMultipleParagraphs(state)).toStrictEqual(true);
+});
+
+test('selection spans multiple paragraphs: false', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.selection = {
+    startIndex: 3,
+    length: 2,
+    headPosition: 'left',
+  };
+  expect(selectionSpansMultipleParagraphs(state)).toStrictEqual(false);
 });
 
 test('current user cursor time at zero-length item', () => {

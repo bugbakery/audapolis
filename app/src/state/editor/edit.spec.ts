@@ -841,7 +841,6 @@ const mockedSerializeDocument = mocked(serializeDocument);
 jest.mock('../../core/document', () => {
   const originalModule = jest.requireActual('../../core/document');
 
-  //Mock the default export and named export 'foo'
   return {
     __esModule: true,
     ...originalModule,

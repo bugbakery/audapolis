@@ -24,6 +24,7 @@ import {
   memoizedTimedDocumentItems,
 } from '../../state/editor/selectors';
 import { Dispatch } from '@reduxjs/toolkit';
+import { startTranscriptCorrection } from '../../state/editor/transcript_correction';
 
 const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   position: relative;
@@ -53,6 +54,14 @@ export function Document(): JSX.Element {
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
 
+  const editingRange = useSelector((state: RootState) => {
+    if (state.editor.present?.transcriptCorrectionState != null) {
+      return state.editor.present?.selection;
+    } else {
+      return null;
+    }
+  });
+
   const speakerColorIndices = memoizedSpeakerIndices(contentMacros);
   const ref = useRef<HTMLDivElement>(null);
   const theme: Theme = useTheme();
@@ -62,7 +71,7 @@ export function Document(): JSX.Element {
   }, [ref.current]);
 
   const mouseDownHandler: MouseEventHandler = (e) => {
-    if (e.detail != 1) return;
+    if (e.detail != 1 || e.buttons != 1) return;
 
     e.preventDefault();
     ref.current?.focus(); // sometimes we loose focus and then it is nice to be able to gain it back
@@ -105,6 +114,9 @@ export function Document(): JSX.Element {
     } else if (e.key == 'ArrowUp' || e.key == 'ArrowDown') {
       // TODO: handle properly (see: https://github.com/audapolis/audapolis/issues/228)
       e.preventDefault();
+    } else if (e.key == 'i') {
+      e.preventDefault();
+      dispatch(startTranscriptCorrection());
     }
   };
   function getSpeakerColor(speaker: string | null) {
@@ -120,7 +132,7 @@ export function Document(): JSX.Element {
       displaySpeakerNames={displaySpeakerNames}
       onMouseDown={mouseDownHandler}
       onMouseMove={mouseMoveHandler}
-      tabIndex={-1}
+      tabIndex={1}
       onKeyDown={keyDownHandler}
     >
       <Cursor />
@@ -152,6 +164,7 @@ export function Document(): JSX.Element {
                 color={speakerColor}
                 displaySpeakerNames={displaySpeakerNames}
                 paraBreakIdx={paraBreakIdx}
+                editingRange={editingRange}
               />
             );
           }
@@ -231,6 +244,9 @@ const itemFromNode = (content: TimedDocumentItem[], node: Node, n = 0) => {
 };
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
+  const transcriptCorrectionState = useSelector(
+    (state: RootState) => state.editor.present?.transcriptCorrectionState
+  );
   useEffect(() => {
     if (selection) {
       const start = document.getElementById(`item-${selection.startIndex}`);
@@ -247,7 +263,13 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     } else {
       window.getSelection()?.removeAllRanges();
     }
-  }, [selection?.startIndex, selection?.length, selection?.headPosition, documentRef.current]);
+  }, [
+    selection?.startIndex,
+    selection?.length,
+    selection?.headPosition,
+    documentRef.current,
+    transcriptCorrectionState,
+  ]);
   return <></>;
 }
 

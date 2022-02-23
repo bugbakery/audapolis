@@ -92,6 +92,12 @@ export function EditorMenuBar(): JSX.Element {
           callback={() => dispatch(selectAll())}
           accelerator={'CommandOrControl+A'}
         />
+
+        <MenuItem
+          label={'correct transcript of selection'}
+          callback={() => dispatch(selectAll())}
+          accelerator={'CommandOrControl+A'}
+        />
       </MenuGroup>
       <MenuGroup label={'View'}>
         <MenuCheckbox

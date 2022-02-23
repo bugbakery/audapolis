@@ -15,7 +15,7 @@ import {
   Word,
 } from '../../core/document';
 import _ from 'lodash';
-import { assertUnreachable, roughEq } from '../../util';
+import { assertSome, assertUnreachable, roughEq } from '../../util';
 import { isDraft, original } from 'immer';
 
 function isSame<T extends any[]>(a: T, b: T): boolean {
@@ -201,6 +201,17 @@ function untimeDocumentItems(items: TimedDocumentItem[]): DocumentItem[] {
     const { absoluteStart: _aS, absoluteIndex: _aI, ...untimedIcon } = item;
     return untimedIcon;
   });
+}
+
+export function selectionSpansMultipleParagraphs(state: EditorState): boolean {
+  const selection = state.selection;
+  assertSome(selection);
+
+  const selectedItems = memoizedTimedDocumentItems(state.document.content).slice(
+    selection.startIndex,
+    selection.startIndex + selection.length
+  );
+  return selectedItems.filter((x) => x.type == 'paragraph_break').length > 0;
 }
 
 export const memoizedParagraphItems = memoize((content: DocumentItem[]): TimedParagraphItem[] => {

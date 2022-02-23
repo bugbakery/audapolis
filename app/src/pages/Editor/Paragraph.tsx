@@ -1,8 +1,7 @@
 import * as React from 'react';
-import { DetailedHTMLProps, HTMLAttributes, useRef, useState } from 'react';
+import { HTMLAttributes, HTMLProps, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Paragraph as ParagraphType, TimedItemExtension } from '../../core/document';
-import { assertSome } from '../../util';
 import {
   Button,
   majorScale,
@@ -13,22 +12,30 @@ import {
   Text,
   TextInput,
 } from 'evergreen-ui';
-import { reassignParagraph, renameSpeaker, setWord } from '../../state/editor/edit';
+import { reassignParagraph, renameSpeaker } from '../../state/editor/edit';
 import { RootState } from '../../state';
 import { useTheme } from '../../components/theme';
+import { Selection } from '../../state/editor/types';
+import {
+  abortTranscriptCorrection,
+  finishTranscriptCorrection,
+  setTranscriptCorrectionText,
+} from '../../state/editor/transcript_correction';
+import { assertSome } from '../../util';
 
 export function Paragraph({
   data,
   color,
   displaySpeakerNames,
   paraBreakIdx,
+  editingRange,
 }: {
   data: ParagraphType & TimedItemExtension;
   color: string;
   displaySpeakerNames: boolean;
   paraBreakIdx: number;
+  editingRange: Selection | null;
 }): JSX.Element {
-  const dispatch = useDispatch();
   const theme = useTheme();
 
   return (
@@ -49,23 +56,34 @@ export function Paragraph({
             key: i,
             id: `item-${item.absoluteIndex}`,
           };
-
-          if (item.type == 'word') {
-            return (
-              <Word
-                word={item.word}
-                changehandler={(text: string) => {
-                  dispatch(setWord({ text, absoluteIndex: item.absoluteIndex }));
-                }}
-                {...commonProps}
-              />
-            );
+          if (editingRange && editingRange.startIndex == item.absoluteIndex) {
+            return <TranscriptCorrectionEntry {...commonProps} />;
+          } else if (
+            editingRange &&
+            editingRange.startIndex <= item.absoluteIndex &&
+            editingRange.startIndex + editingRange.length > item.absoluteIndex
+          ) {
+            return; // we are handling the rendering in the first element
+          } else if (item.type == 'word') {
+            return <span {...commonProps}>{' ' + item.word}</span>;
           } else if (item.type == 'silence' || item.type == 'artificial_silence') {
             if (item.length > 0.4) {
-              return <LongSilence {...commonProps} />;
-            } else {
               return (
-                <ShortSilence preserve={i == 0 || i == data.content.length - 1} {...commonProps} />
+                <span style={{ fontFamily: 'quarter_rest' }} {...commonProps}>
+                  {' _'}
+                </span>
+              );
+            } else {
+              const preserve = i == 0 || i == data.content.length - 1;
+              return (
+                <span
+                  style={{
+                    ...(preserve && { whiteSpace: 'pre' }),
+                  }}
+                  {...commonProps}
+                >
+                  {' '}
+                </span>
               );
             }
           }
@@ -81,10 +99,55 @@ export function Paragraph({
   );
 }
 
-function LongSilence(props: HTMLAttributes<HTMLSpanElement>): JSX.Element {
+function TranscriptCorrectionEntry(props: HTMLProps<HTMLSpanElement>): JSX.Element {
+  const editingState = useSelector(
+    (state: RootState) => state.editor.present?.transcriptCorrectionState
+  );
+  const dispatch = useDispatch();
+  const focusDocument = () => {
+    const el = document.getElementById('document');
+    el?.focus();
+  };
+
   return (
-    <span style={{ fontFamily: 'quarter_rest' }} {...props}>
-      {' _'}
+    <span {...props}>
+      {' '}
+      <span
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key == 'Enter') {
+            dispatch(setTranscriptCorrectionText(e.currentTarget.innerHTML));
+            dispatch(finishTranscriptCorrection());
+            focusDocument();
+            e.preventDefault();
+          } else if (e.key == 'Escape') {
+            dispatch(abortTranscriptCorrection());
+            e.preventDefault();
+            focusDocument();
+          }
+
+          e.stopPropagation();
+        }}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        onBlur={() => {
+          dispatch(abortTranscriptCorrection());
+          focusDocument();
+        }}
+        ref={(ref) => {
+          if (ref)
+            setTimeout(() => {
+              const range = document.createRange();
+              range.selectNodeContents(ref);
+              const sel = window.getSelection();
+              assertSome(sel);
+              sel.removeAllRanges();
+              sel.addRange(range);
+              ref?.focus();
+            });
+        }}
+      >
+        {editingState}
+      </span>
     </span>
   );
 }
@@ -108,86 +171,6 @@ function ParagraphSign({
   return (
     <span style={{ color: theme.colors.muted }} {...props}>
       {showParSign ? ' ¶' : ''}
-    </span>
-  );
-}
-
-function ShortSilence({
-  preserve,
-  ...props
-}: { preserve: boolean } & HTMLAttributes<HTMLSpanElement>): JSX.Element {
-  return (
-    <span
-      style={{
-        ...(preserve && { whiteSpace: 'pre' }),
-      }}
-      {...props}
-    >
-      {' '}
-    </span>
-  );
-}
-
-export function Word({
-  word,
-  changehandler,
-  ...props
-}: DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> & {
-  word: string;
-  changehandler: (x: string) => void;
-}): JSX.Element {
-  const [editing, setEditing] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  const startEditing = () => {
-    setEditing(true);
-    const range = document.createRange();
-    assertSome(ref.current);
-    range.selectNodeContents(ref.current);
-    const sel = window.getSelection();
-    assertSome(sel);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    setTimeout(function () {
-      ref.current?.focus();
-    }, 0);
-  };
-
-  const stopEditing = () => {
-    setEditing(false);
-    const text = ref.current?.innerText;
-    assertSome(text);
-    if (text != word) {
-      changehandler(text);
-    }
-  };
-  const handleContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-    if (editing) {
-      stopEditing();
-    } else {
-      startEditing();
-    }
-  };
-  const editableProps = editing
-    ? {
-        onKeyDown: (e: React.KeyboardEvent) => {
-          e.stopPropagation();
-          if (e.key == 'Enter') {
-            stopEditing();
-          }
-        },
-        contentEditable: editing,
-        suppressContentEditableWarning: true,
-        onBlur: () => {
-          stopEditing();
-        },
-      }
-    : {};
-
-  return (
-    <span {...props} {...editableProps} ref={ref} onContextMenu={handleContextMenu}>
-      {' ' + word}
     </span>
   );
 }

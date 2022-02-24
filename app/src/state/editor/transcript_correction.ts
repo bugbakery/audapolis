@@ -20,6 +20,7 @@ export const startTranscriptCorrection = createActionWithReducer<EditorState>(
     }
     try {
       state.transcriptCorrectionState = getTranscriptCorrectionState(state);
+      state.playing = false;
     } catch (e) {
       toaster.warning(e.message);
     }

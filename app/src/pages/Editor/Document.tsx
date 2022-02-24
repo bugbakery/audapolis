@@ -247,6 +247,8 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
   const transcriptCorrectionState = useSelector(
     (state: RootState) => state.editor.present?.transcriptCorrectionState
   );
+  const exportPopupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
+
   useEffect(() => {
     if (selection) {
       const start = document.getElementById(`item-${selection.startIndex}`);
@@ -269,6 +271,7 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     selection?.headPosition,
     documentRef.current,
     transcriptCorrectionState,
+    exportPopupState,
   ]);
   return <></>;
 }

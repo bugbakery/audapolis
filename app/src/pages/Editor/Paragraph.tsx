@@ -113,6 +113,11 @@ function TranscriptCorrectionEntry(props: HTMLProps<HTMLSpanElement>): JSX.Eleme
     <span {...props}>
       {' '}
       <span
+        tabIndex={0}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          console.log(e);
+        }}
         onKeyDown={(e: React.KeyboardEvent) => {
           if (e.key == 'Enter') {
             dispatch(setTranscriptCorrectionText(e.currentTarget.innerHTML));

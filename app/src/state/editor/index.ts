@@ -12,12 +12,14 @@ import {
   deleteSomething,
 } from './edit';
 
+import { finishTranscriptCorrection } from './transcript_correction';
+
 import * as displayReducers from './display';
 import * as editReducers from './edit';
 import * as ioReducers from './io';
 import * as playReducers from './play';
 import * as selectionReducers from './selection';
-import * as transcripCorrectionReducers from './transcript_correction';
+import * as transcriptCorrectionReducers from './transcript_correction';
 
 exposeReducersWindow(displayReducers, editReducers, ioReducers, playReducers, selectionReducers);
 
@@ -30,7 +32,7 @@ export const reducers: (
   ...Object.values(ioReducers),
   ...Object.values(playReducers),
   ...Object.values(selectionReducers),
-  ...Object.values(transcripCorrectionReducers),
+  ...Object.values(transcriptCorrectionReducers),
 ];
 
 function editorReducer(state: EditorState | undefined, action: AnyAction): EditorState {
@@ -53,6 +55,7 @@ const stateSlice: Reducer<StateWithHistory<EditorState | null>> = undoable(edito
     reassignParagraph.type,
     renameSpeaker.type,
     paste.fulfilled.type,
+    finishTranscriptCorrection.type,
   ]),
   ignoreInitialState: false,
   syncFilter: true,

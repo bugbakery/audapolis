@@ -38,6 +38,10 @@ export function Paragraph({
 }): JSX.Element {
   const theme = useTheme();
 
+  const displayConfidence = useSelector(
+    (state: RootState) => state.editor.present?.displayConfidence || false
+  );
+
   return (
     <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
       <Speaker
@@ -65,7 +69,22 @@ export function Paragraph({
           ) {
             return; // we are handling the rendering in the first element
           } else if (item.type == 'word') {
-            return <span {...commonProps}>{' ' + item.word}</span>;
+            if (displayConfidence) {
+              return (
+                <span {...commonProps}>
+                  {' '}
+                  <span
+                    style={{
+                      backgroundColor: `rgba(255, 0, 0, ${1 - item.conf})`,
+                    }}
+                  >
+                    {item.word}
+                  </span>
+                </span>
+              );
+            } else {
+              return <span {...commonProps}>{' ' + item.word}</span>;
+            }
           } else if (item.type == 'silence' || item.type == 'artificial_silence') {
             if (item.length > 0.4) {
               return (

@@ -199,9 +199,7 @@ function handleWordClick(dispatch: Dispatch, content: TimedDocumentItem[], e: Re
     const parent = range.startContainer.parentElement;
     const placeLeft = parent == null ? false : shouldPlaceCursorLeft(e.clientX, e.clientY, parent);
     dispatch(setSelection(null));
-    const node = range && getChild(range.startContainer, range.startOffset);
-    const element = node?.parentElement;
-    const item = getItem(content, element);
+    const item = itemFromNode(content, range.startContainer, range.startOffset);
     if (item) {
       const idx = item.absoluteIndex + (placeLeft ? 0 : 1);
       dispatch(setUserIndex(idx));
@@ -239,8 +237,12 @@ function indexAtPosition(
 
 const itemFromNode = (content: TimedDocumentItem[], node: Node, n = 0) => {
   const child = getChild(node, n);
-  const element = child?.parentElement;
-  return getItem(content, element);
+  let itemElement = child?.parentElement;
+  while (itemElement) {
+    if (itemElement.id.match(/item-/)) break;
+    else itemElement = itemElement?.parentElement;
+  }
+  return getItem(content, itemElement);
 };
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);

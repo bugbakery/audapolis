@@ -22,6 +22,13 @@ export const toggleDisplayVideo = createActionWithReducer<EditorState>(
   }
 );
 
+export const toggleDisplayConfidence = createActionWithReducer<EditorState>(
+  'editor/toggleDisplayConfidence',
+  (state) => {
+    state.displayConfidence = !state.displayConfidence;
+  }
+);
+
 export const setExportPopup = createActionWithReducer<EditorState, ExportPopupState>(
   'editor/setExportPopup',
   (state, payload) => {

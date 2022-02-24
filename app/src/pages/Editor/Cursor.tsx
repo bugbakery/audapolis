@@ -14,6 +14,9 @@ import _ from 'lodash';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
+  const isCorrection = useSelector(
+    (state: RootState) => state.editor.present?.transcriptCorrectionState != null
+  );
 
   const [ref, setRef] = useState<HTMLDivElement | null>(null);
   const now = Date.now();
@@ -23,7 +26,9 @@ export function Cursor(): JSX.Element {
   const _parentSize = useElementSize(ref?.parentElement);
 
   const cursorPosition = useComputeCursorPosition(ref?.parentElement);
-  if (cursorPosition == null) return <></>;
+  if (isCorrection || cursorPosition == null) {
+    return <div style={{ display: 'none' }} ref={(ref: HTMLDivElement) => setRef(ref)} />;
+  }
 
   const scrollContainer = document.getElementById('scroll-container');
   if (

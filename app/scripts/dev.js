@@ -1,7 +1,6 @@
 const { createServer, build, createLogger } = require('vite');
 const electronPath = require('electron');
 const { spawn } = require('child_process');
-
 const mode = (process.env.MODE = process.env.MODE || 'development');
 const LOG_LEVEL = 'warn';
 const sharedConfig = {
@@ -69,9 +68,9 @@ const setupMainPackageWatcher = (viteDevServer) => {
       configFile: 'src/vite_renderer.config.js',
     });
 
-    // we start with a random port because spawning multiple audapolis instances could be racy.
-    // this reduces the flakiness of puppeteer tests
-    const basePort = 1000 + Math.round(Math.random() * 5000);
+    // we start with a random port in test mode because spawning multiple audapolis instances could
+    // be racy. this reduces the flakiness of puppeteer tests
+    const basePort = mode === 'test' ? 1000 + Math.round(Math.random() * 5000) : 3000;
     await viteDevServer.listen(basePort);
 
     await setupMainPackageWatcher(viteDevServer);

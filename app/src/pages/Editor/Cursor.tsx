@@ -10,6 +10,7 @@ import {
   getIndexAtTime,
   memoizedTimedDocumentItems,
 } from '../../state/editor/selectors';
+import _ from 'lodash';
 
 export function Cursor(): JSX.Element {
   const theme = useTheme();
@@ -21,7 +22,7 @@ export function Cursor(): JSX.Element {
   // we do this to re-render the cursor when the parent container size changes
   const _parentSize = useElementSize(ref?.parentElement);
 
-  const cursorPosition = useComputeCursorPosition();
+  const cursorPosition = useComputeCursorPosition(ref?.parentElement);
   if (cursorPosition == null) return <></>;
 
   const scrollContainer = document.getElementById('scroll-container');
@@ -68,7 +69,7 @@ export function Cursor(): JSX.Element {
   );
 }
 
-function useComputeCursorPosition(): {
+function useComputeCursorPosition(parentElement: HTMLElement | null | undefined): {
   left: number;
   top: number;
 } | null {
@@ -109,11 +110,35 @@ function useComputeCursorPosition(): {
   if (itemIdx == null) return null;
   const itemElement = document.getElementById(`item-${itemIdx}`);
   if (!itemElement) return null;
-  let left = itemElement.offsetLeft;
-  const top = itemElement.offsetTop;
+
   if (item && item.absoluteStart <= time && 'length' in item) {
+    if (!parentElement) return null;
+    const parentClientRect = parentElement.getBoundingClientRect();
+    const rects = Array.from(itemElement.getClientRects());
+    const totalWidth = _.sum(rects.map((r) => r.width));
     const timeInWord = showTime - item.absoluteStart;
-    left += (timeInWord / item.length) * itemElement.offsetWidth;
+
+    const target = (timeInWord / item.length) * totalWidth;
+    let offset = 0;
+    for (const rect of rects) {
+      if (target - offset <= rect.width) {
+        return {
+          left: rect.left + target - offset - parentClientRect.left,
+          top: rect.top - parentClientRect.top,
+        };
+      } else {
+        offset += rect.width;
+      }
+    }
+    const lastRect = rects[rects.length - 1];
+    return {
+      left: lastRect.left + lastRect.width - parentClientRect.left,
+      top: lastRect.top - parentClientRect.top,
+    };
+  } else {
+    return {
+      left: itemElement.offsetLeft,
+      top: itemElement.offsetTop,
+    };
   }
-  return { left, top };
 }

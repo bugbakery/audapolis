@@ -5,7 +5,11 @@ import { transcribeFile } from '../../state/transcribe';
 import { ActionCreators } from 'redux-undo';
 import { copy, cut, paste } from '../../state/editor/edit';
 import { selectAll } from '../../state/editor/selection';
-import { toggleDisplaySpeakerNames, toggleDisplayVideo } from '../../state/editor/display';
+import {
+  toggleDisplayConfidence,
+  toggleDisplaySpeakerNames,
+  toggleDisplayVideo,
+} from '../../state/editor/display';
 import React from 'react';
 import {
   MenuBar,
@@ -22,6 +26,9 @@ export function EditorMenuBar(): JSX.Element {
   );
   const displayVideo = useSelector(
     (state: RootState) => state.editor.present?.displayVideo || false
+  );
+  const displayConfidence = useSelector(
+    (state: RootState) => state.editor.present?.displayConfidence || false
   );
 
   return (
@@ -92,12 +99,6 @@ export function EditorMenuBar(): JSX.Element {
           callback={() => dispatch(selectAll())}
           accelerator={'CommandOrControl+A'}
         />
-
-        <MenuItem
-          label={'correct transcript of selection'}
-          callback={() => dispatch(selectAll())}
-          accelerator={'CommandOrControl+A'}
-        />
       </MenuGroup>
       <MenuGroup label={'View'}>
         <MenuCheckbox
@@ -109,6 +110,11 @@ export function EditorMenuBar(): JSX.Element {
           label={'Display Video'}
           checked={displayVideo}
           callback={() => dispatch(toggleDisplayVideo())}
+        />
+        <MenuCheckbox
+          label={'Highlight low confidence transcript'}
+          checked={displayConfidence}
+          callback={() => dispatch(toggleDisplayConfidence())}
         />
       </MenuGroup>
     </MenuBar>

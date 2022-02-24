@@ -44,6 +44,7 @@ export interface EditorState {
 
   displaySpeakerNames: boolean;
   displayVideo: boolean;
+  displayConfidence: boolean;
 
   exportState: ExportState;
   exportPopup: ExportPopupState;
@@ -77,6 +78,8 @@ export const defaultEditorState: EditorState = {
 
   displaySpeakerNames: false,
   displayVideo: false,
+  displayConfidence: false,
+
   exportPopup: 'hidden',
 
   transcriptCorrectionState: null,

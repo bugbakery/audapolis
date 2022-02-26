@@ -72,7 +72,9 @@ export function publishServerInfo(update?: Partial<ServerInfo>): void {
       (serverInfo[k] as any) = update[k];
     });
   }
-  sendAll('local-server-info', serverInfo);
+  if (serverInfo.state == 'running') {
+    sendAll('local-server-info', serverInfo);
+  }
 }
 
 export function publishServerStderr(stderr: string): void {

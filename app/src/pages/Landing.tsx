@@ -1,16 +1,25 @@
 import * as React from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { transcribeFile } from '../state/transcribe';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, MainCenterColumn } from '../components/Util';
 import styled from 'styled-components';
 import { openModelManager } from '../state/nav';
 import { resetTour } from '../components/Tour';
-import { Button, CommentIcon, IconButton, SettingsIcon, Tooltip } from 'evergreen-ui';
+import {
+  Button,
+  CommentIcon,
+  IconButton,
+  SettingsIcon,
+  Tooltip,
+  Text,
+  Heading,
+} from 'evergreen-ui';
 import { LandingTour } from '../tour/LandingTour';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor/io';
 import { emptyDocument } from '../core/document';
 import { MenuBar, MenuGroup, MenuItem } from '../components/MenuBar';
+import { RootState } from '../state';
 
 const BottomRightContainer = styled.div`
   position: absolute;
@@ -23,10 +32,31 @@ const BottomRightContainer = styled.div`
 `;
 
 export function LandingPage(): JSX.Element {
+  const connected = useSelector(
+    (state: RootState) => state.server.servers[state.server.selectedServer]
+  );
+
+  return <AppContainer>{connected ? <LandingContent /> : <ConnectingContent />}</AppContainer>;
+}
+
+function ConnectingContent(): JSX.Element {
+  return (
+    <>
+      <TitleBar />
+      <MainCenterColumn>
+        <Heading>Connecting to server...</Heading>
+        <p />
+        <Text>This should only take a few seconds</Text>
+      </MainCenterColumn>
+    </>
+  );
+}
+
+function LandingContent(): JSX.Element {
   const dispatch = useDispatch();
 
   return (
-    <AppContainer>
+    <>
       <MenuBar>
         <MenuGroup label={'File'}>
           <MenuItem
@@ -86,6 +116,6 @@ export function LandingPage(): JSX.Element {
           <IconButton icon={SettingsIcon} onClick={() => dispatch(openModelManager())} />
         </Tooltip>
       </BottomRightContainer>
-    </AppContainer>
+    </>
   );
 }

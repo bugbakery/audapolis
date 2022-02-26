@@ -127,6 +127,8 @@ export const openDocumentFromMemory = createAsyncActionWithReducer<EditorState, 
   },
   {
     fulfilled: (state, document) => {
+      state.cursor.current = 'user';
+      state.cursor.userIndex = firstPossibleCursorPosition(state.document.content);
       state.document = document;
     },
   }

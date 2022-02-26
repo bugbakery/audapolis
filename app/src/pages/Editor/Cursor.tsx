@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { Pane } from 'evergreen-ui';
@@ -76,6 +76,16 @@ function useComputeCursorPosition(): {
     state.editor.present ? currentCursorTime(state.editor.present) : 0
   );
   const useRoundedTime = useSelector((state: RootState) => state.editor.present?.playing);
+  const stateDisplaySpeakerNames = useSelector(
+    (state: RootState) => state.editor.present?.displaySpeakerNames
+  );
+  const [_speakerNamesDisplayed, setSpeakerNamesDisplayed] = useState(stateDisplaySpeakerNames);
+  useEffect(() => {
+    setTimeout(() => {
+      setSpeakerNamesDisplayed(stateDisplaySpeakerNames);
+    }, 200);
+  }, [stateDisplaySpeakerNames]);
+
   const roundedTime = Math.ceil(time * 10) / 10;
   const showTime = useRoundedTime ? roundedTime : time;
   const itemIdx = useSelector((state: RootState) => {

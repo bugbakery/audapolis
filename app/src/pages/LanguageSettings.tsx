@@ -25,15 +25,18 @@ import {
 import { Circle } from 'rc-progress';
 import { openModelManager } from '../state/nav';
 import { useEffect, useState } from 'react';
+import { LanguageSettingsTour } from '../tour/LanguageSettingsTour';
 
 function ModelTable({
   models,
   lang,
   type,
+  id,
 }: {
   models: Model[];
   lang: string;
   type: string;
+  id?: string;
 }): JSX.Element {
   const dispatch = useDispatch();
   const all_downloaded = useSelector((state: RootState) => state.models.downloaded);
@@ -72,42 +75,61 @@ function ModelTable({
     }
   }, [defaultModel, downloaded]);
 
-  const rows = (
-    <>
-      {downloaded.map((model, i) => (
-        <Table.Row
-          id={`${model.lang}-${model.name}` /* for tour */}
-          className={'downloaded' /* for tour */}
-          key={i}
-        >
-          <Table.Cell>
+  const ModelTableRow = ({
+    row_model,
+    className,
+    isDefault,
+    action,
+  }: {
+    row_model: Model;
+    className?: string;
+    isDefault: boolean | null;
+    action: JSX.Element;
+  }): JSX.Element => {
+    return (
+      <Table.Row id={row_model.name} className={className}>
+        <Table.Cell>
+          {isDefault !== null ? (
             <Radio
-              checked={defaultModel == model.model_id}
-              name={`default-${lang}-${type}`}
+              checked={isDefault}
+              name={`default-${type}`}
               onChange={() => {
-                setDefaultModel(lang, type, model.model_id);
-                setLocalDefaultModel(model.model_id);
+                setDefaultModel(lang, type, row_model.model_id);
+                setLocalDefaultModel(row_model.model_id);
               }}
             />
-          </Table.Cell>
-          <Table.TextCell {...nameColumnsProps}>{model.name}</Table.TextCell>
-          <Table.TextCell isNumber>{model.size}</Table.TextCell>
-          <Table.TextCell flexBasis={'55%'}>{model.description}</Table.TextCell>
-          {/*<Table.TextCell>{model.lang}</Table.TextCell>*/}
-          <Table.Cell {...lastColumnProps}>
+          ) : (
+            <></>
+          )}
+        </Table.Cell>
+        <Table.TextCell {...nameColumnsProps}>{row_model.name}</Table.TextCell>
+        <Table.TextCell isNumber>{row_model.size}</Table.TextCell>
+        <Table.TextCell flexBasis={'55%'}>{row_model.description}</Table.TextCell>
+        <Table.Cell {...lastColumnProps}>{action}</Table.Cell>
+      </Table.Row>
+    );
+  };
+
+  const rows = (
+    <>
+      {downloaded.map((model) => (
+        <ModelTableRow
+          row_model={model}
+          className={'downloaded'}
+          isDefault={defaultModel == model.model_id}
+          action={
             <Tooltip content={'delete model'}>
               <IconButton icon={TrashIcon} onClick={() => dispatch(deleteModel(model))} />
             </Tooltip>
-          </Table.Cell>
-        </Table.Row>
+          }
+          key={model.model_id}
+        />
       ))}
-      {downloading.map((model, i) => (
-        <Table.Row id={`${model.lang}-${model.name}` /* for tour */} key={i}>
-          <Table.TextCell {...nameColumnsProps}>{model.name}</Table.TextCell>
-          <Table.TextCell isNumber>{model.size}</Table.TextCell>
-          <Table.TextCell flexBasis={'55%'}>{model.description}</Table.TextCell>
-          {/*<Table.TextCell>{model.lang}</Table.TextCell>*/}
-          <Table.Cell {...lastColumnProps}>
+      {downloading.map((model) => (
+        <ModelTableRow
+          row_model={model}
+          isDefault={null}
+          action={
             <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
               <Button
                 padding={0}
@@ -123,16 +145,16 @@ function ModelTable({
                 />
               </Button>
             </Tooltip>
-          </Table.Cell>
-        </Table.Row>
+          }
+          key={model.model_id}
+        />
       ))}
-      {notDownloaded.map((model, i) => (
-        <Table.Row id={`${model.lang}-${model.name}` /* for tour */} key={i}>
-          <Table.TextCell {...nameColumnsProps}>{model.name}</Table.TextCell>
-          <Table.TextCell isNumber>{model.size}</Table.TextCell>
-          <Table.TextCell flexBasis={'55%'}>{model.description}</Table.TextCell>
-          {/*<Table.TextCell>{model.lang}</Table.TextCell>*/}
-          <Table.Cell {...lastColumnProps}>
+      {notDownloaded.map((model) => (
+        <ModelTableRow
+          key={model.model_id}
+          row_model={model}
+          isDefault={null}
+          action={
             <Tooltip content={'download model'}>
               <IconButton
                 className={'download' /* for tour */}
@@ -140,20 +162,19 @@ function ModelTable({
                 onClick={() => dispatch(downloadModel(model))}
               />
             </Tooltip>
-          </Table.Cell>
-        </Table.Row>
+          }
+        />
       ))}
     </>
   );
 
   return (
-    <Table>
+    <Table id={id}>
       <Table.Head padding={0}>
         <Table.TextHeaderCell>⭐</Table.TextHeaderCell>
         <Table.TextHeaderCell {...nameColumnsProps}>Name</Table.TextHeaderCell>
         <Table.TextHeaderCell>Size</Table.TextHeaderCell>
         <Table.TextHeaderCell flexBasis={'55%'}>Description</Table.TextHeaderCell>
-        {/*<Table.TextHeaderCell>Languages</Table.TextHeaderCell>*/}
         <Table.TextHeaderCell {...lastColumnProps} />
       </Table.Head>
 
@@ -183,9 +204,14 @@ export function LanguageSettingsPage(): JSX.Element {
   const languages = useSelector((state: RootState) => state.models.languages);
   const language = languages[selectedLanguage];
 
+  const all_downloaded = useSelector((state: RootState) => state.models.downloaded);
+  const transcription_downloaded = language.transcription_models.filter(
+    (x) => x.model_id in all_downloaded
+  );
+
   return (
     <AppContainer>
-      {/*<ModelManagerTour hasDownloaded={Object.keys(downloaded).length > 0} />*/}
+      <LanguageSettingsTour hasDownloaded={transcription_downloaded.length > 0} />
 
       <TitleBar />
       <MainMaxWidthContainer>
@@ -198,6 +224,7 @@ export function LanguageSettingsPage(): JSX.Element {
           models={language.transcription_models}
           lang={language.lang}
           type={'transcription'}
+          id={'transcription_table'}
         />
 
         <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
@@ -207,6 +234,7 @@ export function LanguageSettingsPage(): JSX.Element {
           models={language.punctuation_models}
           lang={language.lang}
           type={'punctuation'}
+          id={'punctuation_table'}
         />
 
         <BackButton marginY={majorScale(2)} />

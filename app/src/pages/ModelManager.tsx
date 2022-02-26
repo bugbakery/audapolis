@@ -27,17 +27,17 @@ export function ModelManagerPage(): JSX.Element {
 
   return (
     <AppContainer>
-      <ModelManagerTour hasDownloaded={Object.keys(downloaded).length > 0} />
+      <ModelManagerTour />
 
       <TitleBar />
       <MainMaxWidthContainer>
         <BackButton id={'back' /* for tour */} />
 
         <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
-          Transcription Models
+          Languages
         </Heading>
 
-        <Table>
+        <Table id={'language_table'}>
           <Table.Head padding={0}>
             <Table.TextHeaderCell {...firstColumnProps}>Language</Table.TextHeaderCell>
             <Table.TextHeaderCell>Transcription Models</Table.TextHeaderCell>
@@ -51,7 +51,6 @@ export function ModelManagerPage(): JSX.Element {
               <Table.Row
                 isSelectable
                 onSelect={() => {
-                  console.log('clicked', lang.lang);
                   dispatch(openLanguageSettings(lang.lang));
                 }}
                 id={lang.lang}

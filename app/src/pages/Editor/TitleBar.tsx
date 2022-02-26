@@ -134,6 +134,7 @@ export function EditorTitleBar(): JSX.Element {
           ) : (
             <Tooltip content={'export document'}>
               <TitleBarButton
+                id={'export'}
                 icon={ExportIcon}
                 disabled={exportDisabled}
                 onClick={() => dispatch(setExportPopup('document'))}

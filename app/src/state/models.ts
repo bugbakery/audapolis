@@ -54,7 +54,7 @@ export const fetchModelState = createAsyncThunk<
 
   const flattenLanguages = (x: Record<string, Language>) =>
     Object.values(x).flatMap((x) => {
-      return x.punctuation_models.concat(x.transcription_models);
+      return x.transcription_models.concat(x.punctuation_models);
     });
 
   return { all: flattenLanguages(all), downloaded: downloaded, languages: all };

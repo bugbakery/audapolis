@@ -116,7 +116,10 @@ export function Document(): JSX.Element {
       e.preventDefault();
     } else if (e.key == 'i') {
       e.preventDefault();
-      dispatch(startTranscriptCorrection());
+      dispatch(startTranscriptCorrection('left'));
+    } else if (e.key == 'o') {
+      e.preventDefault();
+      dispatch(startTranscriptCorrection('right'));
     }
   };
   function getSpeakerColor(speaker: string | null) {

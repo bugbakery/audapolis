@@ -39,6 +39,32 @@ jest.mock('evergreen-ui', () => {
   };
 });
 
+test('startTranscriptCorrection selects left', () => {
+  const state = getState();
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  startTranscriptCorrection.reducer(state, 'left');
+  expect(state.selection).toStrictEqual({
+    startIndex: 1,
+    length: 1,
+    headPosition: 'left',
+  });
+  expect(state.transcriptCorrectionState).toStrictEqual('One');
+});
+
+test('startTranscriptCorrection selects right', () => {
+  const state = getState();
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 2;
+  startTranscriptCorrection.reducer(state, 'right');
+  expect(state.selection).toStrictEqual({
+    startIndex: 2,
+    length: 1,
+    headPosition: 'right',
+  });
+  expect(state.transcriptCorrectionState).toStrictEqual('Two');
+});
+
 test('startTranscriptCorrection warns if selection spans multiple paragraphs', () => {
   const state = getState();
   state.selection = {
@@ -47,7 +73,7 @@ test('startTranscriptCorrection warns if selection spans multiple paragraphs', (
     headPosition: 'left',
   };
   const stateClone = _.cloneDeep(state);
-  startTranscriptCorrection.reducer(state);
+  startTranscriptCorrection.reducer(state, 'left');
   expect(state).toStrictEqual(stateClone);
   expect(mockedWarning).toHaveBeenCalled();
 });
@@ -60,7 +86,7 @@ test('startTranscriptCorrection warns if selection spans multiple sources', () =
     headPosition: 'left',
   };
   const stateClone = _.cloneDeep(state);
-  startTranscriptCorrection.reducer(state);
+  startTranscriptCorrection.reducer(state, 'left');
   expect(state).toStrictEqual(stateClone);
   expect(mockedWarning).toHaveBeenCalled();
 });
@@ -73,7 +99,7 @@ test('startTranscriptCorrection warns if selection is non continuous in source',
     headPosition: 'left',
   };
   const stateClone = _.cloneDeep(state);
-  startTranscriptCorrection.reducer(state);
+  startTranscriptCorrection.reducer(state, 'left');
   expect(state).toStrictEqual(stateClone);
   expect(mockedWarning).toHaveBeenCalled();
 });
@@ -86,7 +112,7 @@ test('startTranscriptCorrection warns if paragraph_break is selected', () => {
     headPosition: 'left',
   };
   const stateClone = _.cloneDeep(state);
-  startTranscriptCorrection.reducer(state);
+  startTranscriptCorrection.reducer(state, 'left');
   expect(state).toStrictEqual(stateClone);
   expect(mockedWarning).toHaveBeenCalled();
 });
@@ -98,7 +124,7 @@ test('startTranscriptCorrection sets transcriptCorrectionState', () => {
     length: 3,
     headPosition: 'left',
   };
-  startTranscriptCorrection.reducer(state);
+  startTranscriptCorrection.reducer(state, 'left');
   expect(state.transcriptCorrectionState).toStrictEqual('One Two Three');
   expect(mockedWarning).toHaveBeenCalled();
 });

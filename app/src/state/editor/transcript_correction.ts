@@ -7,16 +7,20 @@ import {
   selectionSpansMultipleParagraphs,
 } from './selectors';
 import { toaster } from 'evergreen-ui';
-import { moveSelectionHeadRight } from './selection';
+import { moveSelectionHeadLeft, moveSelectionHeadRight } from './selection';
 import { Silence, TimedDocumentItem, TimedItemExtension, Word } from '../../core/document';
 import { deleteSelection } from './edit';
 import _ from 'lodash';
 
-export const startTranscriptCorrection = createActionWithReducer<EditorState>(
+export const startTranscriptCorrection = createActionWithReducer<EditorState, 'left' | 'right'>(
   'transcript_correction/startTranscriptCorrection',
-  (state) => {
+  (state, direction) => {
     if (state.selection == null) {
-      moveSelectionHeadRight.reducer(state);
+      if (direction == 'right') {
+        moveSelectionHeadRight.reducer(state);
+      } else {
+        moveSelectionHeadLeft.reducer(state);
+      }
     }
     try {
       state.transcriptCorrectionState = getTranscriptCorrectionState(state);

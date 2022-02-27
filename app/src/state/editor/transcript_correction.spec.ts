@@ -162,3 +162,26 @@ test('finishTranscriptCorrection changes document', () => {
     { type: 'word', source: 'source-3', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
   ]);
 });
+
+test('finishTranscriptCorrection creates silence when correction is empty', () => {
+  const state = getState();
+  state.selection = {
+    startIndex: 1,
+    length: 4,
+    headPosition: 'left',
+  };
+  state.transcriptCorrectionState = '';
+  finishTranscriptCorrection.reducer(state);
+  expect(state.transcriptCorrectionState).toStrictEqual(null);
+  expect(state.document.content).toStrictEqual([
+    { type: 'paragraph_break', speaker: 'Speaker One' },
+    { type: 'silence', source: 'source-1', sourceStart: 2, length: 4 },
+    { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
+    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'Two', conf: 1 },
+    { type: 'artificial_silence', length: 10 },
+    { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
+    { type: 'word', source: 'source-3', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+  ]);
+});

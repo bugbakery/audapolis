@@ -34,8 +34,7 @@ export const finishTranscriptCorrection = createActionWithReducer<EditorState>(
     const noDifferenceSelectionState = getTranscriptCorrectionState(state);
 
     if (
-      !state.transcriptCorrectionState ||
-      !state.transcriptCorrectionState.trim() ||
+      state.transcriptCorrectionState == null ||
       state.transcriptCorrectionState == noDifferenceSelectionState
     ) {
       state.transcriptCorrectionState = null;
@@ -51,14 +50,22 @@ export const finishTranscriptCorrection = createActionWithReducer<EditorState>(
     const length = _.sum(selectionSoureItems.map((x) => x.length));
 
     deleteSelection.reducer(state);
-    state.document.content.splice(currentIndex(state), 0, {
-      type: 'word',
-      word: state.transcriptCorrectionState,
-      sourceStart,
-      length,
-      source,
-      conf: 1,
-    });
+    const newItem: Word | Silence = !state.transcriptCorrectionState.trim() // the selection is empty
+      ? {
+          type: 'silence',
+          sourceStart,
+          length,
+          source,
+        }
+      : {
+          type: 'word',
+          word: state.transcriptCorrectionState,
+          sourceStart,
+          length,
+          source,
+          conf: 1,
+        };
+    state.document.content.splice(currentIndex(state), 0, newItem);
     state.transcriptCorrectionState = null;
   }
 );

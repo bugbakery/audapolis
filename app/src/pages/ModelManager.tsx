@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { TitleBar } from '../components/TitleBar';
 import { AppContainer, BackButton, MainMaxWidthContainer } from '../components/Util';
 import { RootState } from '../state';
-import { deleteModel, downloadModel, Model } from '../state/models';
+import { cancelDownload, deleteModel, downloadModel, Model } from '../state/models';
 import {
   Button,
   CloudDownloadIcon,
@@ -84,7 +84,11 @@ export function ModelManagerPage(): JSX.Element {
                 <Table.TextCell isNumber>{model.size}</Table.TextCell>
                 <Table.Cell {...lastColumnProps}>
                   <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
-                    <Button padding={0} appearance={'minimal'}>
+                    <Button
+                      padding={0}
+                      appearance={'minimal'}
+                      onClick={() => dispatch(cancelDownload(model.task_uuid))}
+                    >
                       <Circle
                         style={{ height: majorScale(3) }}
                         percent={model.progress * 100}

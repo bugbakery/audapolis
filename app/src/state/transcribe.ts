@@ -154,7 +154,7 @@ export const startTranscription = createAsyncThunk<
         dispatch(openDocumentFromMemory({ sources: sources, content: flatContent }));
         dispatch(setDisplaySpeakerNames(diarize));
         // Once the task is finished, try to delete it but ignore any errors
-        await deleteTask(server, task);
+        await deleteTask(server, task.uuid);
         break;
       }
       await sleep(0.1);

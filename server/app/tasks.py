@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 class Task:
     uuid: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
 
+    def cancel(self):
+        pass
+
 
 class Tasks:
     def __init__(self):
@@ -27,6 +30,8 @@ class Tasks:
 
     def delete(self, uuid: str):
         try:
+            task = self.tasks[uuid]
+            task.cancel()
             self.tasks.pop(uuid)
         except KeyError:
             raise TaskNotFoundError()

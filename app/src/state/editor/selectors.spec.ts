@@ -439,6 +439,14 @@ test('current user cursor time at word', () => {
   expect(currentCursorTime(state)).toBe(2);
 });
 
+test('current user cursor time after last item', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContent);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = 14;
+  expect(currentCursorTime(state)).toBe(18);
+});
+
 test('current player cursor time ', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);

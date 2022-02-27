@@ -108,12 +108,27 @@ export const currentIndexLeft = (state: EditorState): number => {
   }
 };
 
+function itemLength(item: DocumentItem) {
+  if ('length' in item) {
+    return item.length;
+  }
+  return 0;
+}
 export const currentCursorTime = (state: EditorState): number => {
   switch (state.cursor.current) {
     case 'player':
       return state.cursor.playerTime;
-    case 'user':
-      return currentItem(state)?.absoluteStart || 0;
+    case 'user': {
+      const timedItems = memoizedTimedDocumentItems(state.document.content);
+      if (state.cursor.userIndex < timedItems.length) {
+        return timedItems[state.cursor.userIndex].absoluteStart;
+      } else if (timedItems.length == 0) {
+        return 0;
+      } else {
+        const lastItem = timedItems[timedItems.length - 1];
+        return lastItem.absoluteStart + itemLength(lastItem);
+      }
+    }
   }
 };
 

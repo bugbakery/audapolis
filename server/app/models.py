@@ -96,15 +96,15 @@ class Models:
             response = requests.get(model.url, stream=True)
             task.total = int(response.headers.get("content-length"))
             task.state = DownloadModelState.DOWNLOADING
-            if task.total is None:
-                f.write(response.content)
-            else:
-                for data in response.iter_content(
-                    chunk_size=max(int(task.total / 1000), 1024 * 1024)
-                ):
-                    task.add_progress(len(data))
 
-                    f.write(data)
+            for data in response.iter_content(
+                chunk_size=max(int(task.total / 1000), 1024 * 1024)
+            ):
+                task.add_progress(len(data))
+
+                f.write(data)
+                if task.canceled:
+                    return
 
             task.state = DownloadModelState.EXTRACTING
             with ZipFile(f) as archive:
@@ -138,6 +138,7 @@ class DownloadModelState(str, enum.Enum):
     DOWNLOADING = "downloading"
     EXTRACTING = "extracting"
     DONE = "done"
+    CANCELED = "canceled"
 
 
 @dataclass
@@ -149,6 +150,12 @@ class DownloadModelTask(Task):
     processed: float = 0
     progress: float = 0
 
+    def __post_init__(self):
+        self.canceled = False
+
     def add_progress(self, added):
         self.processed += added
         self.progress = self.processed / self.total
+
+    def cancel(self):
+        self.canceled = True

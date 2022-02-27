@@ -9,6 +9,7 @@ import {
   deleteModel as deleteModelApiCall,
   getTask,
   DownloadingModelState,
+  deleteTask,
 } from '../server_api/api';
 
 export interface Model {
@@ -22,6 +23,7 @@ export interface Model {
 
 export type DownloadingModel = Model & {
   progress: number;
+  task_uuid: string;
   state: DownloadingModelState;
 };
 
@@ -56,7 +58,7 @@ export const downloadModel = createAsyncThunk<void, Model, { state: RootState }>
     while (true) {
       const { state, progress } = await getTask(server, task);
 
-      dispatch(setProgress({ model, state, progress }));
+      dispatch(setProgress({ model, state, progress, task_uuid: task.uuid }));
       if (state == DownloadingModelState.DONE) {
         dispatch(fetchModelState());
         break;
@@ -76,6 +78,16 @@ export const deleteModel = createAsyncThunk<void, Model, { state: RootState }>(
   }
 );
 
+export const cancelDownload = createAsyncThunk<string, string, { state: RootState }>(
+  'models/downloadModel',
+  async (uuid, { dispatch, getState }) => {
+    const server = getServer(getState());
+    assertSome(server);
+    await deleteTask(server, uuid);
+    dispatch(fetchModelState());
+    return uuid;
+  }
+);
 export const modelsSlice = createSlice({
   name: 'models',
   initialState: {
@@ -86,9 +98,14 @@ export const modelsSlice = createSlice({
   reducers: {
     setProgress: (
       slice,
-      payload: PayloadAction<{ model: Model; progress: number; state: DownloadingModelState }>
+      payload: PayloadAction<{
+        model: Model;
+        progress: number;
+        state: DownloadingModelState;
+        task_uuid: string;
+      }>
     ) => {
-      const { progress, state, model } = payload.payload;
+      const { progress, state, model, task_uuid } = payload.payload;
 
       if (state == DownloadingModelState.DONE) {
         slice.downloading = slice.downloading.filter(
@@ -97,7 +114,7 @@ export const modelsSlice = createSlice({
         return;
       }
 
-      const newDownloadingRow = { progress, state, ...model };
+      const newDownloadingRow = { progress, state, task_uuid, ...model };
       const idx = slice.downloading.findIndex((x) => x.lang == model.lang && x.name == model.name);
       if (idx === -1) {
         slice.downloading.push(newDownloadingRow);
@@ -115,6 +132,9 @@ export const modelsSlice = createSlice({
       alert(
         `something went wrong while comunicating with the transcription server:\n${action.error.message}`
       );
+    });
+    builder.addCase(cancelDownload.fulfilled, (state, action) => {
+      state.downloading = state.downloading.filter((x) => !(x.task_uuid = action.payload));
     });
   },
 });

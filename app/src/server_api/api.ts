@@ -68,8 +68,8 @@ export function getTask<T extends Task>(server: ServerConfig, task: T): Promise<
   return fetchFromServer(server, 'GET', `tasks/${task.uuid}`).then((x) => x.json());
 }
 
-export function deleteTask(server: ServerConfig, task: Task): Promise<void> {
-  return fetchFromServer(server, 'DELETE', `tasks/${task.uuid}`).then(() => {});
+export function deleteTask(server: ServerConfig, uuid: string): Promise<void> {
+  return fetchFromServer(server, 'DELETE', `tasks/${uuid}`).then(() => {});
 }
 
 export function deleteModel(server: ServerConfig, lang: string, model: string): Promise<void> {

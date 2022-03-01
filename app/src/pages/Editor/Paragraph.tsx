@@ -1,7 +1,11 @@
 import * as React from 'react';
 import { HTMLAttributes, HTMLProps, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Paragraph as ParagraphType, TimedItemExtension } from '../../core/document';
+import {
+  Paragraph as ParagraphType,
+  TimedItemExtension,
+  TimedParagraphItem,
+} from '../../core/document';
 import {
   Button,
   majorScale,
@@ -68,43 +72,9 @@ export function Paragraph({
             editingRange.startIndex + editingRange.length > item.absoluteIndex
           ) {
             return; // we are handling the rendering in the first element
-          } else if (item.type == 'word') {
-            if (displayConfidence) {
-              return (
-                <span {...commonProps}>
-                  {' '}
-                  <span
-                    style={{
-                      backgroundColor: `rgba(255, 0, 0, ${1 - item.conf})`,
-                    }}
-                  >
-                    {item.word}
-                  </span>
-                </span>
-              );
-            } else {
-              return <span {...commonProps}>{' ' + item.word}</span>;
-            }
-          } else if (item.type == 'silence' || item.type == 'artificial_silence') {
-            if (item.length > 0.4) {
-              return (
-                <span style={{ fontFamily: 'quarter_rest' }} {...commonProps}>
-                  {' _'}
-                </span>
-              );
-            } else {
-              const preserve = i == 0 || i == data.content.length - 1;
-              return (
-                <span
-                  style={{
-                    ...(preserve && { whiteSpace: 'pre' }),
-                  }}
-                  {...commonProps}
-                >
-                  {' '}
-                </span>
-              );
-            }
+          } else {
+            const preserve = i == 0 || i == data.content.length - 1;
+            return renderParagraphItem(item, displayConfidence, commonProps, preserve);
           }
         })}
         <ParagraphSign
@@ -116,6 +86,53 @@ export function Paragraph({
       </Pane>
     </Pane>
   );
+}
+
+function renderParagraphItem(
+  item: TimedParagraphItem,
+  displayConfidence: boolean,
+  commonProps: HTMLProps<HTMLSpanElement>,
+  preserve: boolean
+): JSX.Element {
+  if (item.type == 'word') {
+    if (displayConfidence) {
+      return (
+        <span {...commonProps}>
+          {' '}
+          <span
+            style={{
+              backgroundColor: `rgba(255, 0, 0, ${1 - item.conf})`,
+            }}
+          >
+            {item.word}
+          </span>
+        </span>
+      );
+    } else {
+      return <span {...commonProps}>{' ' + item.word}</span>;
+    }
+  } else if (item.type == 'silence' || item.type == 'artificial_silence') {
+    if (item.length > 0.4) {
+      return (
+        <span style={{ fontFamily: 'quarter_rest' }} {...commonProps}>
+          {' _'}
+        </span>
+      );
+    } else {
+      return (
+        <span
+          style={{
+            ...(preserve && { whiteSpace: 'pre' }),
+          }}
+          {...commonProps}
+        >
+          {' '}
+        </span>
+      );
+    }
+  } else {
+    throw Error(`unknown paragraph-item '${item}'`);
+  }
 }
 
 function TranscriptCorrectionEntry(props: HTMLProps<HTMLSpanElement>): JSX.Element {
@@ -135,7 +152,6 @@ function TranscriptCorrectionEntry(props: HTMLProps<HTMLSpanElement>): JSX.Eleme
         tabIndex={0}
         onMouseDown={(e) => {
           e.stopPropagation();
-          console.log(e);
         }}
         onKeyDown={(e: React.KeyboardEvent) => {
           if (e.key == 'Enter') {

@@ -14,12 +14,14 @@ import {
   Tooltip,
   Text,
   Heading,
+  Link,
 } from 'evergreen-ui';
 import { LandingTour } from '../tour/LandingTour';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor/io';
 import { emptyDocument } from '../core/document';
 import { MenuBar, MenuGroup, MenuItem } from '../components/MenuBar';
 import { RootState } from '../state';
+import { shell } from 'electron';
 
 const BottomRightContainer = styled.div`
   position: absolute;
@@ -39,14 +41,27 @@ export function LandingPage(): JSX.Element {
   return <AppContainer>{connected ? <LandingContent /> : <ConnectingContent />}</AppContainer>;
 }
 
+function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link cursor={'pointer'} onClick={() => shell.openExternal(href)}>
+      {children}
+    </Link>
+  );
+}
+
 function ConnectingContent(): JSX.Element {
   return (
     <>
       <TitleBar />
       <MainCenterColumn>
-        <Heading>Connecting to server...</Heading>
+        <Heading>Starting app...</Heading>
         <p />
-        <Text>This should only take a few seconds</Text>
+        <Text>
+          This should only take a few seconds. If it takes much longer,{' '}
+          <ExternalLink href={'https://github.com/audapolis/audapolis/issues/new'}>
+            please report to us
+          </ExternalLink>
+        </Text>
       </MainCenterColumn>
     </>
   );

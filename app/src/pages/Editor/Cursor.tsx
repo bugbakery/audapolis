@@ -116,31 +116,42 @@ function useComputeCursorPosition(parentElement: HTMLElement | null | undefined)
   const itemElement = document.getElementById(`item-${itemIdx}`);
   if (!itemElement) return null;
 
-  if (item && item.absoluteStart <= time && 'length' in item) {
+  if (item && item.absoluteStart <= showTime && 'length' in item) {
     if (!parentElement) return null;
+
     const parentClientRect = parentElement.getBoundingClientRect();
+
+    // each rect is one line. An item can span multiple lines because of line-wrapping
+    // "a multiline inline element (such as a multiline <span> element, by default) has a border box around each line."
+    // - https://developer.mozilla.org/en-US/docs/Web/API/Element/getClientRects
     const rects = Array.from(itemElement.getClientRects());
+
     const totalWidth = _.sum(rects.map((r) => r.width));
     const timeInWord = showTime - item.absoluteStart;
 
-    const target = (timeInWord / item.length) * totalWidth;
-    let offset = 0;
+    // `target` is the offset in px into the word pretending there is no line-wrapping going on
+    let target = (timeInWord / item.length) * totalWidth;
+
+    // we then iterate over the wrapped lines and subtract the width of each line before the cursor until the cursor fits into the line
     for (const rect of rects) {
-      if (target - offset <= rect.width) {
+      if (target <= rect.width) {
+        // we subtract the parentClientRect from the calculated cursor position to have a position that is relative to the parent
         return {
-          left: rect.left + target - offset - parentClientRect.left,
+          left: rect.left + target - parentClientRect.left,
           top: rect.top - parentClientRect.top,
         };
       } else {
-        offset += rect.width;
+        target -= rect.width;
       }
     }
     const lastRect = rects[rects.length - 1];
+    // we subtract the parentClientRect from the calculated cursor position to have a position that is relative to the parent
     return {
       left: lastRect.left + lastRect.width - parentClientRect.left,
       top: lastRect.top - parentClientRect.top,
     };
   } else {
+    // this is triggered when we are in an element that does not have a length
     return {
       left: itemElement.offsetLeft,
       top: itemElement.offsetTop,

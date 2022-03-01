@@ -79,14 +79,13 @@ export function Document(): JSX.Element {
   const disableMouseMove = useRef(false); // this is a hack to counter some unintuitive behaviour after opening the context menu
 
   const mouseDownHandler: MouseEventHandler = (e) => {
+    e.preventDefault();
     if (e.buttons != 1 || e.detail != 1) {
-      e.preventDefault();
       return;
     }
 
     disableMouseMove.current = false;
 
-    e.preventDefault();
     ref.current?.focus(); // sometimes we loose focus and then it is nice to be able to gain it back
 
     if (!e.shiftKey) {
@@ -102,6 +101,7 @@ export function Document(): JSX.Element {
   const store = useStore();
   const getState = (): RootState => store.getState();
   const contextMenuHandler: MouseEventHandler = (e) => {
+    e.preventDefault();
     if (!getState().editor.present?.selection) {
       const index = indexAtPosition(content, e.clientX, e.clientY, 100);
       if (index) {

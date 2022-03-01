@@ -7,7 +7,7 @@ const steps = [
     target: '#transcription_table',
     body: (
       <Text>
-        At first you can download a so called "transcription models". These models will help the
+        At first you can download so called "transcription models". These models will help the
         computer to transcribe audio into text. You need at least one transcription model for each
         language you want to use.
       </Text>

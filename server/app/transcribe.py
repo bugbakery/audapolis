@@ -1,11 +1,3 @@
-# TODO for punctuation
-# - collect models
-# x safe model loading
-# x ui in frontend
-#   x model manager
-#   x transcribe page
-#   x select default models
-
 import enum
 import json
 import traceback

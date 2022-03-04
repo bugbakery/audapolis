@@ -21,4 +21,4 @@ It would be really nice if you could help us out by answering [our short survey]
 
 ## Acknowledgements
 
-* Funded from September 2021 until February 2022 by ![logos of the "Bundesministerium für Bildung und Forschung", Prodotype Fund and OKFN-Deutschland](doc/pf_funding_logos.svg)
+* Funded from September 2021 until February 2022 by ![logos of the "Bundesministerium für Bildung und Forschung", Prototype Fund and Open Knowledge Foundation Deutschland](doc/pf_funding_logos.svg)

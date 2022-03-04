@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const getVersion = require('./get_version.js');
+const { getVersion, getBuildVersion } = require('./get_version.js');
 
 /**
  * @type {import('electron-builder').Configuration}
@@ -12,8 +12,9 @@ const config = {
   },
   files: ['build/**'],
   extraMetadata: {
-    version: getVersion(),
+    version: getVersion()
   },
+  buildVersion: getBuildVersion(),
   mac: {
     category: 'public.app-category.productivity', // this is also where libreoffice lives
     darkModeSupport: true,

@@ -75,6 +75,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Import and trust codesigning cert
         if: startsWith(matrix.os, 'macos') && (github.ref_name == 'main' || github.ref_type == 'tag')

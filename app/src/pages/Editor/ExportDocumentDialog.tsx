@@ -32,7 +32,7 @@ export function ExportDocumentDialog(): JSX.Element {
   const dispatch = useDispatch();
   const store = useStore();
   const [home, setHome] = useState('');
-  getHomePath(setHome);
+  getHomePath().then(setHome);
   const documentPath = useSelector(
     (state: RootState) => state.editor.present?.path || path.join(home, 'Untitled.audapolis')
   );

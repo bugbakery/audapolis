@@ -8,9 +8,10 @@ import { openEditor, openLanding } from '../nav';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
 import { EditorState, NoFileSelectedError } from './types';
 import { setPlay } from './play';
-import { openFile, saveFile } from '../../../ipc/ipc_renderer';
+import { getHomePath, openFile, saveFile } from '../../../ipc/ipc_renderer';
 import { firstPossibleCursorPosition } from './selectors';
 import { ActionCreators } from 'redux-undo';
+import path from 'path';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
@@ -28,17 +29,18 @@ export const saveDocument = createAsyncActionWithReducer<
       await serializeDocumentToFile(document, state_path);
       return { document };
     } else {
-      const path = await saveFile({
+      const savePath = await saveFile({
         title: 'Save file as...',
         properties: ['showOverwriteConfirmation', 'createDirectory'],
         filters: [
           { name: 'Audapolis Project Files', extensions: ['audapolis'] },
           { name: 'All Files', extensions: ['*'] },
         ],
+        defaultPath: path.join(await getHomePath(), 'Untitled.audapolis'),
       }).then((x) => x.filePath);
-      if (!path) return;
-      await serializeDocumentToFile(document, path);
-      return { document, path };
+      if (!savePath) return;
+      await serializeDocumentToFile(document, savePath);
+      return { document, path: savePath };
     }
   },
   {

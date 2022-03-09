@@ -10,6 +10,7 @@ import { EditorState, NoFileSelectedError } from './types';
 import { setPlay } from './play';
 import { openFile, saveFile } from '../../../ipc/ipc_renderer';
 import { firstPossibleCursorPosition } from './selectors';
+import { ActionCreators } from 'redux-undo';
 
 export const saveDocument = createAsyncActionWithReducer<
   EditorState,
@@ -98,6 +99,7 @@ export const openDocumentFromDisk = createAsyncActionWithReducer<
       const doc = await deserializeDocumentFromFile(path, (sources) => {
         dispatch(setSources(sources));
       });
+      await dispatch(ActionCreators.clearHistory());
       return { path, document: doc };
     } catch (e) {
       dispatch(openLanding());
@@ -123,6 +125,7 @@ export const openDocumentFromMemory = createAsyncActionWithReducer<EditorState, 
   'editor/openDocumentFromMemory',
   async (document, { dispatch }) => {
     await dispatch(openEditor());
+    await dispatch(ActionCreators.clearHistory());
     return document;
   },
   {

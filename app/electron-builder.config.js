@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { getVersion, getBuildVersion } = require('./get_version.js');
+const { getVersion, getBuildVersion, getGithubSafeVersion } = require('./get_version.js');
 
 /**
  * @type {import('electron-builder').Configuration}
@@ -12,13 +12,13 @@ const config = {
   },
   files: ['build/**'],
   extraMetadata: {
-    version: getVersion()
+    version: getVersion(),
   },
   buildVersion: getBuildVersion(),
   mac: {
     category: 'public.app-category.productivity', // this is also where libreoffice lives
     darkModeSupport: true,
-    artifactName: '${name}-mac-${arch}-${version}.${ext}',
+    artifactName: `\${name}-mac-\${arch}-${getGithubSafeVersion()}.\${ext}`,
     target: [
       {
         target: 'dmg',
@@ -31,7 +31,7 @@ const config = {
     ],
   },
   win: {
-    artifactName: '${name}-win-${arch}-${version}.${ext}',
+    artifactName: `\${name}-win-\${arch}-${getGithubSafeVersion()}.\${ext}`,
   },
   linux: {
     target: [
@@ -42,7 +42,7 @@ const config = {
       'pacman',
     ],
     category: 'Audio',
-    artifactName: '${name}-linux-${arch}-${version}.${ext}',
+    artifactName: `\${name}-linux-\${arch}-${getGithubSafeVersion()}.\${ext}`,
   },
   extraResources: ['./server/**', './generated/**'],
   asar: false,

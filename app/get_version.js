@@ -18,12 +18,16 @@ function getVersion() {
     execOptions
   );
   const noCommitsSinceBump = commitListSinceBump.trim().split('\n').length;
-  return `${baseVersion}.${noCommitsSinceBump}`;
+  return `${baseVersion}+${noCommitsSinceBump}`;
 }
 
+function getGithubSafeVersion() {
+  return getVersion().replace(/[^0-9A-Za-z._-]/g, '_');
+}
 function getBuildVersion() {
   return require('./package.json').version;
 }
 
 module.exports.getVersion = getVersion;
 module.exports.getBuildVersion = getBuildVersion;
+module.exports.getGithubSafeVersion = getGithubSafeVersion;

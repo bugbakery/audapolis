@@ -136,6 +136,7 @@ export function ExportDocumentDialog(): JSX.Element {
             setFormState((state) => {
               return {
                 ...state,
+                ...selected,
                 path: switchExtension(state.path, selected.defaultExtension),
               };
             });

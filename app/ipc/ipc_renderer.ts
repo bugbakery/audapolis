@@ -48,7 +48,7 @@ export function subscribeMenuBarClick(callback: (uuid: string) => void): void {
 }
 
 export function unsubscribeAllMenuBarClick(): void {
-  ipcRenderer.removeAllListeners('menu-click');
+  ipcRenderer.removeAllListeners('menubar-click');
 }
 
 export function showContextMenu(contents: MenuItemConstructorOptionsIpc[]): void {

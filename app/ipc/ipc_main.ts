@@ -61,7 +61,7 @@ ipcMain.on('show-menubar', (event) => {
 });
 
 export function menuBarClick(window: BrowserWindow, uuid: string): void {
-  window.webContents.send('menu-click', uuid);
+  window.webContents.send('menubar-click', uuid);
 }
 
 ipcMain.on('show-contextmenu', (event, args) => {

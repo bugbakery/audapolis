@@ -44,6 +44,7 @@ function transformReactMenuTreeToMenuItemConstructorOptions(
         submenu: transformReactMenuTreeToMenuItemConstructorOptions(props.children),
       };
     } else {
+      console.warn(x);
       throw Error('Unknown component encountered in Menubar');
     }
   });
@@ -132,7 +133,7 @@ function transformMenuTemplate(
   const transformed = x.map((x): MenuItemConstructorOptionsIpc => {
     if (Array.isArray(x.submenu)) {
       const [submenu, subListeners] = transformMenuTemplate(x.submenu);
-      Object.apply(listeners, subListeners);
+      Object.assign(listeners, subListeners);
       return {
         ...x,
         click: x.click && transformClick(x.click),

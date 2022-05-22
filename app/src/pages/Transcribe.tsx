@@ -150,7 +150,7 @@ export function TranscribePage(): JSX.Element {
                   dispatch(
                     startTranscription({
                       transcription_model: selectedTranscriptionModel,
-                      punctuation_model: selectedPunctuationModel,
+                      punctuation_model: punctuate ? selectedPunctuationModel : null,
                       diarize: diarizationMode != 'off',
                       diarize_max_speakers:
                         diarizationMode == 'advanced' ? parsedSpeakers - 1 : null,

@@ -1,19 +1,24 @@
 import tmp from 'tmp';
 import { contentToVtt, exportWebVTT } from './webvtt';
-import { DocumentItem } from './document';
+import { V3DocumentItem } from './document';
 import fs from 'fs';
-const testContent: DocumentItem[] = [
-  { type: 'paragraph_break', speaker: 'Speaker One' },
-  { type: 'word', word: 'One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'word', word: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'word', word: 'Three', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'word', word: 'Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'paragraph_break', speaker: 'Speaker Two' },
-  { type: 'word', word: 'Two One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'word', word: 'Two Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'word', word: 'Two Three', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'word', word: 'Two Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-];
+import { addUuids } from '../util/test_helper.ts';
+
+const testContent: V3DocumentItem[] = addUUIDs([
+  { type: 'speaker_change', speaker: 'Speaker One', language: 'en' },
+  { type: 'text', text: 'One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'text', text: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'text', text: 'Three', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'text', text: 'Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'paragraph_break' },
+  { type: 'speaker_change', speaker: 'Speaker Two', language: 'en' },
+  { type: 'text', text: 'Two One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'text', text: 'Two Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'text', text: 'Two Three', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'text', text: 'Two Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  { type: 'paragraph_break' },
+]);
+
 test('webvtt: export minimal', () => {
   const vtt = contentToVtt(testContent, false, false, null);
   expect(vtt.toString()).toBe(
@@ -37,20 +42,21 @@ test('webvtt: line length', () => {
 });
 
 test('webvtt: line length: too long word', () => {
-  const testContent: DocumentItem[] = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-    { type: 'word', word: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+  const testContent: V3DocumentItem[] = addUUIDs([
+    { type: 'speaker_change', speaker: 'Speaker One', language: 'en' },
+    { type: 'text', text: 'One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+    { type: 'text', text: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
     {
-      type: 'word',
-      word: 'Supercalifragilisticexpialidocious',
+      type: 'text',
+      text: 'Supercalifragilisticexpialidocious',
       source: 'source-1',
       sourceStart: 1,
       conf: 1,
       length: 1,
     },
-    { type: 'word', word: 'Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  ];
+    { type: 'text', text: 'Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
+    { type: 'paragraph_break' },
+  ]);
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
@@ -61,7 +67,10 @@ test('webvtt: line length: too long word', () => {
 });
 
 test('webvtt: empty para creates no cue', () => {
-  const testContent: DocumentItem[] = [{ type: 'paragraph_break', speaker: 'Speaker One' }];
+  const testContent: V3DocumentItem[] = addUUIDs([
+    { type: 'speaker_change', speaker: 'Speaker One', language: 'en' },
+    { type: 'paragraph_break' },
+  ]);
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis'
@@ -69,7 +78,7 @@ test('webvtt: empty para creates no cue', () => {
 });
 
 test('webvtt: empty document creates no cue', () => {
-  const testContent: DocumentItem[] = [];
+  const testContent: V3DocumentItem[] = [];
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis'

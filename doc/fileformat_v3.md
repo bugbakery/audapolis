@@ -11,13 +11,12 @@ The *content* of an audapolis document consists of a list of `DocumentItem`s.
 The *content* list MAY NOT be empty.
 
 Semantically the content is a number of sections.
-They may either be a "paragraph", meaning a list of `ParagraphItem`s and a speaker, or a "heading".
-Every section MUST either end with a `DocumentItem` of type `paragragraph_break` or `heading`.
+At the moment, they can only be a "paragraph", meaning a list of `ParagraphItem`s and a speaker.
+Every section MUST end with a `DocumentItem` of type `paragragraph_break`.
 
 ### `DocumentItem`s
 
-There are 6 types of document items:
-- `heading`
+There are 5 types of document items:
 - `paragraph_break`
 - `speaker_change`
 - `text`
@@ -36,39 +35,18 @@ It has no additional properties.
 
 A `speaker_change` changes the current speaker.
 If present, it MUST be the first item in a section.
-It has one additional property:
+It has two additional properties:
 - speaker
 - language
 
 The speaker MUST be a string.
 It MAY NOT be the empty string.
 It MAY NOT consist of only white space (as defined in [ECMAScript Section `TrimString`](https://tc39.es/ecma262/#sec-trimstring)).
-It MAY contain the entire range of unicode characters.
+It MAY otherwise contain the entire range of unicode characters.
 
-The `langauge` MUST be a string.
-It MAY be the empty string.
-It MAY be an ietf language code.
+The `language` MUST be a string or null.
+It MUST be null or an ietf language code.
 It MAY NOT be another value.
-
-#### `heading`
-
-A `heading` marks a Heading in the document.
-A `heading` MUST only appear at the beginning of a section, i.e. it MUST follow a heading, a paragraph break or be at the start of the document.
-A `heading` also marks the end of a section, i.e. the item *after* the heading is the first item of a new section.
-
-A `heading` has the following additional properties:
-1. `level`
-2. `text`
-
-The level is a number of the inclusive range 1-3.
-It represents a hierarchy of headings with 1 being the highest (or most important) heading
-and 3 being the lowest (or least important) one.
-
-The `text` MUST be a string.
-It MAY NOT be the empty string.
-It MAY NOT consist of only white space (as defined in [ECMAScript Section `TrimString`](https://tc39.es/ecma262/#sec-trimstring)).
-It MAY contain the entire range of unicode characters.
-Applications MAY choose to ignore or not render certain white space characters, e.g. newlines.
 
 #### `text`
 
@@ -125,8 +103,7 @@ It MUST be greater than zero.
 ### Conclusion
 
 The document items describe above allow us to divide the `content` into sections.
-A section can be a single document item of type `heading`.
-It can also be up to one `speaker_change` followed by zero or more `text`, `non_text` or `aritifical_silence` item, finished by a `paragraph_break`.
+A section can be up to one `speaker_change` followed by zero or more `text`, `non_text` or `aritifical_silence` item, finished by a `paragraph_break`.
 
 ## Metadata
 
@@ -168,9 +145,7 @@ The content can also be represented as `MacroItem`s.
 This format is never stored on disk, but can be generated on the fly from the Content of a document.
 Helper functions for this can be found in the audapolis source code.
 
-These can be
-- `paragraph`
-- `heading`
+At the moment, these can only be a `paragraph`.
 
 Every macro item has a uuid in addition to the properties described below.
 
@@ -187,7 +162,3 @@ The empty string represents that no speaker is set for this paragraph.
 The content is a list of `ParagraphItem`s.
 `ParagraphItem`s are `DocumentItem` of types `text`, `non_text`, and `artificial_silence`.
 The content list MAY be empty, representing a paragraph with no content.
-
-#### `heading`
-
-A macro item of type `heading` has the same additional properties as the `DocumentItem` `heading`.

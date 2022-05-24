@@ -6,11 +6,12 @@ import {
   WebVtt,
 } from '@audapolis/webvtt-writer';
 import fs from 'fs';
-import { DocumentItem, Paragraph, TimedItemExtension, Word } from './document';
+import { V3Paragraph, TimedItemExtension, V3DocumentItem, V3TextItem } from './document';
 import { memoizedMacroItems } from '../state/editor/selectors';
+import { v4 as uuidv4 } from 'uuid';
 
 function paragraphToCue(
-  paragraph: Paragraph,
+  paragraph: V3Paragraph,
   wordTimings: boolean,
   includeSpeakerNames: boolean
 ): VttCue | null {
@@ -19,17 +20,17 @@ function paragraphToCue(
   }
   const firstItem = paragraph.content[0];
   const lastItem = paragraph.content[paragraph.content.length - 1];
-  const itemToString = (item: Word & TimedItemExtension): string => {
+  const itemToString = (item: V3TextItem & TimedItemExtension): string => {
     if (wordTimings) {
-      return `<${formattedTime(item.absoluteStart)}><c>${escapeVttString(item.word)}</c>`;
+      return `<${formattedTime(item.absoluteStart)}><c>${escapeVttString(item.text)}</c>`;
     } else {
-      return escapeVttString(item.word);
+      return escapeVttString(item.text);
     }
   };
   const payload =
     (includeSpeakerNames && paragraph.speaker ? `<v ${escapeVttString(paragraph.speaker)}>` : '') +
     paragraph.content
-      .filter((item) => item.type == 'word')
+      .filter((item) => item.type == 'text')
       .map(itemToString)
       .join(' ');
   return new VttCue({
@@ -41,29 +42,42 @@ function paragraphToCue(
 }
 
 export function contentToVtt(
-  content: DocumentItem[],
+  content: V3DocumentItem[],
   wordTimings: boolean,
   includeSpeakerNames: boolean,
   limitLineLength: number | null
 ): WebVtt {
   if (limitLineLength !== null) {
     let currentCharacterLength = 0;
-    let currentSpeaker = null;
-    const items: DocumentItem[] = [];
+    let currentSpeaker: { speaker: string | null; language: string | null } = {
+      speaker: null,
+      language: null,
+    };
+    const items: V3DocumentItem[] = [];
     for (const item of content) {
-      if (item.type == 'paragraph_break') {
+      if (item.type == 'speaker_change') {
         currentCharacterLength = 0;
-        currentSpeaker = item.speaker;
+        currentSpeaker = { speaker: item.speaker, language: item.language };
       }
-      if (item.type == 'word') {
-        if (currentCharacterLength + item.word.length > limitLineLength) {
-          if (currentSpeaker === null) {
+      if (item.type == 'text') {
+        if (currentCharacterLength + item.text.length > limitLineLength) {
+          const cur_speak = currentSpeaker.speaker;
+          const cur_lang = currentSpeaker.language;
+          if (cur_speak === null) {
             throw new Error('Current speaker is null. Who is the speaker?');
           }
-          items.push({ type: 'paragraph_break', speaker: currentSpeaker });
+          items.push(
+            { type: 'paragraph_break', uuid: uuidv4() },
+            {
+              type: 'speaker_change',
+              speaker: cur_speak,
+              language: cur_lang,
+              uuid: uuidv4(),
+            }
+          );
           currentCharacterLength = 0;
         }
-        currentCharacterLength += item.word.length;
+        currentCharacterLength += item.text.length;
       }
 
       items.push(item);
@@ -71,8 +85,8 @@ export function contentToVtt(
     content = items;
   }
 
-  const paragraphItems: Paragraph[] = memoizedMacroItems(content).filter(
-    (x): x is Paragraph & TimedItemExtension => x.type == 'paragraph'
+  const paragraphItems: V3Paragraph[] = memoizedMacroItems(content).filter(
+    (x): x is V3Paragraph & TimedItemExtension => x.type == 'paragraph'
   );
 
   const vtt = new WebVtt(
@@ -88,7 +102,7 @@ export function contentToVtt(
 }
 
 export async function exportWebVTT(
-  content: DocumentItem[],
+  content: V3DocumentItem[],
   outputPath: string,
   wordTimings: boolean,
   includeSpeakerNames: boolean,

@@ -91,7 +91,6 @@ test('insert paragraph break: non-word item', () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', text: 'H1', level: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
   ];
@@ -101,19 +100,17 @@ test('insert paragraph break: non-word item', () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', text: 'H1', level: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(5);
+  expect(state.cursor.userIndex).toBe(4);
 });
 
 test('insert paragraph break: before first para break, not at idx 0', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
@@ -122,7 +119,6 @@ test('insert paragraph break: before first para break, not at idx 0', () => {
   insertParagraphBreak.reducer(state);
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: null },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ]);
@@ -151,33 +147,29 @@ test('insert paragraph break: before first para break, at idx 0', () => {
 test('insert paragraph break: before first para break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
+  state.cursor.userIndex = 0;
   insertParagraphBreak.reducer(state);
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: null },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
 });
 
 test('delete selection with no selection is noop', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
   deleteSelection.reducer(state);
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ]);
@@ -187,14 +179,12 @@ test('delete selection with no selection is noop', () => {
 test('delete selection: 1 word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
-  state.selection = { startIndex: 1, length: 1, headPosition: 'left' };
+  state.selection = { startIndex: 0, length: 1, headPosition: 'left' };
   deleteSelection.reducer(state);
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ]);
   expect(state.selection).toBe(null);
@@ -203,28 +193,23 @@ test('delete selection: 1 word', () => {
 test('delete selection: more words', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
-  state.selection = { startIndex: 1, length: 2, headPosition: 'left' };
+  state.selection = { startIndex: 0, length: 2, headPosition: 'left' };
   deleteSelection.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
-  ]);
+  expect(state.document.content).toStrictEqual([]);
   expect(state.selection).toBe(null);
 });
 
 test('set word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
-  setWord.reducer(state, { text: 'Word', absoluteIndex: 2 });
+  setWord.reducer(state, { text: 'Word', absoluteIndex: 1 });
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'Word', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ]);
@@ -233,25 +218,22 @@ test('set word', () => {
 test('set word: idx is not a word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
   expect(() => {
-    setWord.reducer(state, { text: 'Word', absoluteIndex: 1 });
+    setWord.reducer(state, { text: 'Word', absoluteIndex: 0 });
   }).toThrow(/not a word/i);
 });
 
 test('reassign paragraph', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
-  reassignParagraph.reducer(state, { newSpeaker: 'Speaker Two', absoluteIndex: 1 });
+  reassignParagraph.reducer(state, { newSpeaker: 'Speaker Two', absoluteIndex: 0 });
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ]);
@@ -260,19 +242,17 @@ test('reassign paragraph', () => {
 test('reassign paragraph: idx is not a para break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
   ];
   expect(() => {
-    reassignParagraph.reducer(state, { newSpeaker: 'Speaker Two', absoluteIndex: 2 });
+    reassignParagraph.reducer(state, { newSpeaker: 'Speaker Two', absoluteIndex: 1 });
   }).toThrow(/not a paragraph_break/i);
 });
 
 test('rename speaker', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker One' },
@@ -280,7 +260,6 @@ test('rename speaker', () => {
   ];
   renameSpeaker.reducer(state, { newName: 'Speaker Two', oldName: 'Speaker One' });
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -291,7 +270,6 @@ test('rename speaker', () => {
 test('rename speaker: more than one speaker in document', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -299,7 +277,6 @@ test('rename speaker: more than one speaker in document', () => {
   ];
   renameSpeaker.reducer(state, { newName: 'Speaker Three', oldName: 'Speaker One' });
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Three' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -310,7 +287,6 @@ test('rename speaker: more than one speaker in document', () => {
 test('rename speaker: speaker not in document', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -318,7 +294,6 @@ test('rename speaker: speaker not in document', () => {
   ];
   renameSpeaker.reducer(state, { newName: 'Speaker Three', oldName: 'Speaker Ten' });
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -329,7 +304,6 @@ test('rename speaker: speaker not in document', () => {
 test('delete something: selection left', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -337,24 +311,22 @@ test('delete something: selection left', () => {
   ];
   state.selection = {
     headPosition: 'left',
-    startIndex: 2,
+    startIndex: 1,
     length: 2,
   };
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
   expect(state.selection).toBe(null);
 });
 
 test('delete something: selection right', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -362,192 +334,117 @@ test('delete something: selection right', () => {
   ];
   state.selection = {
     headPosition: 'left',
-    startIndex: 2,
+    startIndex: 1,
     length: 2,
   };
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
   expect(state.selection).toBe(null);
 });
 
 test('delete something: para break; left', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 4;
+  state.cursor.userIndex = 3;
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(3);
+  expect(state.cursor.userIndex).toBe(2);
   expect(state.selection).toBe(null);
 });
 
 test('delete something: para break; right', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 3;
+  state.cursor.userIndex = 2;
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(3);
+  expect(state.cursor.userIndex).toBe(2);
   expect(state.selection).toBe(null);
 });
 
 test('delete something: word; left', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 3;
+  state.cursor.userIndex = 2;
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 2, length: 1 });
+  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 1, length: 1 });
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.selection).toStrictEqual(null);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
 });
 
 test('delete something: word; right', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 2;
+  state.cursor.userIndex = 1;
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 2, length: 1 });
+  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 1, length: 1 });
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.selection).toStrictEqual(null);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
-});
-
-test('delete something: heading; left', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 3;
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 2, length: 1 });
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
-});
-
-test('delete something: heading; right', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 2;
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 2, length: 1 });
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
 });
 
 test('delete something: left at idx=0', () => {
@@ -555,7 +452,6 @@ test('delete something: left at idx=0', () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -563,7 +459,6 @@ test('delete something: left at idx=0', () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -576,7 +471,6 @@ test('delete something: right doesnt delete first para_break', () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -584,7 +478,6 @@ test('delete something: right doesnt delete first para_break', () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -597,7 +490,6 @@ test('delete something: left doesnt delete first para', () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -607,7 +499,6 @@ test('delete something: left doesnt delete first para', () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -618,57 +509,48 @@ test('delete something: left doesnt delete first para', () => {
 test('delete something: right doesnt delete first para_break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Pre Heading' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
+  state.cursor.userIndex = 0;
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Pre Heading' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
+  expect(state.cursor.userIndex).toBe(0);
 });
 
 test('delete something: left doesnt delete first para', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Pre Heading' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
   state.cursor.current = 'user';
-  state.cursor.userIndex = 2;
+  state.cursor.userIndex = 1;
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Pre Heading' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
 });
 
 test('delete something: word; left; player cursor at end of word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -678,7 +560,6 @@ test('delete something: word; left; player cursor at end of word', () => {
   state.cursor.playerTime = 1;
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
@@ -689,7 +570,6 @@ test('delete something: word; left; player cursor at end of word', () => {
 test('delete something: word; right; player cursor at end of word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -699,29 +579,26 @@ test('delete something: word; right; player cursor at end of word', () => {
   state.cursor.playerTime = 1;
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 4, length: 1 });
+  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 3, length: 1 });
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
   ]);
   expect(state.selection).toStrictEqual(null);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(4);
+  expect(state.cursor.userIndex).toBe(3);
 });
 
 test('delete something: word; left; player cursor in word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -731,29 +608,26 @@ test('delete something: word; left; player cursor in word', () => {
   state.cursor.playerTime = 0.5;
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 2, length: 1 });
+  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 1, length: 1 });
   deleteSomething.reducer(state, 'left');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.selection).toStrictEqual(null);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
 });
 
 test('delete something: word; right; player cursor in word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -763,23 +637,21 @@ test('delete something: word; right; player cursor in word', () => {
   state.cursor.playerTime = 0.5;
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 2, length: 1 });
+  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 1, length: 1 });
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
   expect(state.selection).toStrictEqual(null);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
+  expect(state.cursor.userIndex).toBe(1);
 });
 
 test('delete something: left at t=0', () => {
@@ -787,7 +659,6 @@ test('delete something: left at t=0', () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -797,7 +668,6 @@ test('delete something: left at t=0', () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -810,7 +680,6 @@ test('delete something: right at t=0', () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -820,7 +689,6 @@ test('delete something: right at t=0', () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -828,7 +696,6 @@ test('delete something: right at t=0', () => {
   deleteSomething.reducer(state, 'right');
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -895,7 +762,6 @@ test('copy', async () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -905,7 +771,6 @@ test('copy', async () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -927,7 +792,6 @@ test('copy adds para-break before first word', async () => {
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -938,7 +802,6 @@ test('copy adds para-break before first word', async () => {
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -954,45 +817,11 @@ test('copy adds para-break before first word', async () => {
   expect(clipboard.writeBuffer).toHaveBeenCalled();
 });
 
-test('copy adds para break if selections end in heading', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
-  await runAsyncThunkSync(copy(), state);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-
-  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
-  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
-  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-      { type: 'heading', level: 1, text: 'Heading One' },
-      { type: 'paragraph_break', speaker: null },
-    ],
-  });
-  expect(clipboard.writeBuffer).toHaveBeenCalled();
-});
-
 test('copy does nothing if no selection', async () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -1007,7 +836,6 @@ test('cut', async () => {
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -1015,7 +843,6 @@ test('cut', async () => {
   await runAsyncThunkSync(cut(), state);
 
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -1037,7 +864,6 @@ test('cut adds para-break before first word', async () => {
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -1047,7 +873,6 @@ test('cut adds para-break before first word', async () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -1063,42 +888,11 @@ test('cut adds para-break before first word', async () => {
   expect(clipboard.writeBuffer).toHaveBeenCalled();
 });
 
-test('cut adds para break if selections end in heading', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
-  await runAsyncThunkSync(cut(), state);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-
-  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
-  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
-  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-      { type: 'heading', level: 1, text: 'Heading One' },
-      { type: 'paragraph_break', speaker: null },
-    ],
-  });
-  expect(clipboard.writeBuffer).toHaveBeenCalled();
-});
-
 test('cut does nothing if no selection', async () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = [
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -1107,7 +901,6 @@ test('cut does nothing if no selection', async () => {
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ]);
@@ -1213,7 +1006,6 @@ test('paste more complex', async () => {
   const state = _.cloneDeep(defaultEditorState);
   const pastedDocument: Document = {
     content: [
-      { type: 'heading', level: 1, text: 'test' },
       { type: 'paragraph_break', speaker: 'Speaker One' },
       { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
       { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -1239,7 +1031,6 @@ test('paste more complex', async () => {
   }
   reducer(state, pastedDocument);
   expect(state.document.content).toStrictEqual([
-    { type: 'heading', level: 1, text: 'test' },
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
@@ -1677,14 +1468,11 @@ test('copySelectionText', async () => {
     { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
     { type: 'word', word: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
     { type: 'word', word: 'Three Four', conf: 1, source: 'source-1', sourceStart: 2, length: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Five', conf: 1, source: 'source-2', sourceStart: 0, length: 1 },
     { type: 'word', word: 'Six', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
     { type: 'word', word: 'Seven Eight', conf: 1, source: 'source-2', sourceStart: 2, length: 1 },
-    { type: 'heading', level: 2, text: 'Heading Two' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'heading', level: 3, text: 'Heading Three' },
     { type: 'paragraph_break', speaker: 'Speaker Three' },
     { type: 'word', word: 'Something', conf: 1, source: 'source-4', sourceStart: 0, length: 1 },
     { type: 'word', word: 'Something', conf: 1, source: 'source-4', sourceStart: 1, length: 1 },
@@ -1703,16 +1491,9 @@ test('copySelectionText', async () => {
     'Speaker One:\n' +
       'One Two Three Four\n' +
       '\n' +
-      '# Heading One\n' +
-      '\n' +
       'Speaker Two:\nFive Six Seven Eight\n' +
       '\n' +
-      '## Heading Two\n' +
-      '\n' +
-      'Speaker Two:\n' +
-      '\n' +
-      '### Heading Three\n' +
-      '\n' +
+      'Speaker Two:\n\n' +
       'Speaker Three:\nSomething Something'
   );
 });

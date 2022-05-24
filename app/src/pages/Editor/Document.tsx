@@ -171,10 +171,6 @@ export function Document(): JSX.Element {
               />
             );
           }
-          case 'heading': {
-            console.error('TODO');
-            return <></>;
-          }
         }
       })}
     </DocumentContainer>

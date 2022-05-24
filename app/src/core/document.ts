@@ -58,8 +58,8 @@ export interface ArtificialSilence {
   length: number;
 }
 
-type MacroItem = HeadingItem | Paragraph;
-export type UntimedMacroItem = HeadingItem | Paragraph<DocumentItem>;
+type MacroItem = Paragraph;
+export type UntimedMacroItem = Paragraph<DocumentItem>;
 export type TimedMacroItem = MacroItem & TimedItemExtension;
 export type TimedParagraphItem = ParagraphItem & TimedItemExtension;
 export interface Paragraph<I = TimedParagraphItem> {
@@ -87,15 +87,8 @@ export interface ParagraphBreakItem {
   speaker: string | null;
 }
 
-type HeadingLevel = 1 | 2 | 3;
-export interface HeadingItem {
-  type: 'heading';
-  text: string;
-  level: HeadingLevel;
-}
-
 export type ParagraphItem = Word | Silence | ArtificialSilence;
-export type DocumentItem = ParagraphItem | ParagraphBreakItem | HeadingItem;
+export type DocumentItem = ParagraphItem | ParagraphBreakItem;
 
 export type RenderItem = SilenceRenderItem | SourceRenderItem;
 export interface SilenceRenderItem {

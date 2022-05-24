@@ -2,7 +2,6 @@ import { EditorState, Selection } from './types';
 import {
   Document,
   DocumentItem,
-  HeadingItem,
   Paragraph as ParagraphType,
   ParagraphBreakItem,
   ParagraphItem,
@@ -172,19 +171,6 @@ const memoizedSelectedItems = memoize(
 export function selectionDocument(state: EditorState): Document {
   const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
 
-  if (
-    timedDocumentSlice.length > 0 &&
-    timedDocumentSlice[timedDocumentSlice.length - 1].type == 'heading'
-  ) {
-    // TODO: revisit this code when adding heading functionality
-    timedDocumentSlice.push({
-      type: 'paragraph_break',
-      speaker: null,
-      absoluteStart: 0,
-      absoluteIndex: 0,
-    });
-  }
-
   const documentSlice = untimeDocumentItems(timedDocumentSlice);
   const neededSources = new Set(documentSlice.map((x) => 'source' in x && x.source));
   const filteredSources = Object.fromEntries(
@@ -257,9 +243,6 @@ export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
   let current: RenderItem | null = null;
   let current_speaker: string | null = null;
   for (const item of timedContent) {
-    if (item.type == 'heading') {
-      continue;
-    }
     if (item.type == 'paragraph_break') {
       current_speaker = item.speaker;
     } else if (
@@ -332,13 +315,10 @@ export const memoizedMacroItems = memoize((content: DocumentItem[]): TimedMacroI
   }
   return timedContent
     .filter(
-      (item): item is (ParagraphBreakItem | HeadingItem) & TimedItemExtension =>
-        item.type == 'paragraph_break' || item.type == 'heading'
+      (item): item is ParagraphBreakItem & TimedItemExtension => item.type == 'paragraph_break'
     )
     .map((item, idx, arr): TimedMacroItem => {
       switch (item.type) {
-        case 'heading':
-          return item;
         case 'paragraph_break': {
           const start = item.absoluteIndex;
           const end = arr[idx + 1]?.absoluteIndex || timedContent.length;
@@ -396,8 +376,6 @@ export function macroItemsToText(
   return macroItems
     .map((paragraph) => {
       switch (paragraph.type) {
-        case 'heading':
-          return '#'.repeat(paragraph.level) + ` ${paragraph.text}`;
         case 'paragraph': {
           let paragraphText = '';
           if (displaySpeakerNames) {

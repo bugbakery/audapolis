@@ -140,7 +140,6 @@ function deleteNonSelection(state: EditorState, direction: 'left' | 'right') {
     }
     case 'silence':
     case 'artificial_silence':
-    case 'heading':
     case 'word': {
       state.selection = { headPosition: direction, startIndex: curIdx, length: 1 };
     }

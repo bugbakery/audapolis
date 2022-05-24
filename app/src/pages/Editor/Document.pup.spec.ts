@@ -9,14 +9,12 @@ import { DocumentItem, Document } from '../../core/document';
 import { assertSome } from '../../util';
 
 const testContent: DocumentItem[] = [
-  { type: 'heading', level: 1, text: 'First big heading' },
   { type: 'paragraph_break', speaker: 'Speaker One' },
   { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
   { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
   { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
   { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
   { type: 'paragraph_break', speaker: null },
-  { type: 'heading', text: 'Heading Two', level: 2 },
   { type: 'paragraph_break', speaker: 'Speaker Two' },
   { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
   { type: 'word', source: 'source-2', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
@@ -48,7 +46,7 @@ beforeAll(async () => {
 });
 
 test('Document renders item 13', async () => {
-  await page.waitForSelector('#item-13');
+  await page.waitForSelector('#item-12');
 });
 
 async function getState(): Promise<RootState> {

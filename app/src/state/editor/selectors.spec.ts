@@ -22,14 +22,12 @@ import {
 import { produce } from 'immer';
 
 const testContent: DocumentItem[] = [
-  { type: 'heading', level: 1, text: 'First big heading' },
   { type: 'paragraph_break', speaker: 'Speaker One' },
   { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
   { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
   { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
   { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
   { type: 'paragraph_break', speaker: null },
-  { type: 'heading', text: 'Heading Two', level: 2 },
   { type: 'paragraph_break', speaker: 'Speaker Two' },
   { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
   { type: 'word', source: 'source-2', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
@@ -50,8 +48,7 @@ const testSources: Record<string, Source> = {
 
 test('convert document to timed items', () => {
   expect(memoizedTimedDocumentItems(testContent)).toStrictEqual([
-    { type: 'heading', level: 1, text: 'First big heading', absoluteStart: 0, absoluteIndex: 0 },
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 0 },
     {
       type: 'word',
       source: 'source-1',
@@ -60,7 +57,7 @@ test('convert document to timed items', () => {
       word: 'One',
       conf: 1,
       absoluteStart: 0,
-      absoluteIndex: 2,
+      absoluteIndex: 1,
     },
     {
       type: 'word',
@@ -70,7 +67,7 @@ test('convert document to timed items', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 1,
-      absoluteIndex: 3,
+      absoluteIndex: 2,
     },
     {
       type: 'word',
@@ -80,7 +77,7 @@ test('convert document to timed items', () => {
       word: 'Three',
       conf: 1,
       absoluteStart: 2,
-      absoluteIndex: 4,
+      absoluteIndex: 3,
     },
     {
       type: 'word',
@@ -90,11 +87,10 @@ test('convert document to timed items', () => {
       word: 'Four',
       conf: 1,
       absoluteStart: 3,
-      absoluteIndex: 5,
+      absoluteIndex: 4,
     },
-    { type: 'paragraph_break', speaker: null, absoluteStart: 4, absoluteIndex: 6 },
-    { type: 'heading', text: 'Heading Two', level: 2, absoluteStart: 4, absoluteIndex: 7 },
-    { type: 'paragraph_break', speaker: 'Speaker Two', absoluteStart: 4, absoluteIndex: 8 },
+    { type: 'paragraph_break', speaker: null, absoluteStart: 4, absoluteIndex: 5 },
+    { type: 'paragraph_break', speaker: 'Speaker Two', absoluteStart: 4, absoluteIndex: 6 },
     {
       type: 'word',
       source: 'source-2',
@@ -103,7 +99,7 @@ test('convert document to timed items', () => {
       word: 'One',
       conf: 1,
       absoluteStart: 4,
-      absoluteIndex: 9,
+      absoluteIndex: 7,
     },
     {
       type: 'word',
@@ -113,7 +109,7 @@ test('convert document to timed items', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 5,
-      absoluteIndex: 10,
+      absoluteIndex: 8,
     },
     {
       type: 'word',
@@ -123,7 +119,7 @@ test('convert document to timed items', () => {
       word: 'Three',
       conf: 1,
       absoluteStart: 6,
-      absoluteIndex: 11,
+      absoluteIndex: 9,
     },
     {
       type: 'word',
@@ -133,9 +129,9 @@ test('convert document to timed items', () => {
       word: 'Four',
       conf: 1,
       absoluteStart: 7,
-      absoluteIndex: 12,
+      absoluteIndex: 10,
     },
-    { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 13 },
+    { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 11 },
   ]);
 });
 
@@ -149,7 +145,7 @@ test('convert document to paragraph items', () => {
       word: 'One',
       conf: 1,
       absoluteStart: 0,
-      absoluteIndex: 2,
+      absoluteIndex: 1,
     },
     {
       type: 'word',
@@ -159,7 +155,7 @@ test('convert document to paragraph items', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 1,
-      absoluteIndex: 3,
+      absoluteIndex: 2,
     },
     {
       type: 'word',
@@ -169,7 +165,7 @@ test('convert document to paragraph items', () => {
       word: 'Three',
       conf: 1,
       absoluteStart: 2,
-      absoluteIndex: 4,
+      absoluteIndex: 3,
     },
     {
       type: 'word',
@@ -179,7 +175,7 @@ test('convert document to paragraph items', () => {
       word: 'Four',
       conf: 1,
       absoluteStart: 3,
-      absoluteIndex: 5,
+      absoluteIndex: 4,
     },
     {
       type: 'word',
@@ -189,7 +185,7 @@ test('convert document to paragraph items', () => {
       word: 'One',
       conf: 1,
       absoluteStart: 4,
-      absoluteIndex: 9,
+      absoluteIndex: 7,
     },
     {
       type: 'word',
@@ -199,7 +195,7 @@ test('convert document to paragraph items', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 5,
-      absoluteIndex: 10,
+      absoluteIndex: 8,
     },
     {
       type: 'word',
@@ -209,7 +205,7 @@ test('convert document to paragraph items', () => {
       word: 'Three',
       conf: 1,
       absoluteStart: 6,
-      absoluteIndex: 11,
+      absoluteIndex: 9,
     },
     {
       type: 'word',
@@ -219,9 +215,9 @@ test('convert document to paragraph items', () => {
       word: 'Four',
       conf: 1,
       absoluteStart: 7,
-      absoluteIndex: 12,
+      absoluteIndex: 10,
     },
-    { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 13 },
+    { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 11 },
   ]);
 });
 
@@ -229,12 +225,12 @@ test('selected items', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.selection = {
-    startIndex: 2,
+    startIndex: 1,
     length: 2,
     headPosition: 'right',
   };
   expect(selectedItems(state)).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 0 },
     {
       type: 'word',
       source: 'source-1',
@@ -243,7 +239,7 @@ test('selected items', () => {
       word: 'One',
       conf: 1,
       absoluteStart: 0,
-      absoluteIndex: 2,
+      absoluteIndex: 1,
     },
     {
       type: 'word',
@@ -253,7 +249,7 @@ test('selected items', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 1,
-      absoluteIndex: 3,
+      absoluteIndex: 2,
     },
   ]);
 });
@@ -262,12 +258,12 @@ test('selected items: doesnt add para break if already selected', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.selection = {
-    startIndex: 1,
+    startIndex: 0,
     length: 3,
     headPosition: 'right',
   };
   expect(selectedItems(state)).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 1 },
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 0 },
     {
       type: 'word',
       source: 'source-1',
@@ -276,7 +272,7 @@ test('selected items: doesnt add para break if already selected', () => {
       word: 'One',
       conf: 1,
       absoluteStart: 0,
-      absoluteIndex: 2,
+      absoluteIndex: 1,
     },
     {
       type: 'word',
@@ -286,7 +282,7 @@ test('selected items: doesnt add para break if already selected', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 1,
-      absoluteIndex: 3,
+      absoluteIndex: 2,
     },
   ]);
 });
@@ -308,13 +304,13 @@ test('selected render items', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.selection = {
-    startIndex: 3,
+    startIndex: 2,
     length: 2,
     headPosition: 'right',
   };
   const selItems = selectedItems(state);
   expect(selItems).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 1, absoluteIndex: 2 },
+    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 1, absoluteIndex: 1 },
     {
       type: 'word',
       source: 'source-1',
@@ -323,7 +319,7 @@ test('selected render items', () => {
       word: 'Two',
       conf: 1,
       absoluteStart: 1,
-      absoluteIndex: 3,
+      absoluteIndex: 2,
     },
     {
       type: 'word',
@@ -333,7 +329,7 @@ test('selected render items', () => {
       word: 'Three',
       conf: 1,
       absoluteStart: 2,
-      absoluteIndex: 4,
+      absoluteIndex: 3,
     },
   ]);
   expect(renderItems(selItems)).toStrictEqual([
@@ -394,7 +390,6 @@ test('selectionDocument adds para-break before first word', async () => {
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
   ];
@@ -403,25 +398,6 @@ test('selectionDocument adds para-break before first word', async () => {
   expect(selectionDocument(state).content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ]);
-});
-
-test('selectionDocument adds para break if selections end in heading', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
-
-  expect(selectionDocument(state).content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'heading', level: 1, text: 'Heading One' },
-    { type: 'paragraph_break', speaker: null },
   ]);
 });
 
@@ -451,15 +427,15 @@ test('current user cursor time at zero-length item', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'user';
-  state.cursor.userIndex = 8;
+  state.cursor.userIndex = 6;
   expect(currentCursorTime(state)).toBe(4);
 });
 test('current user cursor time at word', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'user';
-  state.cursor.userIndex = 4;
-  expect(currentCursorTime(state)).toBe(2);
+  state.cursor.userIndex = 2;
+  expect(currentCursorTime(state)).toBe(1);
 });
 
 test('current user cursor time after last item', () => {
@@ -482,7 +458,7 @@ test('current item with user cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'user';
-  state.cursor.userIndex = 2;
+  state.cursor.userIndex = 1;
   expect(currentItem(state)).toStrictEqual({
     type: 'word',
     source: 'source-1',
@@ -491,7 +467,7 @@ test('current item with user cursor', () => {
     word: 'One',
     conf: 1,
     absoluteStart: 0,
-    absoluteIndex: 2,
+    absoluteIndex: 1,
   });
 });
 
@@ -508,7 +484,7 @@ test('current item with player cursor', () => {
     word: 'Three',
     conf: 1,
     absoluteStart: 2,
-    absoluteIndex: 4,
+    absoluteIndex: 3,
   });
 });
 
@@ -516,7 +492,7 @@ test('current item -> current Time -> current item roundtrips', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'user';
-  state.cursor.userIndex = 3;
+  state.cursor.userIndex = 2;
   expect(currentItem(state)).toStrictEqual({
     type: 'word',
     source: 'source-1',
@@ -525,7 +501,7 @@ test('current item -> current Time -> current item roundtrips', () => {
     word: 'Two',
     conf: 1,
     absoluteStart: 1,
-    absoluteIndex: 3,
+    absoluteIndex: 2,
   });
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
@@ -538,7 +514,7 @@ test('current item -> current Time -> current item roundtrips', () => {
     word: 'Two',
     conf: 1,
     absoluteStart: 1,
-    absoluteIndex: 3,
+    absoluteIndex: 2,
   });
 });
 
@@ -555,7 +531,7 @@ test('current item at t=1.5', () => {
     word: 'Two',
     conf: 1,
     absoluteStart: 1,
-    absoluteIndex: 3,
+    absoluteIndex: 2,
   });
 });
 
@@ -572,7 +548,7 @@ test('current item at t = 0', () => {
     word: 'One',
     conf: 1,
     absoluteStart: 0,
-    absoluteIndex: 2,
+    absoluteIndex: 1,
   });
 });
 
@@ -589,23 +565,20 @@ test('current item with player time returns item with length', () => {
     word: 'One',
     conf: 1,
     absoluteStart: 4,
-    absoluteIndex: 9,
+    absoluteIndex: 7,
   });
 });
 
 test('current item skips through zero-length items', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep([
-    { type: 'heading', text: 'H1', level: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-  ]);
+  state.document.content = _.cloneDeep([{ type: 'paragraph_break', speaker: 'Speaker One' }]);
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
   expect(currentItem(state)).toStrictEqual({
     type: 'paragraph_break',
     speaker: 'Speaker One',
     absoluteStart: 0,
-    absoluteIndex: 1,
+    absoluteIndex: 0,
   });
 });
 
@@ -624,8 +597,6 @@ test('current item at t = 0', () => {
   state.document.content = _.cloneDeep([
     { type: 'paragraph_break', speaker: 'Speaker One' },
     { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-    { type: 'heading', level: 1, text: 'First big heading' },
-    { type: 'heading', level: 2, text: 'Second heading' },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
   ]);
   state.cursor.current = 'player';
@@ -634,133 +605,12 @@ test('current item at t = 0', () => {
     type: 'paragraph_break',
     speaker: 'Speaker Two',
     absoluteStart: 1,
-    absoluteIndex: 4,
+    absoluteIndex: 2,
   });
 });
 
 test('paragraphs', () => {
   expect(memoizedMacroItems(testContent)).toStrictEqual([
-    { type: 'heading', level: 1, text: 'First big heading', absoluteStart: 0, absoluteIndex: 0 },
-    {
-      type: 'paragraph',
-      speaker: 'Speaker One',
-      absoluteStart: 0,
-      absoluteIndex: 1,
-      content: [
-        {
-          type: 'word',
-          source: 'source-1',
-          sourceStart: 2,
-          length: 1,
-          word: 'One',
-          conf: 1,
-          absoluteStart: 0,
-          absoluteIndex: 2,
-        },
-        {
-          type: 'word',
-          source: 'source-1',
-          sourceStart: 3,
-          length: 1,
-          word: 'Two',
-          conf: 1,
-          absoluteStart: 1,
-          absoluteIndex: 3,
-        },
-        {
-          type: 'word',
-          source: 'source-1',
-          sourceStart: 4,
-          length: 1,
-          word: 'Three',
-          conf: 1,
-          absoluteStart: 2,
-          absoluteIndex: 4,
-        },
-        {
-          type: 'word',
-          source: 'source-1',
-          sourceStart: 5,
-          length: 1,
-          word: 'Four',
-          conf: 1,
-          absoluteStart: 3,
-          absoluteIndex: 5,
-        },
-      ],
-    },
-    { type: 'paragraph', speaker: null, absoluteStart: 4, absoluteIndex: 6, content: [] },
-    { type: 'heading', text: 'Heading Two', level: 2, absoluteStart: 4, absoluteIndex: 7 },
-    {
-      type: 'paragraph',
-      speaker: 'Speaker Two',
-      absoluteStart: 4,
-      absoluteIndex: 8,
-      content: [
-        {
-          type: 'word',
-          source: 'source-2',
-          sourceStart: 2,
-          length: 1,
-          word: 'One',
-          conf: 1,
-          absoluteStart: 4,
-          absoluteIndex: 9,
-        },
-        {
-          type: 'word',
-          source: 'source-2',
-          sourceStart: 3,
-          length: 1,
-          word: 'Two',
-          conf: 1,
-          absoluteStart: 5,
-          absoluteIndex: 10,
-        },
-        {
-          type: 'word',
-          source: 'source-2',
-          sourceStart: 4,
-          length: 1,
-          word: 'Three',
-          conf: 1,
-          absoluteStart: 6,
-          absoluteIndex: 11,
-        },
-        {
-          type: 'word',
-          source: 'source-2',
-          sourceStart: 5,
-          length: 1,
-          word: 'Four',
-          conf: 1,
-          absoluteStart: 7,
-          absoluteIndex: 12,
-        },
-        { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 13 },
-      ],
-    },
-  ]);
-});
-
-test('paragraphs fails if no para break before first word', () => {
-  expect(() =>
-    memoizedMacroItems([
-      { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-    ])
-  ).toThrowError('paragraph');
-});
-
-test('paragraph from heading without prior para break', () => {
-  expect(
-    memoizedMacroItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'heading', level: 1, text: 'First big heading' },
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-    ])
-  ).toStrictEqual([
     {
       type: 'paragraph',
       speaker: 'Speaker One',
@@ -777,14 +627,44 @@ test('paragraph from heading without prior para break', () => {
           absoluteStart: 0,
           absoluteIndex: 1,
         },
+        {
+          type: 'word',
+          source: 'source-1',
+          sourceStart: 3,
+          length: 1,
+          word: 'Two',
+          conf: 1,
+          absoluteStart: 1,
+          absoluteIndex: 2,
+        },
+        {
+          type: 'word',
+          source: 'source-1',
+          sourceStart: 4,
+          length: 1,
+          word: 'Three',
+          conf: 1,
+          absoluteStart: 2,
+          absoluteIndex: 3,
+        },
+        {
+          type: 'word',
+          source: 'source-1',
+          sourceStart: 5,
+          length: 1,
+          word: 'Four',
+          conf: 1,
+          absoluteStart: 3,
+          absoluteIndex: 4,
+        },
       ],
     },
-    { type: 'heading', level: 1, text: 'First big heading', absoluteStart: 1, absoluteIndex: 2 },
+    { type: 'paragraph', speaker: null, absoluteStart: 4, absoluteIndex: 5, content: [] },
     {
       type: 'paragraph',
       speaker: 'Speaker Two',
-      absoluteStart: 1,
-      absoluteIndex: 3,
+      absoluteStart: 4,
+      absoluteIndex: 6,
       content: [
         {
           type: 'word',
@@ -793,12 +673,51 @@ test('paragraph from heading without prior para break', () => {
           length: 1,
           word: 'One',
           conf: 1,
-          absoluteStart: 1,
-          absoluteIndex: 4,
+          absoluteStart: 4,
+          absoluteIndex: 7,
         },
+        {
+          type: 'word',
+          source: 'source-2',
+          sourceStart: 3,
+          length: 1,
+          word: 'Two',
+          conf: 1,
+          absoluteStart: 5,
+          absoluteIndex: 8,
+        },
+        {
+          type: 'word',
+          source: 'source-2',
+          sourceStart: 4,
+          length: 1,
+          word: 'Three',
+          conf: 1,
+          absoluteStart: 6,
+          absoluteIndex: 9,
+        },
+        {
+          type: 'word',
+          source: 'source-2',
+          sourceStart: 5,
+          length: 1,
+          word: 'Four',
+          conf: 1,
+          absoluteStart: 7,
+          absoluteIndex: 10,
+        },
+        { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 11 },
       ],
     },
   ]);
+});
+
+test('paragraphs fails if no para break before first word', () => {
+  expect(() =>
+    memoizedMacroItems([
+      { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
+    ])
+  ).toThrowError('paragraph');
 });
 
 test('renderItems', () => {
@@ -1033,15 +952,15 @@ test('currentSpeaker: user cursor', () => {
   state.cursor.userIndex = 0;
   expect(currentSpeaker(state)).toBe(null);
   state = produce(state, (state) => {
-    state.cursor.userIndex = 2;
+    state.cursor.userIndex = 1;
   });
   expect(currentSpeaker(state)).toBe('Speaker One');
   state = produce(state, (state) => {
-    state.cursor.userIndex = 8;
+    state.cursor.userIndex = 6;
   });
   expect(currentSpeaker(state)).toBe(null);
   state = produce(state, (state) => {
-    state.cursor.userIndex = 9;
+    state.cursor.userIndex = 8;
   });
   expect(currentSpeaker(state)).toBe('Speaker Two');
 });
@@ -1158,11 +1077,10 @@ test('firstPossibleCursorPosition', () => {
 
   expect(
     firstPossibleCursorPosition([
-      { type: 'heading', text: 'Heading One', level: 1 },
       { type: 'paragraph_break', speaker: 'Speaker Two' },
       { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
     ])
-  ).toBe(0);
+  ).toBe(1);
 });
 
 test('current index left with user cursor', () => {
@@ -1186,7 +1104,7 @@ test('current index left with player cursor', () => {
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
-  expect(currentIndexLeft(state)).toStrictEqual(2);
+  expect(currentIndexLeft(state)).toStrictEqual(1);
 });
 
 test.each([1.1, 1.25, 1.5, 1.75, 2])('current index left with player cursor at t=%ds', (time) => {
@@ -1194,7 +1112,7 @@ test.each([1.1, 1.25, 1.5, 1.75, 2])('current index left with player cursor at t
   state.document.content = _.cloneDeep(testContent);
   state.cursor.current = 'player';
   state.cursor.playerTime = time;
-  expect(currentIndexLeft(state)).toStrictEqual(3);
+  expect(currentIndexLeft(state)).toStrictEqual(2);
 });
 
 test('memoize returns old value if called within immerjs', () => {
@@ -1278,7 +1196,6 @@ const testMacroItems: UntimedMacroItem[] = [
       },
     ],
   },
-  { type: 'heading', level: 1, text: 'Heading One' },
   {
     type: 'paragraph',
     speaker: 'Speaker Two',
@@ -1295,9 +1212,7 @@ const testMacroItems: UntimedMacroItem[] = [
       },
     ],
   },
-  { type: 'heading', level: 2, text: 'Heading Two' },
   { type: 'paragraph', speaker: 'Speaker Two', content: [] },
-  { type: 'heading', level: 3, text: 'Heading Three' },
   {
     type: 'paragraph',
     speaker: 'Speaker Three',
@@ -1324,35 +1239,16 @@ const testMacroItems: UntimedMacroItem[] = [
 test('macroItemsToText speaker names', () => {
   expect(macroItemsToText(testMacroItems, true)).toBe(
     'Something Something:\n\nSpeaker One:\n' +
-      'One Two Three Four\n' +
-      '\n' +
-      '# Heading One\n' +
-      '\n' +
-      'Speaker Two:\nFive Six Seven Eight\n' +
-      '\n' +
-      '## Heading Two\n' +
-      '\n' +
-      'Speaker Two:\n' +
-      '\n' +
-      '### Heading Three\n' +
-      '\n' +
+      'One Two Three Four\n\n' +
+      'Speaker Two:\nFive Six Seven Eight\n\n' +
+      'Speaker Two:\n\n' +
       'Speaker Three:\nSomething Something'
   );
 });
 
 test('macroItemsToText no speaker names', () => {
   expect(macroItemsToText(testMacroItems, false)).toBe(
-    'One Two Three Four\n' +
-      '\n' +
-      '# Heading One\n' +
-      '\n' +
-      'Five Six Seven Eight\n' +
-      '\n' +
-      '## Heading Two\n' +
-      '\n' +
-      '### Heading Three\n' +
-      '\n' +
-      'Something Something'
+    'One Two Three Four\n' + '\n' + 'Five Six Seven Eight\n' + '\n' + 'Something Something'
   );
 });
 

@@ -2,7 +2,7 @@
 
 💖 First of all: thank you for contributing to audapolis
 
-This document contains some resources which should help you in that.
+This document contains some resources which should help you in doing that.
 
 ## Code Of Conduct
 
@@ -13,7 +13,7 @@ If you notice any violations, please reach out to us via the ways described in t
 
 ### Report a bug
 
-Oops 😅 Thank you for catching this bug 🐛.
+Oops 😅 Thank you for catching a bug 🐛.
 Please report this bug to us:
 
 1. Ensure the bug was not already reported by searching through our [Issues](https://github.com/audapolis/audapolis/issues).
@@ -59,15 +59,16 @@ To make sure we can merge it quickly, you can do a few things to help us:
 
 ### Write code for new features
 
-If you want to write code for something that is not already [described in an issue](https://github.com/audapolis/audapolis), please consider opening an issue first.
+If you want to write code for something that is not already [described in an issue](https://github.com/audapolis/audapolis), please open an issue first and communicate that you are working on it.
 Especially if it's more than a small bugfix for an obvious bug.
 We might have some opinions on whether / how your feature should be included into audapolis.
 
-If you do not open an issue first, we might have a lot of review comments that need to be addressed before we can merge your issue or even have to close the PR entirely because we do not want to include the feature.
+If you do not open an issue first, we might have a lot of review comments that need to be addressed before we can merge your pull request or even have to close the PR entirely because we do not want to include the feature.
 
 Opening an issue first also allows other users to comment on it, often leading to a better result.
 
-### Write tests & documentation
+### Write tests & domentation
 
 If you want to write tests & documentation for existing features / behaviour, always feel free to do so and open a pull request.
+Here, we would also appreachiate if you opened an issue first to avoid duplicate work.
 If you have any questions while doing to, please open an issue or write us an email.

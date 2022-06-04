@@ -1,4 +1,4 @@
-import { DocumentItem, Source, UntimedMacroItem } from '../../core/document';
+import { Source, V3DocumentItem, V3UntimedMacroItem } from '../../core/document';
 import { defaultEditorState, EditorState } from './types';
 import _ from 'lodash';
 import {
@@ -20,21 +20,40 @@ import {
   selectionDocument,
 } from './selectors';
 import { produce } from 'immer';
+import { addUUIDs, V3DocumentItemWithoutUuid } from '../../util/test_helper';
 
-const testContent: DocumentItem[] = [
-  { type: 'paragraph_break', speaker: 'Speaker One' },
-  { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-  { type: 'paragraph_break', speaker: null },
-  { type: 'paragraph_break', speaker: 'Speaker Two' },
-  { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-  { type: 'artificial_silence', length: 10 },
+const testParagraphSpeaker1: V3DocumentItemWithoutUuid[] = [
+  { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+  { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+  { type: 'paragraph_break' },
 ];
+
+const testParagraphEmpty: V3DocumentItemWithoutUuid[] = [
+  { type: 'speaker_change', speaker: 'Speaker Empty', language: 'test' },
+  { type: 'paragraph_break' },
+];
+
+const testParagraphSpeaker2: V3DocumentItemWithoutUuid[] = [
+  { type: 'speaker_change', speaker: 'Speaker Two', language: 'test2' },
+  { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+  { type: 'artificial_silence', length: 10 },
+  { type: 'paragraph_break' },
+];
+
+const testContentLong: V3DocumentItem[] = addUUIDs([
+  ...testParagraphSpeaker1,
+  ...testParagraphEmpty,
+  ...testParagraphSpeaker2,
+]);
+
+const testContentShort: V3DocumentItem[] = addUUIDs(testParagraphSpeaker2);
+
 const testSources: Record<string, Source> = {
   'source-1': {
     fileContents: new ArrayBuffer(0),
@@ -47,206 +66,125 @@ const testSources: Record<string, Source> = {
 };
 
 test('convert document to timed items', () => {
-  expect(memoizedTimedDocumentItems(testContent)).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 0 },
+  expect(memoizedTimedDocumentItems(testContentShort)).toMatchObject([
+    { type: 'speaker_change', speaker: 'Speaker Two', absoluteStart: 0, absoluteIndex: 0 },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 2,
       length: 1,
-      word: 'One',
+      text: 'One',
       conf: 1,
       absoluteStart: 0,
       absoluteIndex: 1,
     },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 3,
       length: 1,
-      word: 'Two',
+      text: 'Two',
       conf: 1,
       absoluteStart: 1,
       absoluteIndex: 2,
     },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 4,
       length: 1,
-      word: 'Three',
+      text: 'Three',
       conf: 1,
       absoluteStart: 2,
       absoluteIndex: 3,
     },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 5,
       length: 1,
-      word: 'Four',
+      text: 'Four',
       conf: 1,
       absoluteStart: 3,
       absoluteIndex: 4,
     },
-    { type: 'paragraph_break', speaker: null, absoluteStart: 4, absoluteIndex: 5 },
-    { type: 'paragraph_break', speaker: 'Speaker Two', absoluteStart: 4, absoluteIndex: 6 },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 2,
-      length: 1,
-      word: 'One',
-      conf: 1,
-      absoluteStart: 4,
-      absoluteIndex: 7,
-    },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 3,
-      length: 1,
-      word: 'Two',
-      conf: 1,
-      absoluteStart: 5,
-      absoluteIndex: 8,
-    },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 4,
-      length: 1,
-      word: 'Three',
-      conf: 1,
-      absoluteStart: 6,
-      absoluteIndex: 9,
-    },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 5,
-      length: 1,
-      word: 'Four',
-      conf: 1,
-      absoluteStart: 7,
-      absoluteIndex: 10,
-    },
-    { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 11 },
+    { type: 'artificial_silence', length: 10, absoluteStart: 4, absoluteIndex: 5 },
+    { type: 'paragraph_break', absoluteStart: 14, absoluteIndex: 6 },
   ]);
 });
 
 test('convert document to paragraph items', () => {
-  expect(memoizedParagraphItems(testContent)).toStrictEqual([
+  expect(memoizedParagraphItems(testContentShort)).toMatchObject([
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 2,
       length: 1,
-      word: 'One',
+      text: 'One',
       conf: 1,
       absoluteStart: 0,
       absoluteIndex: 1,
     },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 3,
       length: 1,
-      word: 'Two',
+      text: 'Two',
       conf: 1,
       absoluteStart: 1,
       absoluteIndex: 2,
     },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 4,
       length: 1,
-      word: 'Three',
+      text: 'Three',
       conf: 1,
       absoluteStart: 2,
       absoluteIndex: 3,
     },
     {
-      type: 'word',
-      source: 'source-1',
+      type: 'text',
+      source: 'source-2',
       sourceStart: 5,
       length: 1,
-      word: 'Four',
+      text: 'Four',
       conf: 1,
       absoluteStart: 3,
       absoluteIndex: 4,
     },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 2,
-      length: 1,
-      word: 'One',
-      conf: 1,
-      absoluteStart: 4,
-      absoluteIndex: 7,
-    },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 3,
-      length: 1,
-      word: 'Two',
-      conf: 1,
-      absoluteStart: 5,
-      absoluteIndex: 8,
-    },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 4,
-      length: 1,
-      word: 'Three',
-      conf: 1,
-      absoluteStart: 6,
-      absoluteIndex: 9,
-    },
-    {
-      type: 'word',
-      source: 'source-2',
-      sourceStart: 5,
-      length: 1,
-      word: 'Four',
-      conf: 1,
-      absoluteStart: 7,
-      absoluteIndex: 10,
-    },
-    { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 11 },
+    { type: 'artificial_silence', length: 10, absoluteStart: 4, absoluteIndex: 5 },
   ]);
 });
 
 test('selected items', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.selection = {
     startIndex: 1,
     length: 2,
     headPosition: 'right',
   };
-  expect(selectedItems(state)).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 0 },
+  expect(selectedItems(state)).toMatchObject([
+    { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
     {
-      type: 'word',
+      type: 'text',
       source: 'source-1',
       sourceStart: 2,
       length: 1,
-      word: 'One',
+      text: 'One',
       conf: 1,
       absoluteStart: 0,
       absoluteIndex: 1,
     },
     {
-      type: 'word',
+      type: 'text',
       source: 'source-1',
       sourceStart: 3,
       length: 1,
-      word: 'Two',
+      text: 'Two',
       conf: 1,
       absoluteStart: 1,
       absoluteIndex: 2,
@@ -256,30 +194,36 @@ test('selected items', () => {
 
 test('selected items: doesnt add para break if already selected', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.selection = {
     startIndex: 0,
     length: 3,
     headPosition: 'right',
   };
-  expect(selectedItems(state)).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 0, absoluteIndex: 0 },
+  expect(selectedItems(state)).toMatchObject([
     {
-      type: 'word',
+      type: 'speaker_change',
+      speaker: 'Speaker One',
+      language: 'test',
+      absoluteStart: 0,
+      absoluteIndex: 0,
+    },
+    {
+      type: 'text',
       source: 'source-1',
       sourceStart: 2,
       length: 1,
-      word: 'One',
+      text: 'One',
       conf: 1,
       absoluteStart: 0,
       absoluteIndex: 1,
     },
     {
-      type: 'word',
+      type: 'text',
       source: 'source-1',
       sourceStart: 3,
       length: 1,
-      word: 'Two',
+      text: 'Two',
       conf: 1,
       absoluteStart: 1,
       absoluteIndex: 2,
@@ -289,44 +233,50 @@ test('selected items: doesnt add para break if already selected', () => {
 
 test('selected items: empty selection', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
 
   expect(selectedItems(state)).toStrictEqual([]);
 });
 
 test('selected items: empty content', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.selection = { headPosition: 'right', startIndex: 1, length: 1 };
+  state.selection = { headPosition: 'right', startIndex: 2, length: 1 };
   expect(selectedItems(state)).toStrictEqual([]);
 });
 
 test('selected render items', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.selection = {
     startIndex: 2,
     length: 2,
     headPosition: 'right',
   };
   const selItems = selectedItems(state);
-  expect(selItems).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One', absoluteStart: 1, absoluteIndex: 1 },
+  expect(selItems).toMatchObject([
     {
-      type: 'word',
+      absoluteIndex: 1,
+      absoluteStart: 1,
+      language: 'test',
+      speaker: 'Speaker One',
+      type: 'speaker_change',
+    },
+    {
+      type: 'text',
       source: 'source-1',
       sourceStart: 3,
       length: 1,
-      word: 'Two',
+      text: 'Two',
       conf: 1,
       absoluteStart: 1,
       absoluteIndex: 2,
     },
     {
-      type: 'word',
+      type: 'text',
       source: 'source-1',
       sourceStart: 4,
       length: 1,
-      word: 'Three',
+      text: 'Three',
       conf: 1,
       absoluteStart: 2,
       absoluteIndex: 3,
@@ -346,7 +296,7 @@ test('selected render items', () => {
 
 test('selectionDocument: strips unused sources', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.document.sources = _.cloneDeep(testSources);
   state.selection = {
     startIndex: 3,
@@ -364,7 +314,7 @@ test('selectionDocument: strips unused sources', () => {
 
 test('selectionDocument: packs all used sources', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.document.sources = _.cloneDeep(testSources);
   state.selection = {
     startIndex: 3,
@@ -384,26 +334,36 @@ test('selectionDocument: packs all used sources', () => {
   });
 });
 
-test('selectionDocument adds para-break before first word', async () => {
+test('selectionDocument adds speaker change before first word', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = addUUIDs([
+    { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
 
-  expect(selectionDocument(state).content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  expect(selectionDocument(state).content).toMatchObject([
+    { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+    {
+      type: 'text',
+      text: 'Two',
+      length: 1,
+      source: 'source-1',
+      sourceStart: 1,
+      conf: 1,
+      uuid: '2',
+    },
   ]);
 });
 
 test('selection spans multiple paragraphs: true', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.selection = {
     startIndex: 3,
     length: 7,
@@ -414,7 +374,7 @@ test('selection spans multiple paragraphs: true', () => {
 
 test('selection spans multiple paragraphs: false', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.selection = {
     startIndex: 3,
     length: 2,
@@ -425,14 +385,14 @@ test('selection spans multiple paragraphs: false', () => {
 
 test('current user cursor time at zero-length item', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 6;
   expect(currentCursorTime(state)).toBe(4);
 });
 test('current user cursor time at word', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
   expect(currentCursorTime(state)).toBe(1);
@@ -440,7 +400,7 @@ test('current user cursor time at word', () => {
 
 test('current user cursor time after last item', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 14;
   expect(currentCursorTime(state)).toBe(18);
@@ -448,7 +408,7 @@ test('current user cursor time after last item', () => {
 
 test('current player cursor time ', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 23.42;
   expect(currentCursorTime(state)).toBe(23.42);
@@ -456,137 +416,145 @@ test('current player cursor time ', () => {
 
 test('current item with user cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 1;
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-1',
     sourceStart: 2,
     length: 1,
-    word: 'One',
+    text: 'One',
     conf: 1,
     absoluteStart: 0,
     absoluteIndex: 1,
+    uuid: '1',
   });
 });
 
 test('current item with player cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 2;
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-1',
     sourceStart: 4,
     length: 1,
-    word: 'Three',
+    text: 'Three',
     conf: 1,
     absoluteStart: 2,
     absoluteIndex: 3,
+    uuid: '3',
   });
 });
 
 test('current item -> current Time -> current item roundtrips', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-1',
     sourceStart: 3,
     length: 1,
-    word: 'Two',
+    text: 'Two',
     conf: 1,
     absoluteStart: 1,
     absoluteIndex: 2,
+    uuid: '2',
   });
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
   expect(currentCursorTime(state)).toBe(1);
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-1',
     sourceStart: 3,
     length: 1,
-    word: 'Two',
+    text: 'Two',
     conf: 1,
     absoluteStart: 1,
     absoluteIndex: 2,
+    uuid: '2',
   });
 });
 
 test('current item at t=1.5', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1.5;
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-1',
     sourceStart: 3,
     length: 1,
-    word: 'Two',
+    text: 'Two',
     conf: 1,
     absoluteStart: 1,
     absoluteIndex: 2,
+    uuid: '2',
   });
 });
 
 test('current item at t = 0', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-1',
     sourceStart: 2,
     length: 1,
-    word: 'One',
+    text: 'One',
     conf: 1,
     absoluteStart: 0,
     absoluteIndex: 1,
+    uuid: '1',
   });
 });
 
 test('current item with player time returns item with length', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 4;
   expect(currentItem(state)).toStrictEqual({
-    type: 'word',
+    type: 'text',
     source: 'source-2',
     sourceStart: 2,
     length: 1,
-    word: 'One',
+    text: 'One',
     conf: 1,
     absoluteStart: 4,
-    absoluteIndex: 7,
+    absoluteIndex: 9,
+    uuid: '9',
   });
 });
 
 test('current item skips through zero-length items', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep([{ type: 'paragraph_break', speaker: 'Speaker One' }]);
+  state.document.content = _.cloneDeep(
+    addUUIDs([
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_break' },
+    ])
+  );
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
-  expect(currentItem(state)).toStrictEqual({
+  expect(currentItem(state)).toMatchObject({
     type: 'paragraph_break',
-    speaker: 'Speaker One',
-    absoluteStart: 0,
-    absoluteIndex: 0,
   });
 });
 
 test('current item for empty document', () => {
   const state = _.cloneDeep(defaultEditorState);
-  expect(currentItem(state)).toStrictEqual({
-    type: 'paragraph_break',
-    speaker: null,
+  expect(currentItem(state)).toMatchObject({
+    type: 'speaker_change',
     absoluteStart: 0,
     absoluteIndex: 0,
   });
@@ -594,23 +562,27 @@ test('current item for empty document', () => {
 
 test('current item at t = 0', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-  ]);
+  state.document.content = _.cloneDeep(
+    addUUIDs([
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_break' },
+    ])
+  );
   state.cursor.current = 'player';
-  state.cursor.playerTime = 1;
+  state.cursor.playerTime = 0;
   expect(currentItem(state)).toStrictEqual({
-    type: 'paragraph_break',
-    speaker: 'Speaker Two',
+    type: 'speaker_change',
+    speaker: 'Speaker One',
     absoluteStart: 1,
     absoluteIndex: 2,
   });
 });
 
 test('paragraphs', () => {
-  expect(memoizedMacroItems(testContent)).toStrictEqual([
+  expect(memoizedMacroItems(testContentLong)).toMatchObject([
     {
       type: 'paragraph',
       speaker: 'Speaker One',
@@ -618,110 +590,118 @@ test('paragraphs', () => {
       absoluteIndex: 0,
       content: [
         {
-          type: 'word',
+          type: 'text',
           source: 'source-1',
           sourceStart: 2,
           length: 1,
-          word: 'One',
+          text: 'One',
           conf: 1,
           absoluteStart: 0,
           absoluteIndex: 1,
         },
         {
-          type: 'word',
+          type: 'text',
           source: 'source-1',
           sourceStart: 3,
           length: 1,
-          word: 'Two',
+          text: 'Two',
           conf: 1,
           absoluteStart: 1,
           absoluteIndex: 2,
         },
         {
-          type: 'word',
+          type: 'text',
           source: 'source-1',
           sourceStart: 4,
           length: 1,
-          word: 'Three',
+          text: 'Three',
           conf: 1,
           absoluteStart: 2,
           absoluteIndex: 3,
         },
         {
-          type: 'word',
+          type: 'text',
           source: 'source-1',
           sourceStart: 5,
           length: 1,
-          word: 'Four',
+          text: 'Four',
           conf: 1,
           absoluteStart: 3,
           absoluteIndex: 4,
         },
       ],
     },
-    { type: 'paragraph', speaker: null, absoluteStart: 4, absoluteIndex: 5, content: [] },
+    {
+      type: 'paragraph',
+      speaker: 'Speaker Empty',
+      absoluteStart: 4,
+      absoluteIndex: 5,
+      content: [],
+    },
     {
       type: 'paragraph',
       speaker: 'Speaker Two',
       absoluteStart: 4,
-      absoluteIndex: 6,
+      absoluteIndex: 7,
       content: [
         {
-          type: 'word',
+          type: 'text',
           source: 'source-2',
           sourceStart: 2,
           length: 1,
-          word: 'One',
+          text: 'One',
           conf: 1,
           absoluteStart: 4,
-          absoluteIndex: 7,
-        },
-        {
-          type: 'word',
-          source: 'source-2',
-          sourceStart: 3,
-          length: 1,
-          word: 'Two',
-          conf: 1,
-          absoluteStart: 5,
-          absoluteIndex: 8,
-        },
-        {
-          type: 'word',
-          source: 'source-2',
-          sourceStart: 4,
-          length: 1,
-          word: 'Three',
-          conf: 1,
-          absoluteStart: 6,
           absoluteIndex: 9,
         },
         {
-          type: 'word',
+          type: 'text',
+          source: 'source-2',
+          sourceStart: 3,
+          length: 1,
+          text: 'Two',
+          conf: 1,
+          absoluteStart: 5,
+          absoluteIndex: 10,
+        },
+        {
+          type: 'text',
+          source: 'source-2',
+          sourceStart: 4,
+          length: 1,
+          text: 'Three',
+          conf: 1,
+          absoluteStart: 6,
+          absoluteIndex: 11,
+        },
+        {
+          type: 'text',
           source: 'source-2',
           sourceStart: 5,
           length: 1,
-          word: 'Four',
+          text: 'Four',
           conf: 1,
           absoluteStart: 7,
-          absoluteIndex: 10,
+          absoluteIndex: 12,
         },
-        { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 11 },
+        { type: 'artificial_silence', length: 10, absoluteStart: 8, absoluteIndex: 13 },
       ],
     },
   ]);
 });
 
-test('paragraphs fails if no para break before first word', () => {
+test('paragraphs fails if no speaker change before first word', () => {
   expect(() =>
-    memoizedMacroItems([
-      { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-    ])
-  ).toThrowError('paragraph');
+    memoizedMacroItems(
+      addUUIDs([
+        { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+      ])
+    )
+  ).toThrowError('speaker');
 });
 
 test('renderItems', () => {
-  expect(memoizedDocumentRenderItems(testContent)).toStrictEqual([
+  expect(memoizedDocumentRenderItems(testContentLong)).toStrictEqual([
     {
       type: 'media',
       absoluteStart: 0,
@@ -744,11 +724,14 @@ test('renderItems', () => {
 
 test('render items: source silence', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'silence', source: 'source-1', sourceStart: 3, length: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: null },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'non_text', source: 'source-1', sourceStart: 3, length: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'media',
@@ -763,11 +746,14 @@ test('render items: source silence', () => {
 
 test('render items: same source, not-matching time', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'word', source: 'source-1', sourceStart: 3.1, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: null },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'text', source: 'source-1', sourceStart: 3.1, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'media',
@@ -790,11 +776,14 @@ test('render items: same source, not-matching time', () => {
 
 test('render items: same source, not-matching time', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'word', source: 'source-1', sourceStart: 2.9, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'text', source: 'source-1', sourceStart: 2.9, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'media',
@@ -817,11 +806,14 @@ test('render items: same source, not-matching time', () => {
 
 test('render items: same source, matching time', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'media',
@@ -836,21 +828,27 @@ test('render items: same source, matching time', () => {
 
 test('render items: missing paragraph break', () => {
   expect(() =>
-    memoizedDocumentRenderItems([
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+      ])
+    )
   ).toThrow(/who is the speaker/i);
 });
 
 test('render items: same source, matching time, matching speaker-name', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'paragraph_break' },
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'media',
@@ -865,12 +863,16 @@ test('render items: same source, matching time, matching speaker-name', () => {
 
 test('render items: same source, matching time, mismatching speaker-name', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'paragraph_break' },
+        { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'media',
@@ -893,11 +895,14 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
 
 test('render items: two silences', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'artificial_silence', length: 1 },
-      { type: 'artificial_silence', length: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'artificial_silence', length: 1 },
+        { type: 'artificial_silence', length: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'silence',
@@ -909,11 +914,14 @@ test('render items: two silences', () => {
 
 test('render items: word after silence', () => {
   expect(
-    memoizedDocumentRenderItems([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'artificial_silence', length: 1 },
-      { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-    ])
+    memoizedDocumentRenderItems(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'artificial_silence', length: 1 },
+        { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toStrictEqual([
     {
       type: 'silence',
@@ -933,7 +941,7 @@ test('render items: word after silence', () => {
 
 test('currentSpeaker: player cursor', () => {
   let state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
   expect(currentSpeaker(state)).toBe('Speaker One');
@@ -947,33 +955,38 @@ test('currentSpeaker: player cursor', () => {
 
 test('currentSpeaker: user cursor', () => {
   let state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 0;
-  expect(currentSpeaker(state)).toBe(null);
+  expect(currentSpeaker(state)).toBe('');
   state = produce(state, (state) => {
     state.cursor.userIndex = 1;
   });
   expect(currentSpeaker(state)).toBe('Speaker One');
   state = produce(state, (state) => {
-    state.cursor.userIndex = 6;
+    state.cursor.userIndex = 7;
   });
-  expect(currentSpeaker(state)).toBe(null);
+  expect(currentSpeaker(state)).toBe('Speaker Empty');
   state = produce(state, (state) => {
-    state.cursor.userIndex = 8;
+    state.cursor.userIndex = 10;
   });
   expect(currentSpeaker(state)).toBe('Speaker Two');
 });
 
 test('currentSpeaker with 0-len para: player cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker Three' },
-    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-  ]);
+  state.document.content = _.cloneDeep(
+    addUUIDs([
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Three', language: 'test' },
+      { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+    ])
+  );
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
   expect(currentSpeaker(state)).toBe('Speaker Three');
@@ -981,61 +994,72 @@ test('currentSpeaker with 0-len para: player cursor', () => {
 
 test('currentSpeaker with 0-len para: user cursor', () => {
   let state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker Three' },
-    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-  ]);
+  state.document.content = _.cloneDeep(
+    addUUIDs([
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Three', language: 'test' },
+      { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+    ])
+  );
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
   expect(currentSpeaker(state)).toBe('Speaker One');
   state = produce(state, (state) => {
-    state.cursor.userIndex = 3;
+    state.cursor.userIndex = 4;
   });
   expect(currentSpeaker(state)).toBe('Speaker Two');
   state = produce(state, (state) => {
-    state.cursor.userIndex = 4;
+    state.cursor.userIndex = 6;
   });
   expect(currentSpeaker(state)).toBe('Speaker Three');
 });
 
 test('currentSpeaker before first para break', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker Three' },
-    { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-  ]);
+  state.document.content = _.cloneDeep(
+    addUUIDs([
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Three', language: 'test' },
+      { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+      { type: 'paragraph_break' },
+    ])
+  );
   state.cursor.current = 'user';
   state.cursor.userIndex = 0;
-  expect(currentSpeaker(state)).toBe(null);
+  expect(currentSpeaker(state)).toBe('');
 });
 
 test('current item at t=4', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 4;
   expect(currentItem(state)).toMatchObject({
-    type: 'word',
+    type: 'text',
     source: 'source-2',
     sourceStart: 2,
     length: 1,
-    word: 'One',
+    text: 'One',
     conf: 1,
   });
 });
 
 test('speakerIndices', () => {
-  const content = _.cloneDeep(testContent);
+  const content = _.cloneDeep(testContentLong);
   const contentMacros = memoizedMacroItems(content);
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
     'Speaker One': 0,
-    'Speaker Two': 1,
+    'Speaker Empty': 1,
+    'Speaker Two': 2,
   });
 });
 
@@ -1044,15 +1068,25 @@ test('speakerIndices: empty doc', () => {
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({});
 });
 
-test('speakerIndices: doc with only para breaks', () => {
-  const contentMacros = memoizedMacroItems([
-    { type: 'paragraph_break', speaker: null },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: null },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-  ]);
+test('speakerIndices: doc with only speaker changes and para breaks', () => {
+  const contentMacros = memoizedMacroItems(
+    addUUIDs([
+      { type: 'speaker_change', speaker: '', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: '', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_break' },
+      { type: 'speaker_change', speaker: '', language: 'test' },
+      { type: 'paragraph_break' },
+    ])
+  );
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
     'Speaker One': 0,
     'Speaker Two': 1,
@@ -1061,31 +1095,41 @@ test('speakerIndices: doc with only para breaks', () => {
 
 test('firstPossibleCursorPosition', () => {
   expect(
-    firstPossibleCursorPosition([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-    ])
+    firstPossibleCursorPosition(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toBe(1);
 
   expect(
-    firstPossibleCursorPosition([
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-    ])
+    firstPossibleCursorPosition(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_break' },
+        { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+        { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toBe(1);
 
   expect(
-    firstPossibleCursorPosition([
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', length: 1, sourceStart: 1, source: 'source-1', word: 'One', conf: 1 },
-    ])
+    firstPossibleCursorPosition(
+      addUUIDs([
+        { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+        { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
+        { type: 'paragraph_break' },
+      ])
+    )
   ).toBe(1);
 });
 
 test('current index left with user cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
   expect(currentIndexLeft(state)).toStrictEqual(1);
@@ -1093,7 +1137,7 @@ test('current index left with user cursor', () => {
 
 test('current index left with user cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 0;
   expect(currentIndexLeft(state)).toStrictEqual(-1);
@@ -1101,7 +1145,7 @@ test('current index left with user cursor', () => {
 
 test('current index left with player cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
   expect(currentIndexLeft(state)).toStrictEqual(1);
@@ -1109,7 +1153,7 @@ test('current index left with player cursor', () => {
 
 test.each([1.1, 1.25, 1.5, 1.75, 2])('current index left with player cursor at t=%ds', (time) => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(testContent);
+  state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'player';
   state.cursor.playerTime = time;
   expect(currentIndexLeft(state)).toStrictEqual(2);
@@ -1178,60 +1222,99 @@ test('macroItemsToText empty', () => {
   expect(macroItemsToText([], false)).toBe('');
 });
 
-const testMacroItems: UntimedMacroItem[] = [
-  { type: 'paragraph', speaker: 'Something Something', content: [] },
+const testMacroItems: V3UntimedMacroItem[] = [
+  { type: 'paragraph', speaker: 'Something Something', language: null, content: [] },
   {
     type: 'paragraph',
     speaker: 'Speaker One',
+    language: 'test',
     content: [
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
-      { type: 'word', word: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
       {
-        type: 'word',
-        word: 'Three Four',
+        type: 'text',
+        text: 'One',
+        conf: 1,
+        source: 'source-1',
+        sourceStart: 0,
+        length: 1,
+        uuid: '1',
+      },
+      {
+        type: 'text',
+        text: 'Two',
+        conf: 1,
+        source: 'source-2',
+        sourceStart: 1,
+        length: 1,
+        uuid: '2',
+      },
+      {
+        type: 'text',
+        text: 'Three Four',
         conf: 1,
         source: 'source-1',
         sourceStart: 2,
         length: 1,
+        uuid: '3',
       },
     ],
   },
   {
     type: 'paragraph',
     speaker: 'Speaker Two',
+    language: 'en',
     content: [
-      { type: 'word', word: 'Five', conf: 1, source: 'source-2', sourceStart: 0, length: 1 },
-      { type: 'word', word: 'Six', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
       {
-        type: 'word',
-        word: 'Seven Eight',
+        type: 'text',
+        text: 'Five',
+        conf: 1,
+        source: 'source-2',
+        sourceStart: 0,
+        length: 1,
+        uuid: '4',
+      },
+      {
+        type: 'text',
+        text: 'Six',
+        conf: 1,
+        source: 'source-1',
+        sourceStart: 1,
+        length: 1,
+        uuid: '5',
+      },
+      {
+        type: 'text',
+        text: 'Seven Eight',
         conf: 1,
         source: 'source-2',
         sourceStart: 2,
         length: 1,
+        uuid: '6',
       },
     ],
   },
-  { type: 'paragraph', speaker: 'Speaker Two', content: [] },
+  { type: 'paragraph', speaker: 'Speaker Two', language: null, content: [] },
   {
     type: 'paragraph',
     speaker: 'Speaker Three',
+    language: null,
     content: [
       {
-        type: 'word',
-        word: 'Something',
+        type: 'text',
+        text: 'Something',
         conf: 1,
         source: 'source-4',
         sourceStart: 0,
         length: 1,
+        uuid: '7',
       },
       {
-        type: 'word',
-        word: 'Something',
+        type: 'text',
+        text: 'Something',
         conf: 1,
         source: 'source-4',
         sourceStart: 1,
         length: 1,
+        uuid: '8',
       },
     ],
   },

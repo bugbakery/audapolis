@@ -2,9 +2,9 @@ import tmp from 'tmp';
 import { contentToVtt, exportWebVTT } from './webvtt';
 import { V3DocumentItem } from './document';
 import fs from 'fs';
-import { addUuids } from '../util/test_helper.ts';
+import { addUuids } from '../util/test_helper';
 
-const testContent: V3DocumentItem[] = addUUIDs([
+const testContent: V3DocumentItem[] = addUuids([
   { type: 'speaker_change', speaker: 'Speaker One', language: 'en' },
   { type: 'text', text: 'One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
   { type: 'text', text: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
@@ -42,7 +42,7 @@ test('webvtt: line length', () => {
 });
 
 test('webvtt: line length: too long word', () => {
-  const testContent: V3DocumentItem[] = addUUIDs([
+  const testContent: V3DocumentItem[] = addUuids([
     { type: 'speaker_change', speaker: 'Speaker One', language: 'en' },
     { type: 'text', text: 'One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
     { type: 'text', text: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
@@ -67,7 +67,7 @@ test('webvtt: line length: too long word', () => {
 });
 
 test('webvtt: empty para creates no cue', () => {
-  const testContent: V3DocumentItem[] = addUUIDs([
+  const testContent: V3DocumentItem[] = addUuids([
     { type: 'speaker_change', speaker: 'Speaker One', language: 'en' },
     { type: 'paragraph_break' },
   ]);

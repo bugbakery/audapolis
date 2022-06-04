@@ -20,7 +20,7 @@ import {
   selectionDocument,
 } from './selectors';
 import { produce } from 'immer';
-import { addUUIDs, V3DocumentItemWithoutUuid } from '../../util/test_helper';
+import { addUuids, V3DocumentItemWithoutUuid } from '../../util/test_helper';
 
 const testParagraphSpeaker1: V3DocumentItemWithoutUuid[] = [
   { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
@@ -46,13 +46,13 @@ const testParagraphSpeaker2: V3DocumentItemWithoutUuid[] = [
   { type: 'paragraph_break' },
 ];
 
-const testContentLong: V3DocumentItem[] = addUUIDs([
+const testContentLong: V3DocumentItem[] = addUuids([
   ...testParagraphSpeaker1,
   ...testParagraphEmpty,
   ...testParagraphSpeaker2,
 ]);
 
-const testContentShort: V3DocumentItem[] = addUUIDs(testParagraphSpeaker2);
+const testContentShort: V3DocumentItem[] = addUuids(testParagraphSpeaker2);
 
 const testSources: Record<string, Source> = {
   'source-1': {
@@ -336,7 +336,7 @@ test('selectionDocument: packs all used sources', () => {
 
 test('selectionDocument adds speaker change before first word', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = addUUIDs([
+  state.document.content = addUuids([
     { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
     { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
@@ -539,7 +539,7 @@ test('current item with player time returns item with length', () => {
 test('current item skips through zero-length items', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
-    addUUIDs([
+    addUuids([
       { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
       { type: 'paragraph_break' },
     ])
@@ -563,7 +563,7 @@ test('current item for empty document', () => {
 test('current item at t = 0', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
-    addUUIDs([
+    addUuids([
       { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
       { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
       { type: 'paragraph_break' },
@@ -693,7 +693,7 @@ test('paragraphs', () => {
 test('paragraphs fails if no speaker change before first word', () => {
   expect(() =>
     memoizedMacroItems(
-      addUUIDs([
+      addUuids([
         { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
       ])
     )
@@ -725,7 +725,7 @@ test('renderItems', () => {
 test('render items: source silence', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: null },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'non_text', source: 'source-1', sourceStart: 3, length: 1 },
@@ -747,7 +747,7 @@ test('render items: source silence', () => {
 test('render items: same source, not-matching time', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: null },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3.1, length: 1, text: 'Two', conf: 1 },
@@ -777,7 +777,7 @@ test('render items: same source, not-matching time', () => {
 test('render items: same source, not-matching time', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 2.9, length: 1, text: 'Two', conf: 1 },
@@ -807,7 +807,7 @@ test('render items: same source, not-matching time', () => {
 test('render items: same source, matching time', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
@@ -829,7 +829,7 @@ test('render items: same source, matching time', () => {
 test('render items: missing paragraph break', () => {
   expect(() =>
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
       ])
@@ -840,7 +840,7 @@ test('render items: missing paragraph break', () => {
 test('render items: same source, matching time, matching speaker-name', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'paragraph_break' },
@@ -864,7 +864,7 @@ test('render items: same source, matching time, matching speaker-name', () => {
 test('render items: same source, matching time, mismatching speaker-name', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'paragraph_break' },
@@ -896,7 +896,7 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
 test('render items: two silences', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'artificial_silence', length: 1 },
         { type: 'artificial_silence', length: 1 },
@@ -915,7 +915,7 @@ test('render items: two silences', () => {
 test('render items: word after silence', () => {
   expect(
     memoizedDocumentRenderItems(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'artificial_silence', length: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
@@ -976,7 +976,7 @@ test('currentSpeaker: user cursor', () => {
 test('currentSpeaker with 0-len para: player cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
-    addUUIDs([
+    addUuids([
       { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
@@ -995,7 +995,7 @@ test('currentSpeaker with 0-len para: player cursor', () => {
 test('currentSpeaker with 0-len para: user cursor', () => {
   let state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
-    addUUIDs([
+    addUuids([
       { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
@@ -1022,7 +1022,7 @@ test('currentSpeaker with 0-len para: user cursor', () => {
 test('currentSpeaker before first para break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
-    addUUIDs([
+    addUuids([
       { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
@@ -1070,7 +1070,7 @@ test('speakerIndices: empty doc', () => {
 
 test('speakerIndices: doc with only speaker changes and para breaks', () => {
   const contentMacros = memoizedMacroItems(
-    addUUIDs([
+    addUuids([
       { type: 'speaker_change', speaker: '', language: 'test' },
       { type: 'paragraph_break' },
       { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
@@ -1096,7 +1096,7 @@ test('speakerIndices: doc with only speaker changes and para breaks', () => {
 test('firstPossibleCursorPosition', () => {
   expect(
     firstPossibleCursorPosition(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
         { type: 'paragraph_break' },
@@ -1106,7 +1106,7 @@ test('firstPossibleCursorPosition', () => {
 
   expect(
     firstPossibleCursorPosition(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
         { type: 'paragraph_break' },
         { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
@@ -1118,7 +1118,7 @@ test('firstPossibleCursorPosition', () => {
 
   expect(
     firstPossibleCursorPosition(
-      addUUIDs([
+      addUuids([
         { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
         { type: 'paragraph_break' },

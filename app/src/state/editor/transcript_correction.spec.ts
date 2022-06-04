@@ -1,24 +1,27 @@
-import { DocumentItem } from '../../core/document';
+import { V3DocumentItem } from '../../core/document';
 import { defaultEditorState, EditorState } from './types';
 import _ from 'lodash';
 import { finishTranscriptCorrection, startTranscriptCorrection } from './transcript_correction';
 import { mocked } from 'jest-mock';
 import { toaster } from 'evergreen-ui';
+import { addUuids } from '../../util/test_helper';
 
-const testContent: DocumentItem[] = [
-  { type: 'paragraph_break', speaker: 'Speaker One' },
-  { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-  { type: 'silence', source: 'source-1', sourceStart: 5, length: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-  { type: 'paragraph_break', speaker: 'Speaker Two' },
-  { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'Two', conf: 1 },
+const testContent: V3DocumentItem[] = addUuids([
+  { type: 'speaker_change', speaker: 'Speaker One', language: null },
+  { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+  { type: 'non_text', source: 'source-1', sourceStart: 5, length: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+  { type: 'paragraph_break' },
+  { type: 'speaker_change', speaker: 'Speaker Two', language: null },
+  { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
   { type: 'artificial_silence', length: 10 },
-  { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-  { type: 'word', source: 'source-3', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-];
+  { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+  { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+  { type: 'paragraph_break' },
+]);
 
 function getState(): EditorState {
   const state = _.cloneDeep(defaultEditorState);
@@ -107,7 +110,7 @@ test('startTranscriptCorrection warns if selection is non continuous in source',
 test('startTranscriptCorrection warns if paragraph_break is selected', () => {
   const state = getState();
   state.selection = {
-    startIndex: 0,
+    startIndex: 5,
     length: 2,
     headPosition: 'left',
   };
@@ -152,17 +155,19 @@ test('finishTranscriptCorrection changes document', () => {
   state.transcriptCorrectionState = 'One Three Two';
   finishTranscriptCorrection.reducer(state);
   expect(state.transcriptCorrectionState).toStrictEqual(null);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', source: 'source-1', sourceStart: 2, length: 3, word: 'One Three Two', conf: 1 },
-    { type: 'silence', source: 'source-1', sourceStart: 5, length: 1 },
-    { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'Two', conf: 1 },
+  expect(state.document.content).toMatchObject([
+    { type: 'speaker_change', speaker: 'Speaker One', language: null },
+    { type: 'text', source: 'source-1', sourceStart: 2, length: 3, text: 'One Three Two', conf: 1 },
+    { type: 'non_text', source: 'source-1', sourceStart: 5, length: 1 },
+    { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'speaker_change', speaker: 'Speaker Two', language: null },
+    { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
-    { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-    { type: 'word', source: 'source-3', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+    { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+    { type: 'paragraph_break' },
   ]);
 });
 
@@ -178,14 +183,14 @@ test('finishTranscriptCorrection changes document', () => {
   expect(state.transcriptCorrectionState).toStrictEqual(null);
   expect(state.document.content).toStrictEqual([
     { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', source: 'source-1', sourceStart: 2, length: 4, word: 'One Three Two', conf: 1 },
-    { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+    { type: 'text', source: 'source-1', sourceStart: 2, length: 4, text: 'One Three Two', conf: 1 },
+    { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
     { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'Two', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
-    { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-    { type: 'word', source: 'source-3', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+    { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
   ]);
 });
 
@@ -199,15 +204,17 @@ test('finishTranscriptCorrection creates silence when correction is empty', () =
   state.transcriptCorrectionState = '';
   finishTranscriptCorrection.reducer(state);
   expect(state.transcriptCorrectionState).toStrictEqual(null);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'silence', source: 'source-1', sourceStart: 2, length: 4 },
-    { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-    { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'Two', conf: 1 },
+  expect(state.document.content).toMatchObject([
+    { type: 'speaker_change', speaker: 'Speaker One', language: null },
+    { type: 'non_text', source: 'source-1', sourceStart: 2, length: 4 },
+    { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'speaker_change', speaker: 'Speaker Two', language: null },
+    { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
-    { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-    { type: 'word', source: 'source-3', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+    { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+    { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+    { type: 'paragraph_break' },
   ]);
 });

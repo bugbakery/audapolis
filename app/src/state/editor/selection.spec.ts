@@ -1,5 +1,5 @@
 import { defaultEditorState, EditorState } from './types';
-import { DocumentItem } from '../../core/document';
+import { V3DocumentItem } from '../../core/document';
 import {
   moveSelectionHeadLeft,
   moveSelectionHeadRight,
@@ -8,17 +8,20 @@ import {
   setSelection,
 } from './selection';
 import _ from 'lodash';
+import { addUuids } from '../../util/test_helper';
 
-const testContent: DocumentItem[] = [
-  { type: 'paragraph_break', speaker: 'paragraph_01' },
+const testContent: V3DocumentItem[] = addUuids([
+  { type: 'speaker_change', speaker: 'paragraph_01', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-  { type: 'paragraph_break', speaker: 'paragraph_02' },
+  { type: 'paragraph_break' },
+  { type: 'speaker_change', speaker: 'paragraph_02', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-];
+  { type: 'paragraph_break' },
+]);
 
 const testState: EditorState = _.cloneDeep(defaultEditorState);
 testState.document.content = _.cloneDeep(testContent);
@@ -252,18 +255,22 @@ test('moveSelectionHeadRight: left selection, collapses without including para b
 
 test('moveSelectionHeadRight: multiple para breaks to right', () => {
   const state = _.cloneDeep(testState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'paragraph_01' },
+  state.document.content = addUuids([
+    { type: 'speaker_change', speaker: 'paragraph_01', language: null },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
-    { type: 'paragraph_break', speaker: 'paragraph_02' },
-    { type: 'paragraph_break', speaker: 'paragraph_03' },
-    { type: 'paragraph_break', speaker: 'paragraph_04' },
+    { type: 'paragraph_break' },
+    { type: 'speaker_change', speaker: 'paragraph_02', language: null },
+    { type: 'paragraph_break' },
+    { type: 'speaker_change', speaker: 'paragraph_03', language: null },
+    { type: 'paragraph_break' },
+    { type: 'speaker_change', speaker: 'paragraph_04', language: null },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
-  ];
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'player';
   state.cursor.playerTime = 2;
   moveSelectionHeadRight.reducer(state);
@@ -276,24 +283,24 @@ test('moveSelectionHeadRight: multiple para breaks to right', () => {
 test('moveSelectionHeadRight: does not extend beyond document', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
-  state.cursor.userIndex = 6;
-  state.selection = { headPosition: 'right', startIndex: 5, length: 1 };
+  state.cursor.userIndex = 8;
+  state.selection = { headPosition: 'right', startIndex: 7, length: 1 };
   moveSelectionHeadRight.reducer(state);
   expect(state.selection).toStrictEqual({
     headPosition: 'right',
-    startIndex: 5,
+    startIndex: 7,
     length: 2,
   });
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(7);
+  expect(state.cursor.userIndex).toBe(9);
   moveSelectionHeadRight.reducer(state);
   expect(state.selection).toStrictEqual({
     headPosition: 'right',
-    startIndex: 5,
+    startIndex: 7,
     length: 2,
   });
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(7);
+  expect(state.cursor.userIndex).toBe(9);
 });
 
 // selectAll
@@ -301,7 +308,7 @@ test('moveSelectionHeadRight: does not extend beyond document', () => {
 test('selectAll', () => {
   const state = _.cloneDeep(testState);
   selectAll.reducer(state);
-  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 0, length: 8 });
+  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 0, length: 10 });
 });
 
 test('selectAll: empty document', () => {

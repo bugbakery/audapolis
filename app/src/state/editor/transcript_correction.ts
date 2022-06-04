@@ -8,7 +8,13 @@ import {
 } from './selectors';
 import { toaster } from 'evergreen-ui';
 import { moveSelectionHeadLeft, moveSelectionHeadRight } from './selection';
-import { Silence, TimedDocumentItem, TimedItemExtension, Word } from '../../core/document';
+import {
+  V3NonTextItem,
+  V3TimedDocumentItem,
+  TimedItemExtension,
+  V3TextItem,
+  UuidExtension,
+} from '../../core/document';
 import { deleteSelection } from './edit';
 import _ from 'lodash';
 
@@ -46,29 +52,34 @@ export const finishTranscriptCorrection = createActionWithReducer<EditorState>(
     }
 
     const items = selectedItems(state);
-    const selectionSoureItems = items.filter(
-      (x): x is (Word | Silence) & TimedItemExtension => x.type == 'word' || x.type == 'silence'
+    const selectionSourceItems = items.filter(
+      (x): x is (V3TextItem | V3NonTextItem) & UuidExtension & TimedItemExtension =>
+        x.type == 'text' || x.type == 'non_text'
     );
-    const source = selectionSoureItems[0].source;
-    const sourceStart = selectionSoureItems[0].sourceStart;
-    const length = _.sum(selectionSoureItems.map((x) => x.length));
+    const source = selectionSourceItems[0].source;
+    const sourceStart = selectionSourceItems[0].sourceStart;
+    const uuid = selectionSourceItems[0].uuid;
+    const length = _.sum(selectionSourceItems.map((x) => x.length));
 
     deleteSelection.reducer(state);
-    const newItem: Word | Silence = !state.transcriptCorrectionState.trim() // the selection is empty
-      ? {
-          type: 'silence',
-          sourceStart,
-          length,
-          source,
-        }
-      : {
-          type: 'word',
-          word: state.transcriptCorrectionState,
-          sourceStart,
-          length,
-          source,
-          conf: 1,
-        };
+    const newItem: (V3TextItem | V3NonTextItem) & UuidExtension =
+      !state.transcriptCorrectionState.trim() // the selection is empty
+        ? {
+            type: 'non_text',
+            sourceStart,
+            length,
+            source,
+            uuid,
+          }
+        : {
+            type: 'text',
+            text: state.transcriptCorrectionState,
+            sourceStart,
+            length,
+            source,
+            conf: 1,
+            uuid,
+          };
     state.document.content.splice(currentIndex(state), 0, newItem);
     state.transcriptCorrectionState = null;
   }
@@ -78,7 +89,7 @@ function getTranscriptCorrectionState(state: EditorState): string {
   const items = selectedItems(state);
   if (selectionSpansMultipleParagraphs(state)) {
     throw Error(
-      "transcript correction can't be performed on selections spannig multiple paragraphs."
+      "transcript correction can't be performed on selections spanning multiple paragraphs."
     );
   }
   if (!isSameSourceAndContinuous(items)) {
@@ -87,12 +98,12 @@ function getTranscriptCorrectionState(state: EditorState): string {
     );
   }
   return items
-    .filter((x): x is Word & TimedItemExtension => x.type == 'word')
-    .map((x) => x.word)
+    .filter((x): x is V3TextItem & UuidExtension & TimedItemExtension => x.type == 'text')
+    .map((x) => x.text)
     .join(' ');
 }
 
-function isSameSourceAndContinuous(items: TimedDocumentItem[]): boolean {
+function isSameSourceAndContinuous(items: V3TimedDocumentItem[]): boolean {
   return renderItems(items).length == 1;
 }
 

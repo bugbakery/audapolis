@@ -6,7 +6,13 @@ import {
   WebVtt,
 } from '@audapolis/webvtt-writer';
 import fs from 'fs';
-import { V3Paragraph, TimedItemExtension, V3DocumentItem, V3TextItem } from './document';
+import {
+  V3Paragraph,
+  TimedItemExtension,
+  V3DocumentItem,
+  V3TextItem,
+  UuidExtension,
+} from './document';
 import { memoizedMacroItems } from '../state/editor/selectors';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,7 +36,9 @@ function paragraphToCue(
   const payload =
     (includeSpeakerNames && paragraph.speaker ? `<v ${escapeVttString(paragraph.speaker)}>` : '') +
     paragraph.content
-      .filter((item) => item.type == 'text')
+      .filter(
+        (item): item is V3TextItem & UuidExtension & TimedItemExtension => item.type == 'text'
+      )
       .map(itemToString)
       .join(' ');
   return new VttCue({

@@ -1,21 +1,22 @@
 import { EditorState, Selection } from './types';
 import {
   Document,
-  DocumentItem,
-  Paragraph as ParagraphType,
-  ParagraphBreakItem,
-  ParagraphItem,
   RenderItem,
-  TimedDocumentItem,
   TimedItemExtension,
-  TimedMacroItem,
-  TimedParagraphItem,
-  UntimedMacroItem,
-  Word,
+  V3DocumentItem,
+  V3TimedDocumentItem,
+  V3TimedMacroItem,
+  V3TimedParagraphItem,
+  V3ParagraphItem,
+  V3Paragraph,
+  V3TextItem,
+  UuidExtension,
+  V3UntimedMacroItem,
 } from '../../core/document';
 import _ from 'lodash';
 import { assertSome, assertUnreachable, roughEq } from '../../util';
 import { isDraft, original } from 'immer';
+import { v4 as uuidv4 } from 'uuid';
 
 function isSame<T extends any[]>(a: T, b: T): boolean {
   if (a.length != b.length) {
@@ -36,7 +37,7 @@ function isSame<T extends any[]>(a: T, b: T): boolean {
 // test in selectors.spec.ts for an example
 export function memoize<T extends any[], R>(fn: (...a: T) => R, size = 4): (...a: T) => R {
   const cache: { key: T; value: R }[] = [];
-  const immerAwareFn = (...args: T): R => {
+  return (...args: T): R => {
     const newArgs = args.map((obj) => (isDraft(obj) ? original(obj) : obj)) as T;
     for (const entry of cache) {
       if (isSame(entry.key, newArgs)) {
@@ -48,11 +49,10 @@ export function memoize<T extends any[], R>(fn: (...a: T) => R, size = 4): (...a
     cache.push(newEntry);
     return newEntry.value;
   };
-  return immerAwareFn;
 }
 
 export const memoizedTimedDocumentItems = memoize(
-  (content: DocumentItem[]): TimedDocumentItem[] => {
+  (content: V3DocumentItem[]): V3TimedDocumentItem[] => {
     let absoluteTime = 0;
     return content.map((item, idx) => {
       const timedItem = { ...item, absoluteStart: absoluteTime, absoluteIndex: idx };
@@ -64,12 +64,12 @@ export const memoizedTimedDocumentItems = memoize(
   }
 );
 
-export const currentItem = (state: EditorState): TimedDocumentItem | undefined => {
+export const currentItem = (state: EditorState): V3TimedDocumentItem | undefined => {
   const timedItems = memoizedTimedDocumentItems(state.document.content);
   return timedItems[currentIndex(state)];
 };
 
-export function getIndexAtTime(content: DocumentItem[], time: number): number {
+export function getIndexAtTime(content: V3DocumentItem[], time: number): number {
   const timedItems = memoizedTimedDocumentItems(content);
 
   return (
@@ -107,7 +107,7 @@ export const currentIndexLeft = (state: EditorState): number => {
   }
 };
 
-function itemLength(item: DocumentItem) {
+function itemLength(item: V3DocumentItem) {
   if ('length' in item) {
     return item.length;
   }
@@ -131,23 +131,20 @@ export const currentCursorTime = (state: EditorState): number => {
   }
 };
 
-function isParagraphBreakAtStart(content: DocumentItem[]): boolean {
-  for (const item of content) {
-    if (item.type == 'paragraph_break') {
-      return true;
-    } else if (isParagraphItem(item)) {
-      return false;
-    }
+function isSpeakerChangeAtStart(content: V3DocumentItem[]): boolean {
+  if (content.length == 0) {
+    return true;
+  } else {
+    return content[0].type == 'speaker_change';
   }
-  return true;
 }
 
-export function selectedItems(state: EditorState): TimedDocumentItem[] {
+export function selectedItems(state: EditorState): V3TimedDocumentItem[] {
   return memoizedSelectedItems(state.document.content, state.selection);
 }
 
 const memoizedSelectedItems = memoize(
-  (content: DocumentItem[], selection: Selection | null): TimedDocumentItem[] => {
+  (content: V3DocumentItem[], selection: Selection | null): V3TimedDocumentItem[] => {
     if (!selection) {
       return [];
     } else {
@@ -155,12 +152,13 @@ const memoizedSelectedItems = memoize(
         selection.startIndex,
         selection.startIndex + selection.length
       );
-      if (!isParagraphBreakAtStart(selectedItems)) {
+      if (!isSpeakerChangeAtStart(selectedItems)) {
         selectedItems.splice(0, 0, {
-          type: 'paragraph_break',
-          speaker: getSpeakerAtIndex(content, selection.startIndex),
+          type: 'speaker_change',
+          ...getSpeakerDataAtIndex(content, selection.startIndex),
           absoluteIndex: selectedItems[0].absoluteIndex - 1,
           absoluteStart: selectedItems[0].absoluteStart,
+          uuid: uuidv4(),
         });
       }
       return selectedItems;
@@ -169,7 +167,7 @@ const memoizedSelectedItems = memoize(
 );
 
 export function selectionDocument(state: EditorState): Document {
-  const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
+  const timedDocumentSlice: V3TimedDocumentItem[] = selectedItems(state);
 
   const documentSlice = untimeDocumentItems(timedDocumentSlice);
   const neededSources = new Set(documentSlice.map((x) => 'source' in x && x.source));
@@ -179,10 +177,11 @@ export function selectionDocument(state: EditorState): Document {
   return {
     content: documentSlice,
     sources: filteredSources,
+    metadata: state.document.metadata,
   };
 }
 
-function untimeDocumentItems(items: TimedDocumentItem[]): DocumentItem[] {
+function untimeDocumentItems(items: V3TimedDocumentItem[]): V3DocumentItem[] {
   return items.map((item) => {
     const { absoluteStart: _aS, absoluteIndex: _aI, ...untimedIcon } = item;
     return untimedIcon;
@@ -200,14 +199,16 @@ export function selectionSpansMultipleParagraphs(state: EditorState): boolean {
   return selectedItems.filter((x) => x.type == 'paragraph_break').length > 0;
 }
 
-export const memoizedParagraphItems = memoize((content: DocumentItem[]): TimedParagraphItem[] => {
-  return filterTimedParagraphItems(memoizedTimedDocumentItems(content));
-});
+export const memoizedParagraphItems = memoize(
+  (content: V3DocumentItem[]): V3TimedParagraphItem[] => {
+    return filterTimedParagraphItems(memoizedTimedDocumentItems(content));
+  }
+);
 
-const getRenderType = (type: 'silence' | 'artificial_silence' | 'word'): 'media' | 'silence' => {
+const getRenderType = (type: 'non_text' | 'artificial_silence' | 'text'): 'media' | 'silence' => {
   switch (type) {
-    case 'word':
-    case 'silence':
+    case 'text':
+    case 'non_text':
       return 'media';
     case 'artificial_silence':
       return 'silence';
@@ -233,18 +234,20 @@ function isSubsequentSourceSegment(
   }
 }
 
-export const memoizedDocumentRenderItems = memoize((content: DocumentItem[]): RenderItem[] => {
+export const memoizedDocumentRenderItems = memoize((content: V3DocumentItem[]): RenderItem[] => {
   const timedContent = memoizedTimedDocumentItems(content);
   return renderItems(timedContent);
 });
 
-export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
+export function renderItems(timedContent: V3TimedDocumentItem[]): RenderItem[] {
   const items = [];
   let current: RenderItem | null = null;
   let current_speaker: string | null = null;
   for (const item of timedContent) {
-    if (item.type == 'paragraph_break') {
+    if (item.type == 'speaker_change') {
       current_speaker = item.speaker;
+    } else if (item.type == 'paragraph_break') {
+      // we don't core about para break
     } else if (
       !current ||
       getRenderType(item.type) != current.type ||
@@ -257,8 +260,8 @@ export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
       }
       current = null;
       switch (item.type) {
-        case 'silence':
-        case 'word': {
+        case 'non_text':
+        case 'text': {
           const { absoluteStart, length, sourceStart, source } = item;
           if (current_speaker === null) {
             throw new Error('Current speaker is null. Who is the speaker?');
@@ -282,8 +285,9 @@ export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
           };
           break;
         }
-        default:
+        default: {
           assertUnreachable(item);
+        }
       }
     } else {
       current.length = item.absoluteStart - current.absoluteStart + item.length;
@@ -295,82 +299,113 @@ export function renderItems(timedContent: TimedDocumentItem[]): RenderItem[] {
   return items;
 }
 
-export const isParagraphItem = (item: DocumentItem): item is ParagraphItem =>
-  ['word', 'silence', 'artificial_silence'].indexOf(item.type) >= 0;
+export const isParagraphItem = (item: V3DocumentItem): item is V3ParagraphItem =>
+  ['text', 'non_text', 'artificial_silence'].indexOf(item.type) >= 0;
 
-export const isTimedParagraphItem = (item: TimedDocumentItem): item is TimedParagraphItem =>
-  ['word', 'silence', 'artificial_silence'].indexOf(item.type) >= 0;
+export const isTimedParagraphItem = (item: V3TimedDocumentItem): item is V3TimedParagraphItem =>
+  ['text', 'non_text', 'artificial_silence'].indexOf(item.type) >= 0;
 
-const filterTimedParagraphItems = (content: TimedDocumentItem[]): TimedParagraphItem[] =>
+const filterTimedParagraphItems = (content: V3TimedDocumentItem[]): V3TimedParagraphItem[] =>
   content.filter(isTimedParagraphItem);
 
-export const memoizedMacroItems = memoize((content: DocumentItem[]): TimedMacroItem[] => {
+export const memoizedMacroItems = memoize((content: V3DocumentItem[]): V3TimedMacroItem[] => {
   const timedContent = memoizedTimedDocumentItems(content);
   for (const item of timedContent) {
-    if (item.type == 'paragraph_break') {
+    if (item.type == 'speaker_change') {
       break;
     } else if (isTimedParagraphItem(item)) {
-      throw new Error('ParagraphItem encountered before first paragraph break.');
+      throw new Error('ParagraphItem encountered before first speaker change.');
     }
   }
-  return timedContent
-    .filter(
-      (item): item is ParagraphBreakItem & TimedItemExtension => item.type == 'paragraph_break'
-    )
-    .map((item, idx, arr): TimedMacroItem => {
-      switch (item.type) {
-        case 'paragraph_break': {
-          const start = item.absoluteIndex;
-          const end = arr[idx + 1]?.absoluteIndex || timedContent.length;
-          const { speaker, absoluteStart, absoluteIndex } = item;
-          return {
-            type: 'paragraph',
-            speaker,
-            content: filterTimedParagraphItems(timedContent.slice(start, end)),
-            absoluteIndex,
-            absoluteStart,
-          };
-        }
-      }
-    });
+  const macros = [];
+  let cur_macro: V3TimedMacroItem = {
+    type: 'paragraph',
+    speaker: '',
+    content: [],
+    language: null,
+    absoluteIndex: 0,
+    absoluteStart: 0,
+  };
+  for (const item of timedContent) {
+    if (item.type == 'paragraph_break') {
+      macros.push(cur_macro);
+      cur_macro = {
+        type: 'paragraph',
+        speaker: cur_macro.speaker,
+        content: [],
+        language: cur_macro.language,
+        absoluteIndex: item.absoluteIndex,
+        absoluteStart: item.absoluteStart,
+      };
+    } else if (item.type == 'speaker_change') {
+      cur_macro.speaker = item.speaker;
+      cur_macro.language = item.language;
+    } else if (isParagraphItem(item)) {
+      cur_macro.content.push(item);
+    }
+  }
+  return macros;
+  // return timedContent
+  //   .filter(
+  //     (item): item is V3ParagraphBreakItem & TimedItemExtension => item.type == 'paragraph_break'
+  //   )
+  //   .map((item, idx, arr): V3TimedMacroItem => {
+  //     switch (item.type) {
+  //       case 'paragraph_break': {
+  //         const start = item.absoluteIndex;
+  //         const end = arr[idx + 1]?.absoluteIndex || timedContent.length;
+  //         const { speaker, absoluteStart, absoluteIndex } = item;
+  //         return {
+  //           type: 'paragraph',
+  //           speaker,
+  //           content: filterTimedParagraphItems(timedContent.slice(start, end)),
+  //           absoluteIndex,
+  //           absoluteStart,
+  //         };
+  //       }
+  //     }
+  //   });
 });
 
-export function getSpeakerAtIndex(items: DocumentItem[], index: number): string | null {
+export function getSpeakerDataAtIndex(
+  items: V3DocumentItem[],
+  index: number
+): { speaker: string; language: string | null } {
   for (let idx = Math.min(index, items.length) - 1; idx >= 0; idx--) {
     const idxItem = items[idx];
-    if (idxItem.type == 'paragraph_break') {
-      return idxItem.speaker;
+    if (idxItem.type == 'speaker_change') {
+      return { speaker: idxItem.speaker, language: idxItem.language };
     }
   }
-  return null;
+  return { speaker: '', language: null };
 }
 
-export const currentSpeaker = (state: EditorState): string | null => {
+export const currentSpeaker = (state: EditorState): string => {
   const curItem = currentItem(state);
   const timedItems = memoizedTimedDocumentItems(state.document.content);
-  return getSpeakerAtIndex(timedItems, curItem?.absoluteIndex || 0);
+  return getSpeakerDataAtIndex(timedItems, curItem?.absoluteIndex || 0).speaker;
 };
 
-export const memoizedSpeakerIndices = memoize((contentMacros: TimedMacroItem[]) => {
+export const memoizedSpeakerIndices = memoize((contentMacros: V3TimedMacroItem[]) => {
   const uniqueSpeakerNames = new Set(
     contentMacros
       .filter(
-        (x): x is ParagraphType & TimedItemExtension => x.type == 'paragraph' && x.speaker != null
+        (x): x is V3Paragraph & TimedItemExtension => x.type == 'paragraph' && x.speaker != ''
       )
       .map((p) => p.speaker)
   );
   return Object.fromEntries(Array.from(uniqueSpeakerNames).map((name, i) => [name, i]));
 });
 
-export const firstPossibleCursorPosition = (content: DocumentItem[]): number => {
-  if (content.length >= 1 && content[0].type == 'paragraph_break') {
+export const firstPossibleCursorPosition = (content: V3DocumentItem[]): number => {
+  if (content.length >= 1 && content[0].type == 'speaker_change') {
     return 1;
   }
   return 0;
 };
 
 export function macroItemsToText(
-  macroItems: UntimedMacroItem[],
+  macroItems: V3UntimedMacroItem[],
   displaySpeakerNames: boolean
 ): string {
   return macroItems
@@ -382,8 +417,8 @@ export function macroItemsToText(
             paragraphText += `${paragraph.speaker}:\n`;
           }
           paragraphText += paragraph.content
-            .filter((x): x is Word & TimedDocumentItem => x.type == 'word')
-            .map((x) => x.word)
+            .filter((x): x is V3TextItem & UuidExtension & TimedItemExtension => x.type == 'text')
+            .map((x) => x.text)
             .join(' ');
           return paragraphText.trim();
         }

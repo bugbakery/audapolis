@@ -1,24 +1,27 @@
 import { defaultEditorState, EditorState } from './types';
-import { DocumentItem, emptyDocument } from '../../core/document';
+import { V3DocumentItem, getEmptyDocument } from '../../core/document';
 import { goLeft, goRight } from './play';
 import { EPSILON } from '../../util';
 import _ from 'lodash';
+import { addUuids } from '../../util/test_helper';
 
-const testContent: DocumentItem[] = [
-  { type: 'paragraph_break', speaker: 'paragraph_01' },
+const testContent: V3DocumentItem[] = addUuids([
+  { type: 'speaker_change', speaker: 'paragraph_01', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-  { type: 'paragraph_break', speaker: 'paragraph_02' },
+  { type: 'paragraph_break' },
+  { type: 'speaker_change', speaker: 'paragraph_02', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-];
+  { type: 'paragraph_break' },
+]);
 
 const testState: EditorState = {
   ...defaultEditorState,
   document: {
-    ...emptyDocument,
+    ...getEmptyDocument(),
     content: testContent,
   },
 };
@@ -47,8 +50,8 @@ test('goLeft trivial', () => {
   testLeftPlayer(0.0, 0);
 });
 test('goLeft start of paragraph', () => {
-  testLeftPlayer(4.0, 5);
-  testLeftPlayer(3.0, 4);
+  testLeftPlayer(4.0, 6);
+  testLeftPlayer(3.0, 5);
   testLeftPlayer(3.0 - EPSILON, 3);
 });
 
@@ -78,8 +81,8 @@ test('goRight trivial', () => {
   testRightPlayer(0.0, 2);
   testRightPlayer(1.0, 3);
   testRightPlayer(1.5, 3);
-  testRightPlayer(3.0, 6);
-  testRightPlayer(6.0, 8);
+  testRightPlayer(3.0, 7);
+  testRightPlayer(6.0, 10);
 });
 
 test('goRight end of paragraph', () => {
@@ -88,6 +91,6 @@ test('goRight end of paragraph', () => {
 });
 
 test('goRight end of document', () => {
-  testRightPlayer(6.0, 8);
-  testRightUser(8, 8);
+  testRightPlayer(6.0, 10);
+  testRightUser(8, 9);
 });

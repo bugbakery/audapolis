@@ -6,12 +6,12 @@ import _ from 'lodash';
 import { addUuids } from '../../util/test_helper';
 
 const testContent: V3DocumentItem[] = addUuids([
-  { type: 'speaker_change', speaker: 'paragraph_01', language: null },
+  { type: 'paragraph_start', speaker: 'paragraph_01', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'paragraph_break' },
-  { type: 'speaker_change', speaker: 'paragraph_02', language: null },
+  { type: 'paragraph_start', speaker: 'paragraph_02', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },

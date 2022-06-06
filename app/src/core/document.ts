@@ -33,7 +33,6 @@ interface V2DocumentJson {
   content: V2DocumentItem[];
 }
 
-export type TimedItemExtension = { absoluteStart: number; absoluteIndex: number };
 export type V2TimedDocumentItem = V2DocumentItem & TimedItemExtension;
 
 export interface V1V2Word {
@@ -78,6 +77,9 @@ export type V2ParagraphItem = V1V2Word | V1V2Silence | V1V2ArtificialSilence;
 export type V2DocumentItem = V2ParagraphItem | V2ParagraphBreakItem;
 
 // V3
+
+export type TimedItemExtension = { absoluteStart: number; absoluteIndex: number };
+export type UuidExtension = { uuid: string };
 interface V3DocumentJson {
   version: 3;
   metadata: V3DocumentMetadata;
@@ -91,19 +93,20 @@ interface V3DocumentMetadata {
 
 type V3DocumentItemWithoutUuid =
   | V3ParagraphBreakItem
-  | V3SpeakerChangeItem
+  | V3ParagraphStartItem
   | V3TextItem
   | V3NonTextItem
   | V3ArtificialSilence;
 
-export type V3DocumentItem = V3DocumentItemWithoutUuid & { uuid: string };
+export type V3DocumentItem = V3DocumentItemWithoutUuid & UuidExtension;
+export type V3TimedDocumentItem = V3DocumentItem & TimedItemExtension;
 
 export interface V3ParagraphBreakItem {
   type: 'paragraph_break';
 }
 
-export interface V3SpeakerChangeItem {
-  type: 'speaker_change';
+export interface V3ParagraphStartItem {
+  type: 'paragraph_start';
 
   speaker: string;
   language: string | null;
@@ -134,7 +137,8 @@ export interface V3ArtificialSilence {
 }
 
 export type V3TimedParagraphItem = V3ParagraphItem & TimedItemExtension;
-export type V3ParagraphItem = V3TextItem | V3NonTextItem | V3ArtificialSilence;
+export type V3ParagraphItem = (V3TextItem | V3NonTextItem | V3ArtificialSilence) & UuidExtension;
+
 export interface V3Paragraph<I = V3TimedParagraphItem> {
   type: 'paragraph';
   speaker: string;
@@ -143,7 +147,8 @@ export interface V3Paragraph<I = V3TimedParagraphItem> {
 }
 
 export type V3MacroItem = V3Paragraph;
-export type V3TimedMacroItem = V3MacroItem & TimedItemExtension;
+export type V3UntimedMacroItem = V3Paragraph<V3ParagraphItem>;
+export type V3TimedMacroItem = V3MacroItem & TimedItemExtension & { endAbsoluteIndex: number };
 
 //     what is a document?
 export interface Source {
@@ -170,7 +175,10 @@ export type DocumentJson =
 export function getEmptyDocument(): Document {
   return {
     sources: {},
-    content: [{ type: 'paragraph_break', uuid: uuidv4() }],
+    content: [
+      { type: 'paragraph_start', speaker: '', language: null, uuid: uuidv4() },
+      { type: 'paragraph_break', uuid: uuidv4() },
+    ],
     metadata: { display_speaker_names: false, display_video: false },
   };
 }
@@ -211,7 +219,7 @@ export async function deserializeDocument(
   } else if (parsed.version == 2) {
     partialDocument = convertV2toV3(parsed);
   } else if (parsed.version == 3) {
-    partialDocument = { content: parsed.content, metadata: parsed.metadata };
+    partialDocument = { content: parsed.content, metadata: parsed.metadata }; // TODO @pajowu: validate schema
   } else {
     throw new Error(
       `Cant open document with version ${parsed.version} with current audapolis version.\nMaybe try updating audapolis?`
@@ -279,7 +287,7 @@ function paragraphItemV1V2toV3(item: V1ParagraphItem | V2ParagraphItem): V3Docum
 
 function paragraphV1toV3Items(paragraph: V1Paragraph): V3DocumentItem[] {
   return [
-    { type: 'speaker_change', uuid: uuidv4(), speaker: paragraph.speaker, language: null },
+    { type: 'paragraph_start', uuid: uuidv4(), speaker: paragraph.speaker, language: null },
     ...paragraph.content.map(paragraphItemV1V2toV3),
     {
       type: 'paragraph_break',
@@ -306,7 +314,7 @@ function convertV1toV3(v1_document: V1DocumentJson): Omit<Document, 'sources'> {
   return { content: content, metadata: metadata };
 }
 function convertV2toV3(v2_document: V2DocumentJson): Omit<Document, 'sources'> {
-  const content: V3DocumentItem[] = [];
+  let content: V3DocumentItem[] = [];
   for (const item of v2_document.content) {
     switch (item.type) {
       case 'paragraph_break':
@@ -315,7 +323,7 @@ function convertV2toV3(v2_document: V2DocumentJson): Omit<Document, 'sources'> {
         }
         if (item.speaker !== null) {
           content.push({
-            type: 'speaker_change',
+            type: 'paragraph_start',
             uuid: uuidv4(),
             speaker: item.speaker,
             language: null,
@@ -327,6 +335,11 @@ function convertV2toV3(v2_document: V2DocumentJson): Omit<Document, 'sources'> {
       case 'artificial_silence':
         content.push(paragraphItemV1V2toV3(item));
     }
+  }
+  if (content.length > 0) {
+    content.push({ type: 'paragraph_break', uuid: uuidv4() });
+  } else {
+    content = getEmptyDocument().content;
   }
   return { content, metadata: { display_speaker_names: false, display_video: false } };
 }

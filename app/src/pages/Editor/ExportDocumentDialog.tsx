@@ -4,7 +4,7 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 import path from 'path';
 import { FilePickerWithText } from '../../components/FilePicker';
 import { toast } from 'react-hot-toast';
-import { Document, TimedItemExtension, Word } from '../../core/document';
+import { Document, TimedItemExtension, UuidExtension, V3TextItem } from '../../core/document';
 import { assertSome, switchExtension } from '../../util';
 import { Button, Combobox, Dialog, FormField, majorScale } from 'evergreen-ui';
 import { exportDefinition as audioExportDefinition } from './ExportOptions/Audio';
@@ -50,8 +50,8 @@ export function ExportDocumentDialog(): JSX.Element {
     const editorState = state.editor.present;
     if (popupState != 'selection' || !editorState) return '';
     const selectionItems = _(selectedItems(editorState))
-      .filter((x): x is Word & TimedItemExtension => x.type == 'word')
-      .map((x) => x.word)
+      .filter((x): x is V3TextItem & UuidExtension & TimedItemExtension => x.type == 'text')
+      .map((x) => x.text)
       .slice(0, 3)
       .value();
     if (selectionItems.length == 0) return '';

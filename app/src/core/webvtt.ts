@@ -63,7 +63,7 @@ export function contentToVtt(
     };
     const items: V3DocumentItem[] = [];
     for (const item of content) {
-      if (item.type == 'speaker_change') {
+      if (item.type == 'paragraph_start') {
         currentCharacterLength = 0;
         currentSpeaker = { speaker: item.speaker, language: item.language };
       }
@@ -77,7 +77,7 @@ export function contentToVtt(
           items.push(
             { type: 'paragraph_break', uuid: uuidv4() },
             {
-              type: 'speaker_change',
+              type: 'paragraph_start',
               speaker: cur_speak,
               language: cur_lang,
               uuid: uuidv4(),

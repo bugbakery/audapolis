@@ -5,23 +5,25 @@ import { RootState } from '../../state';
 jest.setTimeout(60000);
 
 import { JSONObject } from 'puppeteer-core';
-import { DocumentItem, Document } from '../../core/document';
+import { Document, V3DocumentItem } from '../../core/document';
 import { assertSome } from '../../util';
+import { addUuids } from '../../util/test_helper';
 
-const testContent: DocumentItem[] = [
-  { type: 'paragraph_break', speaker: 'Speaker One' },
-  { type: 'word', source: 'source-1', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-  { type: 'word', source: 'source-1', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
-  { type: 'paragraph_break', speaker: null },
-  { type: 'paragraph_break', speaker: 'Speaker Two' },
-  { type: 'word', source: 'source-2', sourceStart: 2, length: 1, word: 'One', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 3, length: 1, word: 'Two', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 4, length: 1, word: 'Three', conf: 1 },
-  { type: 'word', source: 'source-2', sourceStart: 5, length: 1, word: 'Four', conf: 1 },
+const testContent: V3DocumentItem[] = addUuids([
+  { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+  { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+  { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+  { type: 'paragraph_break' },
+  { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+  { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
+  { type: 'text', source: 'source-2', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
   { type: 'artificial_silence', length: 10 },
-];
+  { type: 'paragraph_break' },
+]);
 
 beforeAll(async () => {
   await page.waitForSelector('h1');
@@ -37,6 +39,10 @@ beforeAll(async () => {
         objectUrl: 'blob://source-2',
         fileContents: new ArrayBuffer(0),
       },
+    },
+    metadata: {
+      display_speaker_names: true,
+      display_video: true,
     },
   };
 

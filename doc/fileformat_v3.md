@@ -18,7 +18,7 @@ Every section MUST end with a `DocumentItem` of type `paragragraph_break`.
 
 There are 5 types of document items:
 - `paragraph_break`
-- `speaker_change`
+- `paragraph_start`
 - `text`
 - `non_text`
 - `artificial_silence`
@@ -28,19 +28,22 @@ Every document item MUST have an uuid in the `uuid` property in addition the pro
 #### `paragraph_break`
 
 A `paragraph_break` marks the end of a paragraph and thus the end of a section.
-It MAY occur in any place of the content, even directly following another paragraph break.
+It MAY ONLY occur at the end of a paragraph.
 It has no additional properties.
 
-#### `speaker_change`
+#### `paragraph_start`
 
-A `speaker_change` changes the current speaker.
-If present, it MUST be the first item in a section.
+A `paragraph_start` marks the beginning of a paragraph.
+It also sets the current speaker and language.
+The first item of every paragraph MUST be a `paragraph_start`.
+It MAY NOT occur anywhere else in the content.
+
 It has two additional properties:
 - speaker
 - language
 
 The speaker MUST be a string.
-It MAY NOT be the empty string.
+It MAY NOT be the empty string, except to mark the default paragraph in an empty document.
 It MAY NOT consist of only white space (as defined in [ECMAScript Section `TrimString`](https://tc39.es/ecma262/#sec-trimstring)).
 It MAY otherwise contain the entire range of unicode characters.
 
@@ -103,7 +106,9 @@ It MUST be greater than zero.
 ### Conclusion
 
 The document items describe above allow us to divide the `content` into sections.
-A section can be up to one `speaker_change` followed by zero or more `text`, `non_text` or `aritifical_silence` item, finished by a `paragraph_break`.
+A section is a `paragraph_start` followed by zero or more `text`, `non_text` or `aritifical_silence` item, finished by a `paragraph_break`.
+
+The first item of a document is always a `paragraph_start`.
 
 ## Metadata
 

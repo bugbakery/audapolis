@@ -1,4 +1,4 @@
-import { defaultEditorState, EditorState } from './types';
+import { defaultEditorState } from './types';
 import _ from 'lodash';
 import {
   copy,
@@ -8,700 +8,526 @@ import {
   deleteSomething,
   insertParagraphBreak,
   paste,
+  ClipboardDocument,
   reassignParagraph,
   renameSpeaker,
-  setWord,
+  setText,
 } from './edit';
-import { AsyncThunkAction } from '@reduxjs/toolkit/dist/createAsyncThunk';
 import JSZip from 'jszip';
-import { emptyDocument, serializeDocument, Document } from '../../core/document';
+import { Document, getEmptyDocument, serializeDocument } from '../../core/document';
 import { mocked } from 'jest-mock';
 import { clipboard } from 'electron';
-import { reducers } from './index';
-import { AnyAction } from '@reduxjs/toolkit';
+import { addUuids } from '../../util/test_helper';
+import { runAsyncThunkSync } from '../../util/reducer_test_helper';
 
 test('insert paragraph break user cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
   insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(3);
+  expect(state.cursor.userIndex).toBe(4);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('insert paragraph break: player cursor in first 50%', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1.2;
   insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(3);
+  expect(state.cursor.userIndex).toBe(4);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('insert paragraph break: player cursor in last 50%', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1.75;
   insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(4);
+  expect(state.cursor.userIndex).toBe(5);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('insert paragraph break: non-word item', () => {
+test('insert paragraph break: non-text item', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
   insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(4);
+  expect(state.cursor.userIndex).toBe(6);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('insert paragraph break: before first para break, not at idx 0', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 0;
-  insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: null },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
+const testContentSingleParaSingleWord = addUuids([
+  { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+  { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  { type: 'paragraph_break' },
+]);
 
-test('insert paragraph break: before first para break, at idx 0', () => {
+test.each([0, 1])('insert paragraph break: before first para break, at idx=%ds', (index) => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
   state.cursor.current = 'user';
-  state.cursor.userIndex = 0;
+  state.cursor.userIndex = index;
   insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: null },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
-
-test('insert paragraph break: before first para break', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 0;
-  insertParagraphBreak.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: null },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
+  expect(state.cursor.userIndex).toBe(3);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('delete selection with no selection is noop', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
   deleteSelection.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ]);
+  expect(state.document.content).toStrictEqual(testContentSingleParaSingleWord);
   expect(state.selection).toBe(null);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete selection: 1 word', () => {
+test('delete selection: 1 text', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
-  state.selection = { startIndex: 0, length: 1, headPosition: 'left' };
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
+  state.selection = { startIndex: 1, length: 1, headPosition: 'left' };
   deleteSelection.reducer(state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
   ]);
   expect(state.selection).toBe(null);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete selection: more words', () => {
+test('delete selection: more texts', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
+  state.selection = { startIndex: 1, length: 2, headPosition: 'left' };
+  deleteSelection.reducer(state);
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
+  ]);
+  expect(state.selection).toBe(null);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('delete selection: keeps first paragraph start', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.selection = { startIndex: 0, length: 2, headPosition: 'left' };
   deleteSelection.reducer(state);
-  expect(state.document.content).toStrictEqual([]);
-  expect(state.selection).toBe(null);
-});
-
-test('set word', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
-  setWord.reducer(state, { text: 'Word', absoluteIndex: 1 });
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Word', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
+  expect(state.selection).toBe(null);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('set word: idx is not a word', () => {
+test('delete selection: keeps default para', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
+  state.selection = { startIndex: 0, length: 2, headPosition: 'left' };
+  deleteSelection.reducer(state);
+  expect(state.document).toBeSameDocumentExceptUuids(getEmptyDocument());
+  expect(state.selection).toBe(null);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('set text', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
+  setText.reducer(state, { text: 'text', absoluteIndex: 1 });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'text', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('set text: idx is not a text', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
   expect(() => {
-    setWord.reducer(state, { text: 'Word', absoluteIndex: 0 });
-  }).toThrow(/not a word/i);
+    setText.reducer(state, { text: 'text', absoluteIndex: 0 });
+  }).toThrow(/not a text/i);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('reassign paragraph', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
   reassignParagraph.reducer(state, { newSpeaker: 'Speaker Two', absoluteIndex: 0 });
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('reassign paragraph: idx is not a para break', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(testContentSingleParaSingleWord);
   expect(() => {
     reassignParagraph.reducer(state, { newSpeaker: 'Speaker Two', absoluteIndex: 1 });
-  }).toThrow(/not a paragraph_break/i);
+  }).toThrow(/not a paragraph_start/i);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('rename speaker', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  renameSpeaker.reducer(state, { newName: 'Speaker Two', oldName: 'Speaker One' });
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
+  renameSpeaker.reducer(state, { newName: 'Speaker Two', oldName: 'Speaker One' });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('rename speaker: more than one speaker in document', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  renameSpeaker.reducer(state, { newName: 'Speaker Three', oldName: 'Speaker One' });
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Three' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
+  renameSpeaker.reducer(state, { newName: 'Speaker Three', oldName: 'Speaker One' });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker Three', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
+const documentContentTwoParaTwoSpeaker = addUuids([
+  { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+  { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  { type: 'paragraph_break' },
+  { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+  { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  { type: 'paragraph_break' },
+]);
 test('rename speaker: speaker not in document', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   renameSpeaker.reducer(state, { newName: 'Speaker Three', oldName: 'Speaker Ten' });
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete something: selection left', () => {
+test.each(['left', 'right'])('delete something: selection %s', (direction: 'left' | 'right') => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.selection = {
     headPosition: 'left',
     startIndex: 1,
-    length: 2,
+    length: 3,
   };
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  deleteSomething.reducer(state, direction);
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.cursor.current).toBe('user');
   expect(state.cursor.userIndex).toBe(1);
   expect(state.selection).toBe(null);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete something: selection right', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.selection = {
-    headPosition: 'left',
-    startIndex: 1,
-    length: 2,
-  };
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-  expect(state.selection).toBe(null);
-});
+test.each([
+  { index: 3, itemType: 'break', direction: 'left' },
+  { index: 2, itemType: 'break', direction: 'right' },
+  { index: 4, itemType: 'start', direction: 'left' },
+  { index: 3, itemType: 'start', direction: 'right' },
+] as { index: number; itemType: string; direction: 'left' | 'right' }[])(
+  'delete something: para $itemType; $direction',
+  ({ index, direction }: { index: number; direction: 'left' | 'right' }) => {
+    const state = _.cloneDeep(defaultEditorState);
+    state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+    state.cursor.current = 'user';
+    state.cursor.userIndex = index;
+    deleteSomething.reducer(state, direction);
+    expect(state.document.content).toStrictEqualExceptUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+      { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+      { type: 'paragraph_break' },
+    ]);
+    expect(state.cursor.current).toBe('user');
+    expect(state.cursor.userIndex).toBe(2);
+    expect(state.selection).toBe(null);
+    expect(state.document.content).toBeValidDocumentContent();
+  }
+);
 
-test('delete something: para break; left', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 3;
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
-  expect(state.selection).toBe(null);
-});
+test.each([
+  { index: 2, direction: 'left' },
+  { index: 1, direction: 'right' },
+] as { index: number; direction: 'left' | 'right' }[])(
+  'delete something: text; $direction',
+  ({ direction, index }) => {
+    const state = _.cloneDeep(defaultEditorState);
+    state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+    state.cursor.current = 'user';
+    state.cursor.userIndex = index;
+    deleteSomething.reducer(state, direction);
+    expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
+    expect(state.selection).toStrictEqual({ headPosition: direction, startIndex: 1, length: 1 });
+    deleteSomething.reducer(state, direction);
+    expect(state.document.content).toStrictEqualExceptUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'paragraph_break' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+      { type: 'paragraph_break' },
+    ]);
+    expect(state.selection).toStrictEqual(null);
+    expect(state.cursor.current).toBe('user');
+    expect(state.cursor.userIndex).toBe(1);
+    expect(state.document.content).toBeValidDocumentContent();
+  }
+);
 
-test('delete something: para break; right', () => {
+test.each(['left', 'right'])('delete something: %s at idx=0', (direction: 'left' | 'right') => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 2;
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(2);
-  expect(state.selection).toBe(null);
-});
-
-test('delete something: word; left', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 2;
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 1, length: 1 });
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
-
-test('delete something: word; right', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 1, length: 1 });
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
-
-test('delete something: left at idx=0', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(0);
-});
-
-test('delete something: right doesnt delete first para_break', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(0);
-});
-
-test('delete something: left doesnt delete first para', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
-
-test('delete something: right doesnt delete first para_break', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
   state.cursor.current = 'user';
   state.cursor.userIndex = 0;
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  deleteSomething.reducer(state, direction);
+  expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
   expect(state.cursor.current).toBe('user');
   expect(state.cursor.userIndex).toBe(0);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete something: left doesnt delete first para', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
+test.each([
+  { index: 0, direction: 'right' },
+  { index: 1, direction: 'left' },
+])(
+  'delete something: $direction doesnt delete first para',
+  ({ index, direction }: { index: number; direction: 'left' | 'right' }) => {
+    const state = _.cloneDeep(defaultEditorState);
+    state.cursor.current = 'user';
+    state.cursor.userIndex = index;
+    state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+    deleteSomething.reducer(state, direction);
+    deleteSomething.reducer(state, direction);
+    expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
+    expect(state.cursor.current).toBe('user');
+    expect(state.cursor.userIndex).toBe(index);
+    expect(state.document.content).toBeValidDocumentContent();
+  }
+);
 
-test('delete something: word; left; player cursor at end of word', () => {
+test('delete something: text; left; player cursor at end of text', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
   deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.selection).toStrictEqual(null);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete something: word; right; player cursor at end of word', () => {
+test('delete something: text; right; player cursor at end of text', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
   deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 3, length: 1 });
+  expect(state.document.content).toStrictEqual(documentContentTwoParaTwoSpeaker);
+  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 4, length: 1 });
   deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'paragraph_break' },
   ]);
   expect(state.selection).toStrictEqual(null);
   expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(3);
+  expect(state.cursor.userIndex).toBe(4);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete something: word; left; player cursor in word', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'player';
-  state.cursor.playerTime = 0.5;
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'left', startIndex: 1, length: 1 });
-  deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
-
-test('delete something: word; right; player cursor in word', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.cursor.current = 'player';
-  state.cursor.playerTime = 0.5;
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 1, length: 1 });
-  deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
-  expect(state.cursor.current).toBe('user');
-  expect(state.cursor.userIndex).toBe(1);
-});
+test.each(['left', 'right'])(
+  'delete something: text; %s; player cursor in text',
+  (direction: 'left' | 'right') => {
+    const state = _.cloneDeep(defaultEditorState);
+    state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+    state.cursor.current = 'player';
+    state.cursor.playerTime = 0.5;
+    deleteSomething.reducer(state, direction);
+    expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
+    expect(state.selection).toStrictEqual({ headPosition: direction, startIndex: 1, length: 1 });
+    deleteSomething.reducer(state, direction);
+    expect(state.document.content).toStrictEqualExceptUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'paragraph_break' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+      { type: 'paragraph_break' },
+    ]);
+    expect(state.selection).toStrictEqual(null);
+    expect(state.cursor.current).toBe('user');
+    expect(state.cursor.userIndex).toBe(1);
+    expect(state.document.content).toBeValidDocumentContent();
+  }
+);
 
 test('delete something: left at t=0', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
   deleteSomething.reducer(state, 'left');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
+  deleteSomething.reducer(state, 'left');
+  expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
   expect(state.cursor.current).toBe('player');
   expect(state.cursor.userIndex).toBe(0);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('delete something: right at t=0', () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
   deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
+  expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
   expect(state.selection).toStrictEqual({ headPosition: 'right', startIndex: 1, length: 1 });
   deleteSomething.reducer(state, 'right');
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.selection).toBe(null);
   expect(state.cursor.current).toBe('user');
   expect(state.cursor.userIndex).toBe(1);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 const mockedSerializeDocument = mocked(serializeDocument);
@@ -729,183 +555,127 @@ jest.mock('electron', () => {
 });
 const mockedWriteText = mocked(clipboard.writeText);
 
-/**
- * Calls an async thunk and handles oll the side effects in the same Promise.
- * Awaiting the returned promise ensures all properly awaited side effects are done.
- * @param thunk the thunk to test
- * @param state the current state. this will likely be mutated.
- */
-async function runAsyncThunkSync(
-  thunk: AsyncThunkAction<any, any, any>,
-  state: EditorState
-): Promise<void> {
-  const dispatch = async (action: AnyAction | AsyncThunkAction<any, any, any>) => {
-    if (typeof action == 'function') {
-      await runAsyncThunkSync(action, state);
-    } else {
-      reducers.forEach((reducer) => {
-        reducer.handleAction(state, action);
-      });
-    }
-  };
-
-  const getState = () => ({ editor: { present: _.cloneDeep(state) } });
-  const returned = await thunk(dispatch, getState, {});
-  dispatch(returned);
-}
-
 afterEach(() => {
   jest.clearAllMocks();
 });
+
+const documentContentTwoParaTwoWordsTwoSpeaker = addUuids([
+  { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+  { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  { type: 'paragraph_break' },
+  { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+  { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 3, conf: 1 },
+  { type: 'paragraph_break' },
+]);
+
 test('copy', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
   await runAsyncThunkSync(copy(), state);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-
+  // document should not be mutated by copy
+  expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
+  // document has be serialized
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
   expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
   expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
     content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+      { type: 'paragraph_break' },
     ],
   });
   expect(clipboard.writeBuffer).toHaveBeenCalled();
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('copy adds para-break before first word', async () => {
+test('copy adds para-start/break if needed', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoWordsTwoSpeaker);
   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
   await runAsyncThunkSync(copy(), state);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
-
+  expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoWordsTwoSpeaker);
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
   expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
-  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    ],
-  });
+  expect(mockedSerializeDocument.mock.calls[0][0].content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   expect(clipboard.writeBuffer).toHaveBeenCalled();
+  expect(state.document.content).toBeValidDocumentContent();
+  expect(mockedSerializeDocument.mock.calls[0][0].content).toBeValidDocumentContent();
 });
 
 test('copy does nothing if no selection', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.selection = null;
   await runAsyncThunkSync(copy(), state);
   expect(mockedSerializeDocument).not.toHaveBeenCalled();
   expect(clipboard.writeBuffer).not.toHaveBeenCalled();
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('cut', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
-  state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  state.selection = { headPosition: 'left', startIndex: 0, length: 3 };
   await runAsyncThunkSync(cut(), state);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
-
+  // document has be serialized
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
   expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
   expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
     content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+      { type: 'paragraph_break' },
     ],
   });
   expect(clipboard.writeBuffer).toHaveBeenCalled();
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('cut adds para-break before first word', async () => {
+test('cut adds para-start/break if needed', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoWordsTwoSpeaker);
   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
   await runAsyncThunkSync(cut(), state);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 3, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
-
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
   expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
-  expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    ],
-  });
+  expect(mockedSerializeDocument.mock.calls[0][0].content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+  ]);
   expect(clipboard.writeBuffer).toHaveBeenCalled();
+  expect(state.document.content).toBeValidDocumentContent();
+  expect(mockedSerializeDocument.mock.calls[0][0].content).toBeValidDocumentContent();
 });
 
 test('cut does nothing if no selection', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
   state.selection = null;
   await runAsyncThunkSync(cut(), state);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-  ]);
+  expect(state.document.content).toStrictEqual(documentContentTwoParaTwoSpeaker);
   expect(mockedSerializeDocument).not.toHaveBeenCalled();
   expect(clipboard.writeBuffer).not.toHaveBeenCalled();
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 // TODO: should we test the paste payload creator?
@@ -918,16 +688,19 @@ test('paste nothing is noop', async () => {
     throw new Error('paste.reducers.fulfilled must be a function');
   }
   paste.reducers?.fulfilled(state, pastedDocument);
-  expect(state.document).toStrictEqual(emptyDocument);
+  expect(state.document.sources).toStrictEqual({});
+  expect(state.document.content).toStrictEqualExceptUuids(getEmptyDocument().content);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('paste with missing sources fails', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {},
   };
   const reducer = paste.reducers?.fulfilled;
@@ -939,15 +712,17 @@ test('paste with missing sources fails', async () => {
   expect(() => {
     reducer(state, pastedDocument);
   }).toThrow('missing source');
-  expect(state.document).toStrictEqual(emptyDocument);
+  expect(state.document).toBeSameDocumentExceptUuids(getEmptyDocument());
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('paste without leading para break fails', async () => {
+test('paste without leading para start fails', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  const pastedDocument: Document = {
-    content: [
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -963,17 +738,45 @@ test('paste without leading para break fails', async () => {
   }
   expect(() => {
     reducer(state, pastedDocument);
-  }).toThrow('missing paragraph break');
-  expect(state.document).toStrictEqual(emptyDocument);
+  }).toThrow('paragraph start');
+  expect(state.document).toBeSameDocumentExceptUuids(getEmptyDocument());
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('paste without trailing para break fails', async () => {
+  const state = _.cloneDeep(defaultEditorState);
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    ]),
+    sources: {
+      'source-1': {
+        objectUrl: 'blob://source-1',
+        fileContents: new ArrayBuffer(0),
+      },
+    },
+  };
+  const reducer = paste.reducers?.fulfilled;
+
+  expect(reducer).not.toBe(undefined);
+  if (reducer == undefined) {
+    throw new Error('paste.reducers.fulfilled must be a function');
+  }
+  expect(() => {
+    reducer(state, pastedDocument);
+  }).toThrow('paragraph break');
+  expect(state.document).toBeSameDocumentExceptUuids(getEmptyDocument());
 });
 
 test('paste minimal', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -990,9 +793,10 @@ test('paste minimal', async () => {
 
   reducer(state, pastedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.document.sources).toStrictEqual({
     'source-1': {
@@ -1000,18 +804,22 @@ test('paste minimal', async () => {
       fileContents: new ArrayBuffer(0),
     },
   });
+
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('paste more complex', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'Two', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-      { type: 'word', word: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'Two', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'text', text: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -1030,12 +838,14 @@ test('paste more complex', async () => {
     throw new Error('paste.reducers.fulfilled must be a function');
   }
   reducer(state, pastedDocument);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Two', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    { type: 'word', word: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Two', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'text', text: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.document.sources).toStrictEqual({
     'source-1': {
@@ -1047,18 +857,24 @@ test('paste more complex', async () => {
       fileContents: new ArrayBuffer(0),
     },
   });
+
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('paste: unnamed empty paragraph', async () => {
+test('paste: existing empty paragraph', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [{ type: 'paragraph_break', speaker: null }];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'user';
   state.cursor.userIndex = 1;
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -1075,9 +891,12 @@ test('paste: unnamed empty paragraph', async () => {
 
   reducer(state, pastedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.document.sources).toStrictEqual({
     'source-1': {
@@ -1085,98 +904,25 @@ test('paste: unnamed empty paragraph', async () => {
       fileContents: new ArrayBuffer(0),
     },
   });
-});
 
-test('paste: unnamed empty paragraph at idx=0', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [{ type: 'paragraph_break', speaker: null }];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 0;
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
-    sources: {
-      'source-1': {
-        objectUrl: 'blob://source-1',
-        fileContents: new ArrayBuffer(0),
-      },
-    },
-  };
-  const reducer = paste.reducers?.fulfilled;
-
-  expect(reducer).not.toBe(undefined);
-  if (reducer == undefined) {
-    throw new Error('paste.reducers.fulfilled must be a function');
-  }
-
-  reducer(state, pastedDocument);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-  ]);
-  expect(state.document.sources).toStrictEqual({
-    'source-1': {
-      objectUrl: 'blob://source-1',
-      fileContents: new ArrayBuffer(0),
-    },
-  });
-});
-
-test('paste: named empty paragraph', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [{ type: 'paragraph_break', speaker: 'Speaker One' }];
-  state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
-    sources: {
-      'source-1': {
-        objectUrl: 'blob://source-1',
-        fileContents: new ArrayBuffer(0),
-      },
-    },
-  };
-  const reducer = paste.reducers?.fulfilled;
-
-  expect(reducer).not.toBe(undefined);
-  if (reducer == undefined) {
-    throw new Error('paste.reducers.fulfilled must be a function');
-  }
-
-  reducer(state, pastedDocument);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-  ]);
-  expect(state.document.sources).toStrictEqual({
-    'source-1': {
-      objectUrl: 'blob://source-1',
-      fileContents: new ArrayBuffer(0),
-    },
-  });
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('paste: existing data', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -1193,11 +939,13 @@ test('paste: existing data', async () => {
 
   reducer(state, pastedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.document.sources).toStrictEqual({
     'source-1': {
@@ -1205,21 +953,24 @@ test('paste: existing data', async () => {
       fileContents: new ArrayBuffer(0),
     },
   });
-});
 
-test('paste: pasting directly after a para break generates a new para break after the pasted content', async () => {
+  expect(state.document.content).toBeValidDocumentContent();
+});
+test('paste: pasting directly after a para start generates a new para start after the pasted content', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.cursor.current = 'user';
   state.cursor.userIndex = 1;
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -1236,12 +987,15 @@ test('paste: pasting directly after a para break generates a new para break afte
 
   reducer(state, pastedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Test', conf: 1, source: 'source-non', sourceStart: 0, length: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.document.sources).toStrictEqual({
     'source-1': {
@@ -1249,24 +1003,30 @@ test('paste: pasting directly after a para break generates a new para break afte
       fileContents: new ArrayBuffer(0),
     },
   });
+
+  expect(state.document.content).toBeValidDocumentContent();
 });
+
+const documentOneParaThreeWords = addUuids([
+  { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+  { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+  { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+  { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  { type: 'paragraph_break' },
+]);
 
 test('paste: replaces selection', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentOneParaThreeWords);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
-  state.selection = { headPosition: 'left', startIndex: 2, length: 2 };
-  const pastedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker Two' },
-      { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    ],
+  state.selection = { headPosition: 'left', startIndex: 3, length: 1 };
+  const pastedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+      { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {
       'source-1': {
         objectUrl: 'blob://source-1',
@@ -1283,11 +1043,14 @@ test('paste: replaces selection', async () => {
 
   reducer(state, pastedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.document.sources).toStrictEqual({
     'source-1': {
@@ -1295,23 +1058,19 @@ test('paste: replaces selection', async () => {
       fileContents: new ArrayBuffer(0),
     },
   });
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('copy&paste roundtrips', async () => {
+test.each([0, 1, 2])('copy&paste roundtrips as idx=%d', async (index: number) => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentOneParaThreeWords);
   state.document.sources = {
     'source-1': {
       objectUrl: 'blob://source-1',
       fileContents: new ArrayBuffer(0),
     },
   };
-  state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
+  state.selection = { headPosition: 'left', startIndex: index, length: 2 };
   await runAsyncThunkSync(copy(), state);
 
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
@@ -1327,61 +1086,15 @@ test('copy&paste roundtrips', async () => {
 
   reducer(state, copiedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ]);
+  expect(state.document.content).toStrictEqualExceptUuids(documentOneParaThreeWords);
   expect(state.selection).toStrictEqual(null);
-});
 
-test('copy&paste roundtrips at start of para', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
-  state.document.sources = {
-    'source-1': {
-      objectUrl: 'blob://source-1',
-      fileContents: new ArrayBuffer(0),
-    },
-  };
-  state.selection = { headPosition: 'left', startIndex: 0, length: 2 };
-  await runAsyncThunkSync(copy(), state);
-
-  expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
-  expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
-  const copiedDocument: Document = mockedSerializeDocument.mock.calls[0][0];
-
-  const reducer = paste.reducers?.fulfilled;
-
-  expect(reducer).not.toBe(undefined);
-  if (reducer == undefined) {
-    throw new Error('paste.reducers.fulfilled must be a function');
-  }
-  reducer(state, copiedDocument);
-
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ]);
-  expect(state.selection).toStrictEqual(null);
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('paste: merges paras if same speaker name', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentOneParaThreeWords);
   state.document.sources = {
     'source-1': {
       objectUrl: 'blob://source-1',
@@ -1391,11 +1104,12 @@ test('paste: merges paras if same speaker name', async () => {
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
 
-  const copiedDocument: Document = {
-    content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    ],
+  const copiedDocument: ClipboardDocument = {
+    content: addUuids([
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+      { type: 'text', text: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+      { type: 'paragraph_break' },
+    ]),
     sources: {},
   };
 
@@ -1407,24 +1121,22 @@ test('paste: merges paras if same speaker name', async () => {
 
   reducer(state, copiedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.selection).toStrictEqual(null);
+
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('paste: merges paras if same speaker name', async () => {
+test('paste: changes uuids', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
-  ];
+  state.document.content = _.cloneDeep(documentOneParaThreeWords);
   state.document.sources = {
     'source-1': {
       objectUrl: 'blob://source-1',
@@ -1432,12 +1144,21 @@ test('paste: merges paras if same speaker name', async () => {
     },
   };
   state.cursor.current = 'user';
-  state.cursor.userIndex = 1;
+  state.cursor.userIndex = 2;
 
-  const copiedDocument: Document = {
+  const copiedDocument: ClipboardDocument = {
     content: [
-      { type: 'paragraph_break', speaker: 'Speaker One' },
-      { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: null, uuid: 'p1' },
+      {
+        type: 'text',
+        text: 'Pasted One',
+        length: 1,
+        source: 'source-1',
+        sourceStart: 2,
+        conf: 1,
+        uuid: 'p2',
+      },
+      { type: 'paragraph_break', uuid: 'p3' },
     ],
     sources: {},
   };
@@ -1450,37 +1171,46 @@ test('paste: merges paras if same speaker name', async () => {
 
   reducer(state, copiedDocument);
 
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'word', word: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'word', word: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'text', text: 'Pasted One', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
+    { type: 'text', text: 'Three', length: 1, source: 'source-1', sourceStart: 4, conf: 1 },
+    { type: 'paragraph_break' },
   ]);
   expect(state.selection).toStrictEqual(null);
+  expect(state.document.content[2].uuid).not.toBe('p2');
+
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('copySelectionText', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: 'Something Something' },
-    { type: 'paragraph_break', speaker: 'Speaker One' },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
-    { type: 'word', word: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
-    { type: 'word', word: 'Three Four', conf: 1, source: 'source-1', sourceStart: 2, length: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'word', word: 'Five', conf: 1, source: 'source-2', sourceStart: 0, length: 1 },
-    { type: 'word', word: 'Six', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    { type: 'word', word: 'Seven Eight', conf: 1, source: 'source-2', sourceStart: 2, length: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
-    { type: 'paragraph_break', speaker: 'Speaker Three' },
-    { type: 'word', word: 'Something', conf: 1, source: 'source-4', sourceStart: 0, length: 1 },
-    { type: 'word', word: 'Something', conf: 1, source: 'source-4', sourceStart: 1, length: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Something Something', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
+    { type: 'text', text: 'Two', conf: 1, source: 'source-2', sourceStart: 1, length: 1 },
+    { type: 'text', text: 'Three Four', conf: 1, source: 'source-1', sourceStart: 2, length: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Five', conf: 1, source: 'source-2', sourceStart: 0, length: 1 },
+    { type: 'text', text: 'Six', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
+    { type: 'text', text: 'Seven Eight', conf: 1, source: 'source-2', sourceStart: 2, length: 1 },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Three', language: null },
+    { type: 'text', text: 'Something', conf: 1, source: 'source-4', sourceStart: 0, length: 1 },
+    { type: 'text', text: 'Something', conf: 1, source: 'source-4', sourceStart: 1, length: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.selection = {
     headPosition: 'left',
     startIndex: 1,
-    length: 15,
+    length: 17,
   };
   state.displaySpeakerNames = true;
 
@@ -1488,7 +1218,8 @@ test('copySelectionText', async () => {
 
   expect(mockedWriteText).toHaveBeenCalledTimes(1);
   expect(mockedWriteText).toHaveBeenCalledWith(
-    'Speaker One:\n' +
+    'Something Something:\n\n' +
+      'Speaker One:\n' +
       'One Two Three Four\n' +
       '\n' +
       'Speaker Two:\nFive Six Seven Eight\n' +
@@ -1496,50 +1227,22 @@ test('copySelectionText', async () => {
       'Speaker Two:\n\n' +
       'Speaker Three:\nSomething Something'
   );
-});
 
-test('copySelectionText: null speaker, no content', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [{ type: 'paragraph_break', speaker: null }];
-  state.selection = {
-    headPosition: 'left',
-    startIndex: 0,
-    length: 1,
-  };
-
-  await runAsyncThunkSync(copySelectionText(), state);
-
-  expect(mockedWriteText).toHaveBeenCalledTimes(1);
-  expect(mockedWriteText).toHaveBeenCalledWith('');
-});
-
-test('copySelectionText: null speaker, text', async () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: null },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
-  ];
-  state.selection = {
-    headPosition: 'left',
-    startIndex: 0,
-    length: 2,
-  };
-
-  await runAsyncThunkSync(copySelectionText(), state);
-
-  expect(mockedWriteText).toHaveBeenCalledTimes(1);
-  expect(mockedWriteText).toHaveBeenCalledWith('One');
+  expect(state.document.content).toBeValidDocumentContent();
 });
 
 test('copySelectionText: no selection', async () => {
   const state = _.cloneDeep(defaultEditorState);
-  state.document.content = [
-    { type: 'paragraph_break', speaker: null },
-    { type: 'word', word: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
-  ];
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 0, length: 1 },
+    { type: 'paragraph_break' },
+  ]);
   state.selection = null;
 
   await runAsyncThunkSync(copySelectionText(), state);
 
   expect(mockedWriteText).toHaveBeenCalledTimes(0);
+
+  expect(state.document.content).toBeValidDocumentContent();
 });

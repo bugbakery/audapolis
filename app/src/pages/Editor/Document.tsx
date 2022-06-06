@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
-import { TimedDocumentItem } from '../../core/document';
+import { V3TimedDocumentItem } from '../../core/document';
 import * as React from 'react';
 import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef } from 'react';
 import { Cursor } from './Cursor';
@@ -50,6 +50,7 @@ export function Document(): JSX.Element {
     state.editor.present ? memoizedTimedDocumentItems(state.editor.present.document.content) : []
   );
   const contentMacros = memoizedMacroItems(content);
+  console.log('contentMacros', contentMacros, content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
@@ -122,9 +123,10 @@ export function Document(): JSX.Element {
       dispatch(startTranscriptCorrection('right'));
     }
   };
-  function getSpeakerColor(speaker: string | null) {
-    if (speaker == null) return theme.colors.muted;
+  function getSpeakerColor(speaker: string) {
+    if (speakerColorIndices[speaker] === undefined) return theme.colors.muted;
     const color_idx = speakerColorIndices[speaker] % Object.keys(theme.colors.speakers).length;
+    console.log(speaker, color_idx, theme.colors.speakers);
     return theme.colors.speakers[color_idx];
   }
 
@@ -156,10 +158,7 @@ export function Document(): JSX.Element {
         switch (p.type) {
           case 'paragraph': {
             const speakerColor = getSpeakerColor(p.speaker);
-            // TODO: This is a lie that only works because we do not show headings yet.
-            //  Once headings are supported, this needs to be better
-            const paraBreak = contentMacros[i + 1];
-            const paraBreakIdx = paraBreak !== undefined ? paraBreak.absoluteIndex : content.length;
+            const paraBreakIdx = p.endAbsoluteIndex;
             return (
               <Paragraph
                 key={i}
@@ -190,7 +189,7 @@ function shouldPlaceCursorLeft(x: number, y: number, elem: Element, leftPercenta
   }
 }
 
-function handleWordClick(dispatch: Dispatch, content: TimedDocumentItem[], e: React.MouseEvent) {
+function handleWordClick(dispatch: Dispatch, content: V3TimedDocumentItem[], e: React.MouseEvent) {
   const range = document.caretRangeFromPoint(e.clientX, e.clientY);
   if (!range) return;
   const nodeLength = range.startContainer.textContent?.length;
@@ -210,15 +209,15 @@ const getAbsoluteItemIndex = (element: HTMLElement | null) =>
   parseInt(element?.id?.replace('item-', '') || '');
 
 const getItem = (
-  content: TimedDocumentItem[],
+  content: V3TimedDocumentItem[],
   element: HTMLElement | null
-): TimedDocumentItem | null => {
+): V3TimedDocumentItem | null => {
   const itemIdx = getAbsoluteItemIndex(element);
   return content[itemIdx];
 };
 
 function indexAtPosition(
-  content: TimedDocumentItem[],
+  content: V3TimedDocumentItem[],
   x: number,
   y: number,
   leftPercentage = 50
@@ -234,7 +233,7 @@ function indexAtPosition(
   return item.absoluteIndex + off;
 }
 
-const itemFromNode = (content: TimedDocumentItem[], node: Node, n = 0) => {
+const itemFromNode = (content: V3TimedDocumentItem[], node: Node, n = 0) => {
   const child = getChild(node, n);
   let itemElement = child?.parentElement;
   while (itemElement) {

@@ -69,7 +69,7 @@ export function AboutPage(): JSX.Element {
           <img
             width={'100%'}
             src={pf_funding_svg}
-            alt='logos of the "Bundesministerium für Bildung und Forschung", Prodotype Fund and OKFN-Deutschland'
+            alt='logos of the "Bundesministerium für Bildung und Forschung", Prototype Fund and OKFN-Deutschland'
           />
         </Paragraph>
         <BackButton />

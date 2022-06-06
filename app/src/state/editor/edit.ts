@@ -394,14 +394,20 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
     const state = getState().editor.present;
     assertSome(state);
 
+    console.log('copySelectionText', state.selection);
+
     if (!state.selection) {
       return;
     }
 
     const timedDocumentSlice: V3TimedDocumentItem[] = selectedItems(state);
-
-    clipboard.writeText(
-      macroItemsToText(memoizedMacroItems(timedDocumentSlice), state.displaySpeakerNames)
+    const selectedText = macroItemsToText(
+      memoizedMacroItems(timedDocumentSlice),
+      state.displaySpeakerNames
     );
+    console.log('selectedText', selectedText);
+    console.log('mem', memoizedMacroItems(timedDocumentSlice));
+    console.log('sli', timedDocumentSlice);
+    clipboard.writeText(selectedText);
   }
 );

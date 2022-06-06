@@ -19,9 +19,11 @@ import { goLeft, goRight, setUserIndex } from '../../state/editor/play';
 import { deleteSomething } from '../../state/editor/edit';
 import { Theme } from '../../components/theme';
 import {
+  memoizedIndexToUuidMap,
   memoizedMacroItems,
   memoizedSpeakerIndices,
   memoizedTimedDocumentItems,
+  memoizedUuidToIndexMap,
 } from '../../state/editor/selectors';
 import { Dispatch } from '@reduxjs/toolkit';
 import { startTranscriptCorrection } from '../../state/editor/transcript_correction';
@@ -158,7 +160,8 @@ export function Document(): JSX.Element {
         switch (p.type) {
           case 'paragraph': {
             const speakerColor = getSpeakerColor(p.speaker);
-            const paraBreakIdx = p.endAbsoluteIndex;
+            const paraBreakIdx = p.breakAbsoluteIndex;
+            const paraBreakUuid = p.breakUuid;
             return (
               <Paragraph
                 key={i}
@@ -166,6 +169,7 @@ export function Document(): JSX.Element {
                 color={speakerColor}
                 displaySpeakerNames={displaySpeakerNames}
                 paraBreakIdx={paraBreakIdx}
+                paraBreakUuid={paraBreakUuid}
                 editingRange={editingRange}
               />
             );
@@ -205,14 +209,23 @@ function handleWordClick(dispatch: Dispatch, content: V3TimedDocumentItem[], e: 
   }
 }
 
-const getAbsoluteItemIndex = (element: HTMLElement | null) =>
-  parseInt(element?.id?.replace('item-', '') || '');
+const getAbsoluteItemIndex = (
+  content: V3TimedDocumentItem[],
+  element: HTMLElement | null
+): number => {
+  const itemUuid = element?.id?.replace('item-', '');
+  if (!itemUuid) {
+    return 0;
+  }
+  const uuidIndexMap = memoizedUuidToIndexMap(content);
+  return uuidIndexMap[itemUuid] || 0;
+};
 
 const getItem = (
   content: V3TimedDocumentItem[],
   element: HTMLElement | null
 ): V3TimedDocumentItem | null => {
-  const itemIdx = getAbsoluteItemIndex(element);
+  const itemIdx = getAbsoluteItemIndex(content, element);
   return content[itemIdx];
 };
 
@@ -237,10 +250,12 @@ const itemFromNode = (content: V3TimedDocumentItem[], node: Node, n = 0) => {
   const child = getChild(node, n);
   let itemElement = child?.parentElement;
   while (itemElement) {
-    if (itemElement.id.match(/item-/)) break;
+    if (itemElement.id.match(/^item-/)) break;
     else itemElement = itemElement?.parentElement;
   }
-  return getItem(content, itemElement);
+  const item = getItem(content, itemElement);
+  console.log('element', itemElement, item);
+  return item;
 };
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const selection = useSelector((state: RootState) => state.editor.present?.selection);
@@ -248,11 +263,20 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
     (state: RootState) => state.editor.present?.transcriptCorrectionState
   );
   const exportPopupState = useSelector((state: RootState) => state.editor.present?.exportPopup);
+  const indexUuidMap = useSelector((state: RootState) =>
+    state.editor.present
+      ? memoizedIndexToUuidMap(memoizedTimedDocumentItems(state.editor.present.document.content))
+      : {}
+  );
+  const maxIndex = useSelector((state: RootState) =>
+    state.editor.present ? state.editor.present.document.content.length - 1 : 0
+  );
 
   useEffect(() => {
     if (selection) {
-      const start = document.getElementById(`item-${selection.startIndex}`);
-      const end = document.getElementById(`item-${selection.startIndex + selection.length}`);
+      const start = document.getElementById(`item-${indexUuidMap[selection.startIndex]}`);
+      const endIndex = Math.min(selection.startIndex + selection.length, maxIndex);
+      const end = document.getElementById(`item-${indexUuidMap[endIndex]}`);
       if (start && end) {
         if (selection.headPosition == 'left') {
           window.getSelection()?.setBaseAndExtent(start, 0, end, 0);
@@ -260,6 +284,13 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
           window.getSelection()?.setBaseAndExtent(end, 0, start, 0);
         }
       } else {
+        console.log(
+          'end',
+          end,
+          selection.startIndex + selection.length,
+          indexUuidMap[selection.startIndex + selection.length],
+          indexUuidMap
+        );
         window.getSelection()?.removeAllRanges();
       }
     } else {

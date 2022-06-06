@@ -12,6 +12,7 @@ import {
   V3DocumentItem,
   V3TextItem,
   UuidExtension,
+  V3TimedParagraph,
 } from './document';
 import { memoizedMacroItems } from '../state/editor/selectors';
 import { v4 as uuidv4 } from 'uuid';
@@ -94,7 +95,7 @@ export function contentToVtt(
   }
 
   const paragraphItems: V3Paragraph[] = memoizedMacroItems(content).filter(
-    (x): x is V3Paragraph & TimedItemExtension => x.type == 'paragraph'
+    (x): x is V3TimedParagraph => x.type == 'paragraph'
   );
 
   const vtt = new WebVtt(

@@ -20,6 +20,7 @@ import * as ioReducers from './io';
 import * as playReducers from './play';
 import * as selectionReducers from './selection';
 import * as transcriptCorrectionReducers from './transcript_correction';
+import { lintDocumentContent } from '../../util/document_linter';
 
 exposeReducersWindow(displayReducers, editReducers, ioReducers, playReducers, selectionReducers);
 
@@ -44,6 +45,14 @@ function editorReducer(state: EditorState | undefined, action: AnyAction): Edito
     reducers.forEach((reducer) => {
       reducer.handleAction(draft, action);
     });
+    const lintResult = lintDocumentContent(draft.document.content);
+    if (!lintResult.pass) {
+      if (process.env.NODE_ENV == 'development') {
+        alert(lintResult.message());
+      } else {
+        console.error('DOCUMENT LINTING FAILED!', lintResult.message());
+      }
+    }
   });
 }
 

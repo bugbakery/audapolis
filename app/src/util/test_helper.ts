@@ -1,5 +1,5 @@
 import { V3DocumentItem, V3TimedDocumentItem, Document } from '../core/document';
-import { isParagraphItem } from '../state/editor/selectors';
+import { lintDocumentContent } from './document_linter';
 
 type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 export type V3DocumentItemWithoutUuid = DistributiveOmit<V3DocumentItem, 'uuid'>;
@@ -40,57 +40,6 @@ expect.extend({
     return { message: () => ':)', pass: true };
   },
   toBeValidDocumentContent(received: V3DocumentItem[]): jest.CustomMatcherResult {
-    /**
-     * Verifies that `received` is accepted by the following automaton:
-     *
-     *                       paragraph_items
-     *                      ┌────────────┐
-     *                      │            │
-     *                      │            ▼
-     *   paragraph_start ┌──┴────────────────┐
-     *       ┌──────────►│ In Paragraph      │
-     *       │           └┬──────────────────┘
-     *   ┌───┴───┐        │paragraph_break ▲
-     *   │ Start │        ▼                │ paragraph_start
-     *   └───────┘       ┌─────────────────┴─┐             ┌─────────┐
-     *       ▲           │ Outside Paragraph ├────────────►│ Accept  │
-     *       │           └───────────────────┘    EOF      └─────────┘
-     */
-    if (received.length == 0) {
-      return {
-        pass: false,
-        message: () => 'every document needs to have at least one item',
-      };
-    }
-    if (received[0].type != 'paragraph_start') {
-      return { pass: false, message: () => 'every document needs to start with a paragraph_start' };
-    }
-    if (received[received.length - 1].type != 'paragraph_break') {
-      return { pass: false, message: () => 'every document needs to end with a paragraph_break' };
-    }
-    let inPara = false;
-    for (const item of received) {
-      if (isParagraphItem(item) && !inPara) {
-        return { pass: false, message: () => 'paragraph item encountered outside of paragraph' };
-      }
-      if (item.type == 'paragraph_start') {
-        if (inPara) {
-          return { pass: false, message: () => 'paragraph_start item encountered in paragraph' };
-        } else {
-          inPara = true;
-        }
-      }
-      if (item.type == 'paragraph_break') {
-        if (!inPara) {
-          return {
-            pass: false,
-            message: () => 'paragraph_break item encountered outside of paragraph',
-          };
-        } else {
-          inPara = false;
-        }
-      }
-    }
-    return { pass: true, message: () => ':)' };
+    return lintDocumentContent(received);
   },
 });

@@ -52,7 +52,6 @@ export function Document(): JSX.Element {
     state.editor.present ? memoizedTimedDocumentItems(state.editor.present.document.content) : []
   );
   const contentMacros = memoizedMacroItems(content);
-  console.log('contentMacros', contentMacros, content);
   const displaySpeakerNames =
     useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
@@ -128,7 +127,6 @@ export function Document(): JSX.Element {
   function getSpeakerColor(speaker: string) {
     if (speakerColorIndices[speaker] === undefined) return theme.colors.muted;
     const color_idx = speakerColorIndices[speaker] % Object.keys(theme.colors.speakers).length;
-    console.log(speaker, color_idx, theme.colors.speakers);
     return theme.colors.speakers[color_idx];
   }
 
@@ -254,7 +252,6 @@ const itemFromNode = (content: V3TimedDocumentItem[], node: Node, n = 0) => {
     else itemElement = itemElement?.parentElement;
   }
   const item = getItem(content, itemElement);
-  console.log('element', itemElement, item);
   return item;
 };
 function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
@@ -284,13 +281,6 @@ function SelectionApply({ documentRef }: { documentRef: RefObject<HTMLDivElement
           window.getSelection()?.setBaseAndExtent(end, 0, start, 0);
         }
       } else {
-        console.log(
-          'end',
-          end,
-          selection.startIndex + selection.length,
-          indexUuidMap[selection.startIndex + selection.length],
-          indexUuidMap
-        );
         window.getSelection()?.removeAllRanges();
       }
     } else {

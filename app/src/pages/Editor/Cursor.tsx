@@ -113,7 +113,7 @@ function useComputeCursorPosition(parentElement: HTMLElement | null | undefined)
 
   // TODO: Caching?
   if (itemIdx == null) return null;
-  const itemElement = document.getElementById(`item-${itemIdx}`);
+  const itemElement = document.getElementById(`item-${item?.uuid}`);
   if (!itemElement) return null;
 
   if (item && item.absoluteStart <= showTime && 'length' in item) {

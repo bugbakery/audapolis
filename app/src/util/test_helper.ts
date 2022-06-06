@@ -1,11 +1,6 @@
 import { V3DocumentItem, V3TimedDocumentItem, Document } from '../core/document';
 import { isParagraphItem } from '../state/editor/selectors';
-import { AsyncThunkAction } from '@reduxjs/toolkit/dist/createAsyncThunk';
-import { EditorState } from '../state/editor/types';
-import { AnyAction } from '@reduxjs/toolkit';
-import { reducers } from '../state/editor';
-import _ from 'lodash';
-// import expect from 'expect';
+
 type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 export type V3DocumentItemWithoutUuid = DistributiveOmit<V3DocumentItem, 'uuid'>;
 export type V3TimedDocumentItemWithoutUuid = DistributiveOmit<V3TimedDocumentItem, 'uuid'>;

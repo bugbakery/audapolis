@@ -18,8 +18,8 @@ export const setUserIndex = createActionWithReducer<EditorState, number>(
     if (newIndex < 0) {
       newIndex = 0;
     }
-    if (newIndex > state.document.content.length) {
-      newIndex = state.document.content.length;
+    if (newIndex > state.document.content.length - 1) {
+      newIndex = state.document.content.length - 1;
     }
     state.cursor.userIndex = newIndex;
   }

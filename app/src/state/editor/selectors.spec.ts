@@ -201,6 +201,7 @@ test('selected items', () => {
       absoluteStart: 1,
       absoluteIndex: 2,
     },
+    { type: 'paragraph_break', absoluteStart: 1, absoluteIndex: 3 },
   ]);
 });
 
@@ -240,6 +241,7 @@ test('selected items: doesnt add para start if already selected', () => {
       absoluteStart: 1,
       absoluteIndex: 2,
     },
+    { type: 'paragraph_break', absoluteStart: 1, absoluteIndex: 3 },
   ]);
 });
 
@@ -293,6 +295,7 @@ test('selected render items', () => {
       absoluteStart: 2,
       absoluteIndex: 3,
     },
+    { type: 'paragraph_break', absoluteStart: 2, absoluteIndex: 4 },
   ]);
   expect(renderItems(selItems)).toStrictEqual([
     {
@@ -581,7 +584,9 @@ test('paragraphs', () => {
       speaker: 'Speaker One',
       absoluteStart: 0,
       absoluteIndex: 0,
-      endAbsoluteIndex: 5,
+      breakAbsoluteIndex: 5,
+      breakUuid: '5',
+      uuid: '0',
       content: [
         {
           type: 'text',
@@ -630,15 +635,19 @@ test('paragraphs', () => {
       speaker: 'Speaker Empty',
       absoluteStart: 4,
       absoluteIndex: 6,
-      endAbsoluteIndex: 7,
+      breakAbsoluteIndex: 7,
+      breakUuid: '7',
       content: [],
+      uuid: '6',
     },
     {
       type: 'paragraph',
       speaker: 'Speaker Two',
       absoluteStart: 4,
       absoluteIndex: 8,
-      endAbsoluteIndex: 14,
+      breakAbsoluteIndex: 14,
+      breakUuid: '14',
+      uuid: '8',
       content: [
         {
           type: 'text',

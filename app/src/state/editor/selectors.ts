@@ -8,7 +8,6 @@ import {
   V3TimedMacroItem,
   V3TimedParagraphItem,
   V3ParagraphItem,
-  V3Paragraph,
   V3TextItem,
   UuidExtension,
   V3UntimedMacroItem,
@@ -163,6 +162,15 @@ const memoizedSelectedItems = memoize(
           absoluteIndex: selectedItems[0].absoluteIndex - 1,
           absoluteStart: selectedItems[0].absoluteStart,
           uuid: uuidv4(),
+        });
+      }
+      const lastItem = selectedItems[selectedItems.length - 1];
+      if (lastItem && lastItem.type !== 'paragraph_break') {
+        selectedItems.push({
+          type: 'paragraph_break',
+          uuid: uuidv4(),
+          absoluteIndex: lastItem.absoluteIndex + 1,
+          absoluteStart: lastItem.absoluteStart,
         });
       }
       return selectedItems;
@@ -334,7 +342,8 @@ export const memoizedMacroItems = memoize((content: V3DocumentItem[]): V3TimedMa
       if (cur_macro == null) {
         throw new Error('paragraph break without a paragraph found. This should not be possible');
       }
-      cur_macro.endAbsoluteIndex = item.absoluteIndex;
+      cur_macro.breakAbsoluteIndex = item.absoluteIndex;
+      cur_macro.breakUuid = item.uuid;
       macros.push(cur_macro);
       cur_macro = null;
     } else if (item.type == 'paragraph_start') {
@@ -345,7 +354,9 @@ export const memoizedMacroItems = memoize((content: V3DocumentItem[]): V3TimedMa
         language: item.language,
         absoluteIndex: item.absoluteIndex,
         absoluteStart: item.absoluteStart,
-        endAbsoluteIndex: 0,
+        breakAbsoluteIndex: 0,
+        breakUuid: '',
+        uuid: item.uuid,
       };
     } else if (isParagraphItem(item)) {
       if (cur_macro == null) {
@@ -445,3 +456,23 @@ export function macroItemsToText(
     .filter((x) => x !== '')
     .join('\n\n');
 }
+
+export const memoizedUuidToIndexMap = memoize(
+  (content: V3TimedDocumentItem[]): Record<string, number> => {
+    const map: Record<string, number> = {};
+    for (const item of content) {
+      map[item.uuid] = item.absoluteIndex;
+    }
+    return map;
+  }
+);
+
+export const memoizedIndexToUuidMap = memoize(
+  (content: V3TimedDocumentItem[]): Record<number, string> => {
+    const map: Record<number, string> = {};
+    for (const item of content) {
+      map[item.absoluteIndex] = item.uuid;
+    }
+    return map;
+  }
+);

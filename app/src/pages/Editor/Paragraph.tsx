@@ -5,6 +5,7 @@ import {
   V3Paragraph as ParagraphType,
   TimedItemExtension,
   V3TimedParagraphItem,
+  V3TimedParagraph,
 } from '../../core/document';
 import {
   Button,
@@ -32,12 +33,14 @@ export function Paragraph({
   color,
   displaySpeakerNames,
   paraBreakIdx,
+  paraBreakUuid,
   editingRange,
 }: {
-  data: ParagraphType & TimedItemExtension;
+  data: V3TimedParagraph;
   color: string;
   displaySpeakerNames: boolean;
   paraBreakIdx: number;
+  paraBreakUuid: string;
   editingRange: Selection | null;
 }): JSX.Element {
   const theme = useTheme();
@@ -57,12 +60,12 @@ export function Paragraph({
         flexShrink={0}
         marginRight={majorScale(1)}
       />
-      {data.absoluteIndex == 0 ? <span key={data.content.length} id={`item-0`} /> : <></>}
+      <span key={data.uuid} id={`item-${data.uuid}`} />
       <Pane color={displaySpeakerNames ? color : theme.colors.default} transition={'color 0.5s'}>
         {data.content.map((item, i) => {
           const commonProps = {
-            key: i,
-            id: `item-${item.absoluteIndex}`,
+            key: item.uuid,
+            id: `item-${item.uuid}`,
           };
           if (editingRange && editingRange.startIndex == item.absoluteIndex) {
             return <TranscriptCorrectionEntry {...commonProps} />;
@@ -79,7 +82,7 @@ export function Paragraph({
         })}
         <ParagraphSign
           key={data.content.length}
-          id={`item-${paraBreakIdx}`}
+          id={`item-${paraBreakUuid}`}
           data={data}
           paraBreakIdx={paraBreakIdx}
         />

@@ -25,15 +25,12 @@ export interface V1Paragraph<I = V1ParagraphItem> {
   speaker: string;
   content: I[];
 }
-export type TimedV1ParagraphItem = V1ParagraphItem & { absoluteStart: number };
 
 // V2
 interface V2DocumentJson {
   version: 2;
   content: V2DocumentItem[];
 }
-
-export type V2TimedDocumentItem = V2DocumentItem & TimedItemExtension;
 
 export interface V1V2Word {
   type: 'word';
@@ -58,9 +55,6 @@ export interface V1V2ArtificialSilence {
   length: number;
 }
 
-type V2MacroItem = V2Paragraph;
-export type V2UntimedMacroItem = V2Paragraph<V2DocumentItem>;
-export type V2TimedMacroItem = V2MacroItem & TimedItemExtension;
 export type V2TimedParagraphItem = V2ParagraphItem & TimedItemExtension;
 export interface V2Paragraph<I = V2TimedParagraphItem> {
   type: 'paragraph';
@@ -80,6 +74,7 @@ export type V2DocumentItem = V2ParagraphItem | V2ParagraphBreakItem;
 
 export type TimedItemExtension = { absoluteStart: number; absoluteIndex: number };
 export type UuidExtension = { uuid: string };
+export type IdentifiableExtension = TimedItemExtension & UuidExtension;
 interface V3DocumentJson {
   version: 3;
   metadata: V3DocumentMetadata;
@@ -99,7 +94,7 @@ type V3DocumentItemWithoutUuid =
   | V3ArtificialSilence;
 
 export type V3DocumentItem = V3DocumentItemWithoutUuid & UuidExtension;
-export type V3TimedDocumentItem = V3DocumentItem & TimedItemExtension;
+export type V3TimedDocumentItem = V3DocumentItem & IdentifiableExtension;
 
 export interface V3ParagraphBreakItem {
   type: 'paragraph_break';
@@ -148,7 +143,10 @@ export interface V3Paragraph<I = V3TimedParagraphItem> {
 
 export type V3MacroItem = V3Paragraph;
 export type V3UntimedMacroItem = V3Paragraph<V3ParagraphItem>;
-export type V3TimedMacroItem = V3MacroItem & TimedItemExtension & { endAbsoluteIndex: number };
+export type V3TimedParagraph = V3Paragraph &
+  IdentifiableExtension & { breakAbsoluteIndex: number; breakUuid: string };
+export type V3TimedMacroItem = V3MacroItem &
+  IdentifiableExtension & { breakAbsoluteIndex: number; breakUuid: string };
 
 //     what is a document?
 export interface Source {
@@ -197,7 +195,7 @@ export async function deserializeDocumentFromFile(
  * set the sources when they are fully loaded.
  *
  * @param zipBinary the zip that is the audapolis file
- * @param onSourcesLoad the callback that receives the sources oncy they are loaded. Optional: if not given the future this function returns will take longer to be resolved.
+ * @param onSourcesLoad the callback that receives the sources once they are loaded. Optional: if not given the future this function returns will take longer to be resolved.
  */
 export async function deserializeDocument(
   zipBinary: Buffer,

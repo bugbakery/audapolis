@@ -82,7 +82,7 @@ test('goRight trivial', () => {
   testRightPlayer(1.0, 3);
   testRightPlayer(1.5, 3);
   testRightPlayer(3.0, 7);
-  testRightPlayer(6.0, 10);
+  testRightPlayer(6.0, 9);
 });
 
 test('goRight end of paragraph', () => {
@@ -91,6 +91,6 @@ test('goRight end of paragraph', () => {
 });
 
 test('goRight end of document', () => {
-  testRightPlayer(6.0, 10);
+  testRightPlayer(6.0, 9);
   testRightUser(8, 9);
 });

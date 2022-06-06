@@ -394,8 +394,6 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
     const state = getState().editor.present;
     assertSome(state);
 
-    console.log('copySelectionText', state.selection);
-
     if (!state.selection) {
       return;
     }
@@ -405,9 +403,7 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
       memoizedMacroItems(timedDocumentSlice),
       state.displaySpeakerNames
     );
-    console.log('selectedText', selectedText);
-    console.log('mem', memoizedMacroItems(timedDocumentSlice));
-    console.log('sli', timedDocumentSlice);
+
     clipboard.writeText(selectedText);
   }
 );

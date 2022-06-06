@@ -401,7 +401,7 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
     const timedDocumentSlice: V3TimedDocumentItem[] = selectedItems(state);
     const selectedText = macroItemsToText(
       memoizedMacroItems(timedDocumentSlice),
-      state.displaySpeakerNames
+      state.document.metadata.display_speaker_names
     );
 
     clipboard.writeText(selectedText);

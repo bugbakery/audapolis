@@ -31,7 +31,9 @@ export function Text({
   };
 
   const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+    useSelector(
+      (state: RootState) => state.editor.present?.document.metadata.display_speaker_names
+    ) || false;
   const [includeSpeakerNames, setIncludeSpeakerNames] = useState(displaySpeakerNames);
 
   return (

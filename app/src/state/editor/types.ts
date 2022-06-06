@@ -42,8 +42,6 @@ export interface EditorState {
 
   playing: boolean;
 
-  displaySpeakerNames: boolean;
-  displayVideo: boolean;
   displayConfidence: boolean;
 
   exportState: ExportState;
@@ -76,8 +74,6 @@ export const defaultEditorState: EditorState = {
 
   playing: false,
 
-  displaySpeakerNames: false,
-  displayVideo: false,
   displayConfidence: false,
 
   exportPopup: 'hidden',

@@ -4,21 +4,21 @@ import { EditorState, ExportPopupState } from './types';
 export const toggleDisplaySpeakerNames = createActionWithReducer<EditorState>(
   'editor/toggleDisplaySpeakerNames',
   (state) => {
-    state.displaySpeakerNames = !state.displaySpeakerNames;
+    state.document.metadata.display_speaker_names = !state.document.metadata.display_speaker_names;
   }
 );
 
 export const setDisplaySpeakerNames = createActionWithReducer<EditorState, boolean>(
   'editor/setDisplaySpeakerNames',
   (state, payload) => {
-    state.displaySpeakerNames = payload;
+    state.document.metadata.display_speaker_names = payload;
   }
 );
 
 export const toggleDisplayVideo = createActionWithReducer<EditorState>(
   'editor/toggleDisplayVideo',
   (state) => {
-    state.displayVideo = !state.displayVideo;
+    state.document.metadata.display_video = !state.document.metadata.display_video;
   }
 );
 

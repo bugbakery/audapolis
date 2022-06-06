@@ -83,7 +83,7 @@ function useComputeCursorPosition(parentElement: HTMLElement | null | undefined)
   );
   const useRoundedTime = useSelector((state: RootState) => state.editor.present?.playing);
   const stateDisplaySpeakerNames = useSelector(
-    (state: RootState) => state.editor.present?.displaySpeakerNames
+    (state: RootState) => state.editor.present?.document.metadata.display_speaker_names
   );
   const [_speakerNamesDisplayed, setSpeakerNamesDisplayed] = useState(stateDisplaySpeakerNames);
   useEffect(() => {

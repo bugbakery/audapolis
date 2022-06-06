@@ -22,10 +22,10 @@ import {
 export function EditorMenuBar(): JSX.Element {
   const dispatch = useDispatch();
   const displaySpeakerNames = useSelector(
-    (state: RootState) => state.editor.present?.displaySpeakerNames || false
+    (state: RootState) => state.editor.present?.document.metadata.display_speaker_names || false
   );
   const displayVideo = useSelector(
-    (state: RootState) => state.editor.present?.displayVideo || false
+    (state: RootState) => state.editor.present?.document.metadata.display_video || false
   );
   const displayConfidence = useSelector(
     (state: RootState) => state.editor.present?.displayConfidence || false

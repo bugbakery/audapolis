@@ -42,7 +42,9 @@ export function Subtitles({
   };
 
   const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+    useSelector(
+      (state: RootState) => state.editor.present?.document.metadata.display_speaker_names
+    ) || false;
   const [includeSpeakerNames, setIncludeSpeakerNames] = useState(displaySpeakerNames);
   const [wordTimings, setWordTimings] = useState(true);
   const [limitLineLength, setLimitLineLength] = useState(false);

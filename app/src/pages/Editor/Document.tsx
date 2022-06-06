@@ -53,7 +53,9 @@ export function Document(): JSX.Element {
   );
   const contentMacros = memoizedMacroItems(content);
   const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+    useSelector(
+      (state: RootState) => state.editor.present?.document.metadata.display_speaker_names
+    ) || false;
   const fileName = useSelector((state: RootState) => state.editor.present?.path) || '';
 
   const editingRange = useSelector((state: RootState) => {

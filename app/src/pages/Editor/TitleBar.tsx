@@ -62,9 +62,12 @@ function ProgressButton({
 export function EditorTitleBar(): JSX.Element {
   const dispatch = useDispatch();
   const displaySpeakerNames =
-    useSelector((state: RootState) => state.editor.present?.displaySpeakerNames) || false;
+    useSelector(
+      (state: RootState) => state.editor.present?.document.metadata.display_speaker_names
+    ) || false;
   const displayVideo =
-    useSelector((state: RootState) => state.editor.present?.displayVideo) || false;
+    useSelector((state: RootState) => state.editor.present?.document.metadata.display_video) ||
+    false;
   const canUndo = useSelector((state: RootState) => state.editor.past.length > 0);
   const canRedo = useSelector((state: RootState) => state.editor.future.length > 0);
   const canSave = useSelector(

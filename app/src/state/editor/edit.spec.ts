@@ -1212,7 +1212,7 @@ test('copySelectionText', async () => {
     startIndex: 1,
     length: 17,
   };
-  state.displaySpeakerNames = true;
+  state.document.metadata.display_speaker_names = true;
 
   await runAsyncThunkSync(copySelectionText(), state);
 

@@ -47,7 +47,8 @@ export function Player(): JSX.Element {
     return cItem && 'source' in cItem ? cItem.source : null;
   });
   const displayVideo =
-    useSelector((state: RootState) => state.editor.present?.displayVideo) || false;
+    useSelector((state: RootState) => state.editor.present?.document.metadata.display_video) ||
+    false;
 
   return (
     <PlayerContainer visible={displayVideo}>

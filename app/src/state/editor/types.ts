@@ -1,4 +1,4 @@
-import { Document, emptyDocument } from '../../core/document';
+import { Document, getEmptyDocument } from '../../core/document';
 
 export interface ExportState {
   running: boolean;
@@ -63,7 +63,7 @@ export class NoFileSelectedError extends Error {
 
 export const defaultEditorState: EditorState = {
   path: null,
-  document: emptyDocument,
+  document: getEmptyDocument(),
   lastSavedDocument: null,
   exportState: { running: false, progress: 0 },
 

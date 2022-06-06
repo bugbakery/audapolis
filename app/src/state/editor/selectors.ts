@@ -12,6 +12,7 @@ import {
   V3TextItem,
   UuidExtension,
   V3UntimedMacroItem,
+  V3ParagraphStartItem,
 } from '../../core/document';
 import _ from 'lodash';
 import { assertSome, assertUnreachable, roughEq } from '../../util';
@@ -131,11 +132,11 @@ export const currentCursorTime = (state: EditorState): number => {
   }
 };
 
-function isSpeakerChangeAtStart(content: V3DocumentItem[]): boolean {
+function hasParagraphStart(content: V3DocumentItem[]): boolean {
   if (content.length == 0) {
     return true;
   } else {
-    return content[0].type == 'speaker_change';
+    return content[0].type == 'paragraph_start';
   }
 }
 
@@ -152,10 +153,13 @@ const memoizedSelectedItems = memoize(
         selection.startIndex,
         selection.startIndex + selection.length
       );
-      if (!isSpeakerChangeAtStart(selectedItems)) {
+      if (!hasParagraphStart(selectedItems)) {
+        const speakerData = getParagraphStart(content, selection.startIndex);
+        if (speakerData == null) {
+          throw new Error("that's not possible");
+        }
         selectedItems.splice(0, 0, {
-          type: 'speaker_change',
-          ...getSpeakerDataAtIndex(content, selection.startIndex),
+          ...speakerData,
           absoluteIndex: selectedItems[0].absoluteIndex - 1,
           absoluteStart: selectedItems[0].absoluteStart,
           uuid: uuidv4(),
@@ -170,6 +174,12 @@ export function selectionDocument(state: EditorState): Document {
   const timedDocumentSlice: V3TimedDocumentItem[] = selectedItems(state);
 
   const documentSlice = untimeDocumentItems(timedDocumentSlice);
+  if (
+    documentSlice.length > 0 &&
+    documentSlice[documentSlice.length - 1].type != 'paragraph_break'
+  ) {
+    documentSlice.push({ type: 'paragraph_break', uuid: uuidv4() });
+  }
   const neededSources = new Set(documentSlice.map((x) => 'source' in x && x.source));
   const filteredSources = Object.fromEntries(
     Object.entries(state.document.sources).filter(([k, _]) => neededSources.has(k))
@@ -244,7 +254,7 @@ export function renderItems(timedContent: V3TimedDocumentItem[]): RenderItem[] {
   let current: RenderItem | null = null;
   let current_speaker: string | null = null;
   for (const item of timedContent) {
-    if (item.type == 'speaker_change') {
+    if (item.type == 'paragraph_start') {
       current_speaker = item.speaker;
     } else if (item.type == 'paragraph_break') {
       // we don't core about para break
@@ -309,96 +319,104 @@ const filterTimedParagraphItems = (content: V3TimedDocumentItem[]): V3TimedParag
   content.filter(isTimedParagraphItem);
 
 export const memoizedMacroItems = memoize((content: V3DocumentItem[]): V3TimedMacroItem[] => {
-  const timedContent = memoizedTimedDocumentItems(content);
-  for (const item of timedContent) {
-    if (item.type == 'speaker_change') {
-      break;
-    } else if (isTimedParagraphItem(item)) {
-      throw new Error('ParagraphItem encountered before first speaker change.');
-    }
+  if (content.length == 0) {
+    return [];
   }
+  if (content[0].type != 'paragraph_start') {
+    throw new Error('content needs to start with a paragraph_start');
+  }
+  const timedContent = memoizedTimedDocumentItems(content);
+
   const macros = [];
-  let cur_macro: V3TimedMacroItem = {
-    type: 'paragraph',
-    speaker: '',
-    content: [],
-    language: null,
-    absoluteIndex: 0,
-    absoluteStart: 0,
-  };
+  let cur_macro: V3TimedMacroItem | null = null;
   for (const item of timedContent) {
     if (item.type == 'paragraph_break') {
+      if (cur_macro == null) {
+        throw new Error('paragraph break without a paragraph found. This should not be possible');
+      }
+      cur_macro.endAbsoluteIndex = item.absoluteIndex;
       macros.push(cur_macro);
+      cur_macro = null;
+    } else if (item.type == 'paragraph_start') {
       cur_macro = {
         type: 'paragraph',
-        speaker: cur_macro.speaker,
+        speaker: item.speaker,
         content: [],
-        language: cur_macro.language,
+        language: item.language,
         absoluteIndex: item.absoluteIndex,
         absoluteStart: item.absoluteStart,
+        endAbsoluteIndex: 0,
       };
-    } else if (item.type == 'speaker_change') {
-      cur_macro.speaker = item.speaker;
-      cur_macro.language = item.language;
     } else if (isParagraphItem(item)) {
+      if (cur_macro == null) {
+        throw new Error('paragraph item without a paragraph found. This should not be possible');
+      }
       cur_macro.content.push(item);
     }
   }
   return macros;
-  // return timedContent
-  //   .filter(
-  //     (item): item is V3ParagraphBreakItem & TimedItemExtension => item.type == 'paragraph_break'
-  //   )
-  //   .map((item, idx, arr): V3TimedMacroItem => {
-  //     switch (item.type) {
-  //       case 'paragraph_break': {
-  //         const start = item.absoluteIndex;
-  //         const end = arr[idx + 1]?.absoluteIndex || timedContent.length;
-  //         const { speaker, absoluteStart, absoluteIndex } = item;
-  //         return {
-  //           type: 'paragraph',
-  //           speaker,
-  //           content: filterTimedParagraphItems(timedContent.slice(start, end)),
-  //           absoluteIndex,
-  //           absoluteStart,
-  //         };
-  //       }
-  //     }
-  //   });
 });
 
-export function getSpeakerDataAtIndex(
+export function getNotNullParagraphStart(
   items: V3DocumentItem[],
   index: number
-): { speaker: string; language: string | null } {
+): V3ParagraphStartItem {
+  const item = getParagraphStart(items, index);
+  if (item == null) {
+    throw new Error(`no paragraph start found for index ${index}`);
+  }
+  return item;
+}
+export function getParagraphStart(
+  items: V3DocumentItem[],
+  index: number
+): V3ParagraphStartItem | null {
   for (let idx = Math.min(index, items.length) - 1; idx >= 0; idx--) {
     const idxItem = items[idx];
-    if (idxItem.type == 'speaker_change') {
-      return { speaker: idxItem.speaker, language: idxItem.language };
+    if (idxItem.type == 'paragraph_start') {
+      return idxItem;
     }
   }
-  return { speaker: '', language: null };
+  return null;
 }
 
-export const currentSpeaker = (state: EditorState): string => {
+export function getNotNullSpeakerNameAtIndex(items: V3DocumentItem[], index: number): string {
+  const para_start = getParagraphStart(items, index);
+  if (para_start == null) {
+    throw new Error(`no para_start found for index ${index}`);
+  }
+  return para_start.speaker;
+}
+
+export function getSpeakerNameAtIndex(items: V3DocumentItem[], index: number): string | null {
+  const para_start = getParagraphStart(items, index);
+  if (para_start == null) {
+    return null;
+  }
+  return para_start.speaker;
+}
+
+export const currentSpeaker = (state: EditorState): string | null => {
   const curItem = currentItem(state);
-  const timedItems = memoizedTimedDocumentItems(state.document.content);
-  return getSpeakerDataAtIndex(timedItems, curItem?.absoluteIndex || 0).speaker;
+  return getParagraphStart(state.document.content, curItem?.absoluteIndex || 0)?.speaker || null;
+};
+
+export const currentNotNullParagraphStart = (state: EditorState): V3ParagraphStartItem => {
+  const curItem = currentItem(state);
+  return getNotNullParagraphStart(state.document.content, curItem?.absoluteIndex || 0);
 };
 
 export const memoizedSpeakerIndices = memoize((contentMacros: V3TimedMacroItem[]) => {
   const uniqueSpeakerNames = new Set(
     contentMacros
-      .filter(
-        (x): x is V3Paragraph & TimedItemExtension => x.type == 'paragraph' && x.speaker != ''
-      )
+      .filter((x): x is V3TimedMacroItem => x.type == 'paragraph' && x.speaker != '')
       .map((p) => p.speaker)
   );
   return Object.fromEntries(Array.from(uniqueSpeakerNames).map((name, i) => [name, i]));
 });
 
 export const firstPossibleCursorPosition = (content: V3DocumentItem[]): number => {
-  if (content.length >= 1 && content[0].type == 'speaker_change') {
+  if (content.length >= 1 && content[0].type == 'paragraph_start') {
     return 1;
   }
   return 0;

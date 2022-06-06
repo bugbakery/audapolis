@@ -14,9 +14,12 @@ export function assertSome<T>(x: T | null | undefined | void): asserts x is T {
 export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }
-
 // *** END: Things to please the almighty typescript gods
 
+/**
+ * One of the worse hack in audapolis: If the difference between two numbers is less than EPSILON,
+ * we consider them to be the same.
+ */
 export const EPSILON = 0.00001;
 
 export function roughEq(a?: number, b?: number): boolean {

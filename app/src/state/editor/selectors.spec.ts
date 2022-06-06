@@ -23,7 +23,7 @@ import { produce } from 'immer';
 import { addUuids, V3DocumentItemWithoutUuid } from '../../util/test_helper';
 
 const testParagraphSpeaker1: V3DocumentItemWithoutUuid[] = [
-  { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+  { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
   { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
   { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
   { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
@@ -32,12 +32,12 @@ const testParagraphSpeaker1: V3DocumentItemWithoutUuid[] = [
 ];
 
 const testParagraphEmpty: V3DocumentItemWithoutUuid[] = [
-  { type: 'speaker_change', speaker: 'Speaker Empty', language: 'test' },
+  { type: 'paragraph_start', speaker: 'Speaker Empty', language: 'test' },
   { type: 'paragraph_break' },
 ];
 
 const testParagraphSpeaker2: V3DocumentItemWithoutUuid[] = [
-  { type: 'speaker_change', speaker: 'Speaker Two', language: 'test2' },
+  { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test2' },
   { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
   { type: 'text', source: 'source-2', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
   { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
@@ -66,8 +66,14 @@ const testSources: Record<string, Source> = {
 };
 
 test('convert document to timed items', () => {
-  expect(memoizedTimedDocumentItems(testContentShort)).toMatchObject([
-    { type: 'speaker_change', speaker: 'Speaker Two', absoluteStart: 0, absoluteIndex: 0 },
+  expect(memoizedTimedDocumentItems(testContentShort)).toStrictEqualExceptUuids([
+    {
+      type: 'paragraph_start',
+      speaker: 'Speaker Two',
+      language: 'test2',
+      absoluteStart: 0,
+      absoluteIndex: 0,
+    },
     {
       type: 'text',
       source: 'source-2',
@@ -114,7 +120,7 @@ test('convert document to timed items', () => {
 });
 
 test('convert document to paragraph items', () => {
-  expect(memoizedParagraphItems(testContentShort)).toMatchObject([
+  expect(memoizedParagraphItems(testContentShort)).toStrictEqualExceptUuids([
     {
       type: 'text',
       source: 'source-2',
@@ -167,8 +173,14 @@ test('selected items', () => {
     length: 2,
     headPosition: 'right',
   };
-  expect(selectedItems(state)).toMatchObject([
-    { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+  expect(selectedItems(state)).toStrictEqualExceptUuids([
+    {
+      type: 'paragraph_start',
+      speaker: 'Speaker One',
+      language: 'test',
+      absoluteStart: 0,
+      absoluteIndex: 0,
+    },
     {
       type: 'text',
       source: 'source-1',
@@ -192,7 +204,7 @@ test('selected items', () => {
   ]);
 });
 
-test('selected items: doesnt add para break if already selected', () => {
+test('selected items: doesnt add para start if already selected', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(testContentLong);
   state.selection = {
@@ -200,9 +212,9 @@ test('selected items: doesnt add para break if already selected', () => {
     length: 3,
     headPosition: 'right',
   };
-  expect(selectedItems(state)).toMatchObject([
+  expect(selectedItems(state)).toStrictEqualExceptUuids([
     {
-      type: 'speaker_change',
+      type: 'paragraph_start',
       speaker: 'Speaker One',
       language: 'test',
       absoluteStart: 0,
@@ -253,13 +265,13 @@ test('selected render items', () => {
     headPosition: 'right',
   };
   const selItems = selectedItems(state);
-  expect(selItems).toMatchObject([
+  expect(selItems).toStrictEqualExceptUuids([
     {
       absoluteIndex: 1,
       absoluteStart: 1,
       language: 'test',
       speaker: 'Speaker One',
-      type: 'speaker_change',
+      type: 'paragraph_start',
     },
     {
       type: 'text',
@@ -334,21 +346,22 @@ test('selectionDocument: packs all used sources', () => {
   });
 });
 
-test('selectionDocument adds speaker change before first word', async () => {
+test('selectionDocument adds paragraph start before first word; paragraph break at end', async () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = addUuids([
-    { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+    { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
     { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'paragraph_break' },
-    { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
     { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
     { type: 'paragraph_break' },
   ]);
   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
 
-  expect(selectionDocument(state).content).toMatchObject([
-    { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+  const selDocument = selectionDocument(state);
+  expect(selDocument.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
     {
       type: 'text',
       text: 'Two',
@@ -356,9 +369,10 @@ test('selectionDocument adds speaker change before first word', async () => {
       source: 'source-1',
       sourceStart: 1,
       conf: 1,
-      uuid: '2',
     },
+    { type: 'paragraph_break' },
   ]);
+  expect(selDocument.content).toBeValidDocumentContent();
 });
 
 test('selection spans multiple paragraphs: true', () => {
@@ -540,7 +554,7 @@ test('current item skips through zero-length items', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
     addUuids([
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'paragraph_break' },
     ])
   );
@@ -554,30 +568,9 @@ test('current item skips through zero-length items', () => {
 test('current item for empty document', () => {
   const state = _.cloneDeep(defaultEditorState);
   expect(currentItem(state)).toMatchObject({
-    type: 'speaker_change',
+    type: 'paragraph_start',
     absoluteStart: 0,
     absoluteIndex: 0,
-  });
-});
-
-test('current item at t = 0', () => {
-  const state = _.cloneDeep(defaultEditorState);
-  state.document.content = _.cloneDeep(
-    addUuids([
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
-      { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
-      { type: 'paragraph_break' },
-    ])
-  );
-  state.cursor.current = 'player';
-  state.cursor.playerTime = 0;
-  expect(currentItem(state)).toStrictEqual({
-    type: 'speaker_change',
-    speaker: 'Speaker One',
-    absoluteStart: 1,
-    absoluteIndex: 2,
   });
 });
 
@@ -588,6 +581,7 @@ test('paragraphs', () => {
       speaker: 'Speaker One',
       absoluteStart: 0,
       absoluteIndex: 0,
+      endAbsoluteIndex: 5,
       content: [
         {
           type: 'text',
@@ -635,14 +629,16 @@ test('paragraphs', () => {
       type: 'paragraph',
       speaker: 'Speaker Empty',
       absoluteStart: 4,
-      absoluteIndex: 5,
+      absoluteIndex: 6,
+      endAbsoluteIndex: 7,
       content: [],
     },
     {
       type: 'paragraph',
       speaker: 'Speaker Two',
       absoluteStart: 4,
-      absoluteIndex: 7,
+      absoluteIndex: 8,
+      endAbsoluteIndex: 14,
       content: [
         {
           type: 'text',
@@ -690,14 +686,14 @@ test('paragraphs', () => {
   ]);
 });
 
-test('paragraphs fails if no speaker change before first word', () => {
+test('paragraphs fails if no paragraph start before first word', () => {
   expect(() =>
     memoizedMacroItems(
       addUuids([
         { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
       ])
     )
-  ).toThrowError('speaker');
+  ).toThrowError('paragraph_start');
 });
 
 test('renderItems', () => {
@@ -726,7 +722,7 @@ test('render items: source silence', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: null },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: null },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'non_text', source: 'source-1', sourceStart: 3, length: 1 },
         { type: 'paragraph_break' },
@@ -748,7 +744,7 @@ test('render items: same source, not-matching time', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: null },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: null },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3.1, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_break' },
@@ -778,7 +774,7 @@ test('render items: same source, not-matching time', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 2.9, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_break' },
@@ -808,7 +804,7 @@ test('render items: same source, matching time', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_break' },
@@ -841,10 +837,10 @@ test('render items: same source, matching time, matching speaker-name', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'paragraph_break' },
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_break' },
       ])
@@ -865,10 +861,10 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'paragraph_break' },
-        { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_break' },
       ])
@@ -897,7 +893,7 @@ test('render items: two silences', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'artificial_silence', length: 1 },
         { type: 'artificial_silence', length: 1 },
         { type: 'paragraph_break' },
@@ -916,7 +912,7 @@ test('render items: word after silence', () => {
   expect(
     memoizedDocumentRenderItems(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'artificial_silence', length: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_break' },
@@ -958,7 +954,7 @@ test('currentSpeaker: user cursor', () => {
   state.document.content = _.cloneDeep(testContentLong);
   state.cursor.current = 'user';
   state.cursor.userIndex = 0;
-  expect(currentSpeaker(state)).toBe('');
+  expect(currentSpeaker(state)).toBe(null);
   state = produce(state, (state) => {
     state.cursor.userIndex = 1;
   });
@@ -977,12 +973,12 @@ test('currentSpeaker with 0-len para: player cursor', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
     addUuids([
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Three', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Three', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
     ])
@@ -996,12 +992,12 @@ test('currentSpeaker with 0-len para: user cursor', () => {
   let state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
     addUuids([
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Three', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Three', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
     ])
@@ -1023,19 +1019,19 @@ test('currentSpeaker before first para break', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
     addUuids([
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Three', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Three', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
       { type: 'paragraph_break' },
     ])
   );
   state.cursor.current = 'user';
-  state.cursor.userIndex = 0;
-  expect(currentSpeaker(state)).toBe('');
+  state.cursor.userIndex = 3;
+  expect(currentSpeaker(state)).toBe('Speaker One');
 });
 
 test('current item at t=4', () => {
@@ -1071,19 +1067,19 @@ test('speakerIndices: empty doc', () => {
 test('speakerIndices: doc with only speaker changes and para breaks', () => {
   const contentMacros = memoizedMacroItems(
     addUuids([
-      { type: 'speaker_change', speaker: '', language: 'test' },
+      { type: 'paragraph_start', speaker: '', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: '', language: 'test' },
+      { type: 'paragraph_start', speaker: '', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+      { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'paragraph_break' },
-      { type: 'speaker_change', speaker: '', language: 'test' },
+      { type: 'paragraph_start', speaker: '', language: 'test' },
       { type: 'paragraph_break' },
     ])
   );
@@ -1097,7 +1093,7 @@ test('firstPossibleCursorPosition', () => {
   expect(
     firstPossibleCursorPosition(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
         { type: 'paragraph_break' },
       ])
@@ -1107,9 +1103,9 @@ test('firstPossibleCursorPosition', () => {
   expect(
     firstPossibleCursorPosition(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker One', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'paragraph_break' },
-        { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
         { type: 'paragraph_break' },
       ])
@@ -1119,7 +1115,7 @@ test('firstPossibleCursorPosition', () => {
   expect(
     firstPossibleCursorPosition(
       addUuids([
-        { type: 'speaker_change', speaker: 'Speaker Two', language: 'test' },
+        { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
         { type: 'paragraph_break' },
       ])

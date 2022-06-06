@@ -2,9 +2,9 @@ import * as React from 'react';
 import { HTMLAttributes, HTMLProps, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  Paragraph as ParagraphType,
+  V3Paragraph as ParagraphType,
   TimedItemExtension,
-  TimedParagraphItem,
+  V3TimedParagraphItem,
 } from '../../core/document';
 import {
   Button,
@@ -89,12 +89,12 @@ export function Paragraph({
 }
 
 function renderParagraphItem(
-  item: TimedParagraphItem,
+  item: V3TimedParagraphItem,
   displayConfidence: boolean,
   commonProps: HTMLProps<HTMLSpanElement>,
   preserve: boolean
 ): JSX.Element {
-  if (item.type == 'word') {
+  if (item.type == 'text') {
     if (displayConfidence) {
       return (
         <span {...commonProps}>
@@ -104,14 +104,14 @@ function renderParagraphItem(
               backgroundColor: `rgba(255, 0, 0, ${1 - item.conf})`,
             }}
           >
-            {item.word}
+            {item.text}
           </span>
         </span>
       );
     } else {
-      return <span {...commonProps}>{' ' + item.word}</span>;
+      return <span {...commonProps}>{' ' + item.text}</span>;
     }
-  } else if (item.type == 'silence' || item.type == 'artificial_silence') {
+  } else if (item.type == 'non_text' || item.type == 'artificial_silence') {
     if (item.length > 0.4) {
       return (
         <span style={{ fontFamily: 'quarter_rest' }} {...commonProps}>

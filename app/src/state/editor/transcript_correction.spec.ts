@@ -7,14 +7,14 @@ import { toaster } from 'evergreen-ui';
 import { addUuids } from '../../util/test_helper';
 
 const testContent: V3DocumentItem[] = addUuids([
-  { type: 'speaker_change', speaker: 'Speaker One', language: null },
+  { type: 'paragraph_start', speaker: 'Speaker One', language: null },
   { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
   { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
   { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
   { type: 'non_text', source: 'source-1', sourceStart: 5, length: 1 },
   { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
   { type: 'paragraph_break' },
-  { type: 'speaker_change', speaker: 'Speaker Two', language: null },
+  { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
   { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
   { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
   { type: 'artificial_silence', length: 10 },
@@ -155,13 +155,13 @@ test('finishTranscriptCorrection changes document', () => {
   state.transcriptCorrectionState = 'One Three Two';
   finishTranscriptCorrection.reducer(state);
   expect(state.transcriptCorrectionState).toStrictEqual(null);
-  expect(state.document.content).toMatchObject([
-    { type: 'speaker_change', speaker: 'Speaker One', language: null },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'text', source: 'source-1', sourceStart: 2, length: 3, text: 'One Three Two', conf: 1 },
     { type: 'non_text', source: 'source-1', sourceStart: 5, length: 1 },
     { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
     { type: 'paragraph_break' },
-    { type: 'speaker_change', speaker: 'Speaker Two', language: null },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
@@ -181,16 +181,18 @@ test('finishTranscriptCorrection changes document', () => {
   state.transcriptCorrectionState = 'One Three Two';
   finishTranscriptCorrection.reducer(state);
   expect(state.transcriptCorrectionState).toStrictEqual(null);
-  expect(state.document.content).toStrictEqual([
-    { type: 'paragraph_break', speaker: 'Speaker One' },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'text', source: 'source-1', sourceStart: 2, length: 4, text: 'One Three Two', conf: 1 },
     { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break', speaker: 'Speaker Two' },
+    { type: 'paragraph_break' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
     { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
     { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
+    { type: 'paragraph_break' },
   ]);
 });
 
@@ -204,12 +206,12 @@ test('finishTranscriptCorrection creates silence when correction is empty', () =
   state.transcriptCorrectionState = '';
   finishTranscriptCorrection.reducer(state);
   expect(state.transcriptCorrectionState).toStrictEqual(null);
-  expect(state.document.content).toMatchObject([
-    { type: 'speaker_change', speaker: 'Speaker One', language: null },
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'non_text', source: 'source-1', sourceStart: 2, length: 4 },
     { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
     { type: 'paragraph_break' },
-    { type: 'speaker_change', speaker: 'Speaker Two', language: null },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },

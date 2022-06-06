@@ -1,11 +1,11 @@
-import { assertSome } from '../../util';
+import { assertSome, assertUnreachable } from '../../util';
 import {
   deserializeDocument,
   Document,
-  DocumentItem,
   serializeDocument,
   Source,
-  TimedDocumentItem,
+  V3DocumentItem,
+  V3TimedDocumentItem,
 } from '../../core/document';
 import { clipboard } from 'electron';
 import { createActionWithReducer, createAsyncActionWithReducer } from '../util';
@@ -14,14 +14,17 @@ import {
   currentCursorTime,
   currentIndex,
   currentItem,
-  currentSpeaker,
-  getSpeakerAtIndex,
+  currentNotNullParagraphStart,
+  firstPossibleCursorPosition,
+  getNotNullParagraphStart,
+  getNotNullSpeakerNameAtIndex,
   isParagraphItem,
   macroItemsToText,
   memoizedMacroItems,
   selectedItems,
   selectionDocument,
 } from './selectors';
+import { v4 as uuidv4 } from 'uuid';
 
 function getInsertPos(state: EditorState): number {
   switch (state.cursor.current) {
@@ -39,17 +42,28 @@ function getInsertPos(state: EditorState): number {
     }
   }
 }
+function ensureValidCursorPosition(state: EditorState) {
+  if (state.cursor.current == 'user') {
+    state.cursor.userIndex = Math.max(
+      state.cursor.userIndex,
+      firstPossibleCursorPosition(state.document.content)
+    );
+  }
+}
 export const insertParagraphBreak = createActionWithReducer<EditorState>(
   'editor/insertParagraphBreak',
   (state) => {
+    ensureValidCursorPosition(state);
     const insertPos = getInsertPos(state);
-    const speaker = currentSpeaker(state);
-    state.document.content.splice(insertPos, 0, {
-      type: 'paragraph_break',
-      speaker: speaker,
-    });
+    const paraStart = currentNotNullParagraphStart(state);
+    state.document.content.splice(
+      insertPos,
+      0,
+      { type: 'paragraph_break', uuid: uuidv4() },
+      { ...paraStart, uuid: uuidv4() }
+    );
     state.cursor.current = 'user';
-    state.cursor.userIndex = insertPos + 1;
+    state.cursor.userIndex = insertPos + 2;
   }
 );
 
@@ -57,34 +71,58 @@ export const deleteSelection = createActionWithReducer<EditorState>(
   'editor/deleteSelection',
   (state) => {
     const selection = state.selection;
-    if (selection) {
-      state.document.content.splice(selection.startIndex, selection.length);
-      state.cursor.current = 'user';
-      state.cursor.userIndex = selection.startIndex;
+    if (!selection) {
+      return;
     }
+    const selectionEnd = Math.min(
+      selection.startIndex + selection.length,
+      state.document.content.length
+    );
+
+    const restoreElems: V3DocumentItem[] = [];
+    const prevElem = state.document.content[selection.startIndex - 1];
+    const nextElem = state.document.content[selectionEnd];
+    if (selection.startIndex == 0 && !(nextElem && nextElem.type === 'paragraph_start')) {
+      // We're removing the first paragraph_start and are not starting with a new one, so we need to add a new one instead
+      const missing_paragraph_start = getNotNullParagraphStart(
+        state.document.content,
+        selection.startIndex + selection.length
+      );
+      restoreElems.push({ ...missing_paragraph_start, uuid: uuidv4() });
+    }
+    if (
+      selectionEnd === state.document.content.length &&
+      !(prevElem && prevElem.type === 'paragraph_break')
+    ) {
+      restoreElems.push({ type: 'paragraph_break', uuid: uuidv4() });
+    }
+    state.document.content.splice(selection.startIndex, selection.length, ...restoreElems);
+    state.cursor.current = 'user';
+    state.cursor.userIndex = selection.startIndex;
+
     state.selection = null;
   }
 );
 
-export const setWord = createActionWithReducer<
+export const setText = createActionWithReducer<
   EditorState,
   { absoluteIndex: number; text: string }
 >('editor/setWord', (state, payload) => {
   const item = state.document.content[payload.absoluteIndex];
-  if (item.type !== 'word') {
-    throw new Error('setWord called on item that is not a word');
+  if (item.type !== 'text') {
+    throw new Error('setText called on item that is not a text');
   }
-  item.word = payload.text;
+  item.text = payload.text;
 });
 
 export const reassignParagraph = createActionWithReducer<
   EditorState,
-  { absoluteIndex: number; newSpeaker: string | null }
+  { absoluteIndex: number; newSpeaker: string }
 >('editor/reassignParagraph', (state, payload) => {
   const { absoluteIndex, newSpeaker } = payload;
   const item = state.document.content[absoluteIndex];
-  if (item.type !== 'paragraph_break') {
-    throw new Error('reassignParagraph called on item that is not a paragraph_break');
+  if (item.type !== 'paragraph_start') {
+    throw new Error('reassignParagraph called on item that is not a paragraph_start');
   }
   item.speaker = newSpeaker;
 });
@@ -96,7 +134,7 @@ export const renameSpeaker = createActionWithReducer<
   const { oldName, newName } = payload;
 
   state.document.content = state.document.content.map((item) => {
-    if (item.type == 'paragraph_break' && item.speaker === oldName) {
+    if (item.type == 'paragraph_start' && item.speaker === oldName) {
       return { ...item, speaker: newName };
     } else {
       return item;
@@ -109,13 +147,27 @@ function deleteParagraphBreak(state: EditorState, currentIndex: number) {
   if (item.type !== 'paragraph_break') {
     throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
   }
-  if (currentIndex == firstParagraphBreakIndex(state.document.content)) {
+  if (currentIndex == state.document.content.length - 1) {
     return;
   }
-  state.document.content.splice(currentIndex, 1);
+  state.document.content.splice(currentIndex, 2);
   state.cursor.current = 'user';
   state.cursor.userIndex = currentIndex;
 }
+
+function deleteParagraphStart(state: EditorState, currentIndex: number) {
+  const item = state.document.content[currentIndex];
+  if (item.type !== 'paragraph_start') {
+    throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
+  }
+  if (currentIndex == 0) {
+    return;
+  }
+  state.document.content.splice(currentIndex - 1, 2);
+  state.cursor.current = 'user';
+  state.cursor.userIndex = currentIndex - 1;
+}
+
 function shouldLookLeft(state: EditorState, direction: string): boolean {
   if (direction == 'left' && state.cursor.current == 'user') {
     return true;
@@ -138,11 +190,18 @@ function deleteNonSelection(state: EditorState, direction: 'left' | 'right') {
       deleteParagraphBreak(state, curIdx);
       break;
     }
-    case 'silence':
-    case 'artificial_silence':
-    case 'word': {
-      state.selection = { headPosition: direction, startIndex: curIdx, length: 1 };
+    case 'paragraph_start': {
+      deleteParagraphStart(state, curIdx);
+      break;
     }
+    case 'text':
+    case 'non_text':
+    case 'artificial_silence': {
+      state.selection = { headPosition: direction, startIndex: curIdx, length: 1 };
+      break;
+    }
+    default:
+      assertUnreachable(item);
   }
 }
 export const deleteSomething = createActionWithReducer<EditorState, 'left' | 'right'>(
@@ -183,7 +242,8 @@ export const cut = createAsyncActionWithReducer<EditorState>(
   }
 );
 
-export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
+export type ClipboardDocument = Pick<Document, 'sources' | 'content'>;
+export const paste = createAsyncActionWithReducer<EditorState, void, ClipboardDocument>(
   'editor/paste',
   async (arg, { getState }) => {
     const state = getState().editor.present;
@@ -207,21 +267,50 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
       checkPastedContent(payload, mergedSources);
       deleteSelection.reducer(state);
 
-      const insertPos = getInsertPos(state);
-
-      if (atEmptyUnnamedParagraph(state, insertPos)) {
-        state.document.content.splice(insertPos - 1, 1);
+      if (
+        state.document.content.length == 2 &&
+        state.document.content[0].type == 'paragraph_start' &&
+        state.document.content[0].speaker == ''
+      ) {
+        state.document.content.splice(0, state.document.content.length, ...payload.content);
+        state.document.sources = mergedSources;
+        return;
       }
 
-      if (pastedEndsWithDifferentSpeakerThanNextItem(state, payload, insertPos)) {
-        payload.content.push({
-          type: 'paragraph_break',
-          speaker: getSpeakerAtIndex(state.document.content, insertPos),
-        });
-      }
+      payload.content = payload.content.map((x) => ({ ...x, uuid: uuidv4() }));
 
-      if (pastedSpeakerMatchesSpeakerAtInsertPos(state, payload, insertPos)) {
+      const insertPos = Math.max(
+        getInsertPos(state),
+        firstPossibleCursorPosition(state.document.content)
+      );
+      const nextItem = state.document.content[insertPos];
+
+      const matchesAtStart = pastedSpeakerMatchesSpeakerAtInsertPos(state, payload, insertPos);
+      const matchesAtEnd = !pastedEndsWithDifferentSpeakerThanNextItem(state, payload, insertPos);
+      // matches speaker at start
+      // YES: remove paragraph_start at start
+      // NO: add paragraph_break at start
+      if (matchesAtStart) {
         payload.content.splice(0, 1);
+      } else if (nextItem) {
+        payload.content.splice(0, 0, { type: 'paragraph_break', uuid: uuidv4() });
+      }
+      // matches speaker at end
+      // YES: remove paragraph_end at end
+      // NO: add paragraph_start for speaker at insertPos at end
+      if (!matchesAtEnd) {
+        if (nextItem && nextItem.type != 'paragraph_break') {
+          payload.content.push({
+            type: 'paragraph_start',
+            speaker: getNotNullSpeakerNameAtIndex(state.document.content, insertPos),
+            language: null,
+            uuid: uuidv4(),
+          });
+        } else {
+          state.document.content.splice(insertPos, 1);
+        }
+      } else if (nextItem) {
+        payload.content.splice(-1, 1);
       }
 
       state.document.content.splice(insertPos, 0, ...payload.content);
@@ -233,73 +322,70 @@ export const paste = createAsyncActionWithReducer<EditorState, void, Document>(
   }
 );
 
-function getLastSpeaker(content: DocumentItem[]): string | null {
+function getLastSpeaker(content: V3DocumentItem[]): string | null {
   for (const item of content.slice().reverse()) {
-    if (item.type == 'paragraph_break') {
+    if (item.type == 'paragraph_start') {
       return item.speaker;
     }
   }
   return null;
 }
 
-function checkPastedContent(pasted: Document, mergedSources: Record<string, Source>) {
-  let paraSeen = false;
+function checkPastedContent(pasted: ClipboardDocument, mergedSources: Record<string, Source>) {
+  if (pasted.content.length == 0) {
+    return;
+  }
+  let inPara = false;
   for (const item of pasted.content) {
     if ('source' in item && !(item.source in mergedSources)) {
       throw new Error(`Paste failed, missing source: ${item.source}`);
     }
-    if (isParagraphItem(item) && !paraSeen) {
-      throw new Error(
-        'Parse failed, missing paragraph break. paragraph items without prior paragraph_break'
-      );
-    }
-    if (item.type == 'paragraph_break') {
-      paraSeen = true;
+    if (item.type == 'paragraph_start') {
+      if (inPara) {
+        throw new Error('paragraph_start item encountered in paragraph');
+      } else {
+        inPara = true;
+      }
+    } else if (item.type == 'paragraph_break') {
+      if (!inPara) {
+        throw new Error('paragraph_break item encountered outside paragraph');
+      } else {
+        inPara = false;
+      }
+    } else if (isParagraphItem(item)) {
+      if (!inPara) {
+        throw new Error(
+          'paragraph item encountered outside paragraph (are you missing a paragraph start?)'
+        );
+      }
     }
   }
-}
-
-function atEmptyUnnamedParagraph(state: EditorState, insertPos: number) {
-  const previousIdx = Math.max(insertPos - 1, 0);
-  const previousItem = state.document.content[previousIdx];
-  const nextItem = state.document.content[insertPos];
-
-  return (
-    previousItem.type == 'paragraph_break' &&
-    previousItem.speaker == null &&
-    (!nextItem || !isParagraphItem(nextItem))
-  );
+  if (inPara) {
+    throw new Error('missing trailing paragraph break item');
+  }
 }
 
 function pastedSpeakerMatchesSpeakerAtInsertPos(
   state: EditorState,
-  payload: Document,
+  payload: ClipboardDocument,
   insertPos: number
 ): boolean {
   return (
     payload.content.length > 0 &&
-    payload.content[0].type == 'paragraph_break' &&
-    payload.content[0].speaker == getSpeakerAtIndex(state.document.content, insertPos)
+    payload.content[0].type == 'paragraph_start' &&
+    payload.content[0].speaker == getNotNullSpeakerNameAtIndex(state.document.content, insertPos)
   );
 }
 
 function pastedEndsWithDifferentSpeakerThanNextItem(
   state: EditorState,
-  payload: Document,
+  payload: ClipboardDocument,
   insertPos: number
 ): boolean {
-  const nextItem = state.document.content[insertPos];
   return (
-    nextItem &&
-    nextItem.type != 'paragraph_break' &&
-    getSpeakerAtIndex(state.document.content, insertPos + 1) != getLastSpeaker(payload.content) &&
-    insertPos >= firstParagraphBreakIndex(state.document.content) // if we paste before the first para break, there is no speaker
+    getNotNullSpeakerNameAtIndex(state.document.content, insertPos) !=
+    getLastSpeaker(payload.content)
   );
-}
-
-function firstParagraphBreakIndex(content: DocumentItem[]): number {
-  const firstIndex = content.findIndex((x) => x.type == 'paragraph_break');
-  return firstIndex != -1 ? firstIndex : content.length;
 }
 
 export const copySelectionText = createAsyncActionWithReducer<EditorState>(
@@ -312,7 +398,7 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
       return;
     }
 
-    const timedDocumentSlice: TimedDocumentItem[] = selectedItems(state);
+    const timedDocumentSlice: V3TimedDocumentItem[] = selectedItems(state);
 
     clipboard.writeText(
       macroItemsToText(memoizedMacroItems(timedDocumentSlice), state.displaySpeakerNames)

@@ -18,7 +18,7 @@ import {
 } from 'evergreen-ui';
 import { LandingTour } from '../tour/LandingTour';
 import { openDocumentFromDisk, openDocumentFromMemory } from '../state/editor/io';
-import { emptyDocument } from '../core/document';
+import { getEmptyDocument } from '../core/document';
 import { MenuBar, MenuGroup, MenuItem } from '../components/MenuBar';
 import { RootState } from '../state';
 import { shell } from 'electron';
@@ -85,7 +85,7 @@ function LandingContent(): JSX.Element {
             label={'Import & Transcribe'}
           />
           <MenuItem
-            callback={() => dispatch(openDocumentFromMemory(emptyDocument))}
+            callback={() => dispatch(openDocumentFromMemory(getEmptyDocument()))}
             accelerator={'CommandOrControl+Shift+N'}
             label={'New blank document'}
           />
@@ -115,7 +115,7 @@ function LandingContent(): JSX.Element {
           Open Existing
         </Button>
         <Button
-          onClick={() => dispatch(openDocumentFromMemory(emptyDocument))}
+          onClick={() => dispatch(openDocumentFromMemory(getEmptyDocument()))}
           size={'large'}
           marginY={20}
           width={300}

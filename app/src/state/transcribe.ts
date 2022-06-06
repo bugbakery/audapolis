@@ -4,7 +4,7 @@ import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename, extname } from 'path';
 import { sleep } from '../util';
-import { DocumentItem } from '../core/document';
+import { V3DocumentItem } from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getServer } from './server';
 import { createHash } from 'crypto';
@@ -17,7 +17,7 @@ import {
 } from '../server_api/api';
 import { openFile } from '../../ipc/ipc_renderer';
 import { openDocumentFromMemory } from './editor/io';
-import { setDisplaySpeakerNames } from './editor/display';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface TranscribeState {
   file?: string;
@@ -149,18 +149,45 @@ export const startTranscription = createAsyncThunk<
           throw Error('Transcription failed: State is done, but no content was produced');
         }
 
-        const flatContent: DocumentItem[] = [];
+        const flatContent: V3DocumentItem[] = [];
         for (const para of content) {
           flatContent.push(
-            { type: 'paragraph_break', speaker: para.speaker },
+            {
+              type: 'paragraph_start',
+              speaker: para.speaker,
+              language: transcription_model.lang,
+              uuid: uuidv4(),
+            },
+            // todo: proper typing
             ...para.content.map((word: any) => {
+              if (word.type == 'word') {
+                return {
+                  type: 'text',
+                  source: hashValue,
+                  sourceStart: word.sourceStart,
+                  length: word.length,
+                  text: word.word,
+                  conf: word.conf,
+                  uuid: uuidv4(),
+                };
+              }
+              if (word.type == 'silence') {
+                word.type = 'non_text';
+              }
               word['source'] = hashValue;
+              word['uuid'] = uuidv4();
               return word;
-            })
+            }),
+            { type: 'paragraph_break', uuid: uuidv4() }
           );
         }
-        dispatch(openDocumentFromMemory({ sources: sources, content: flatContent }));
-        dispatch(setDisplaySpeakerNames(diarize));
+        dispatch(
+          openDocumentFromMemory({
+            sources: sources,
+            content: flatContent,
+            metadata: { display_speaker_names: diarize, display_video: false }, // TODO @pajowu: display_video
+          })
+        );
         // Once the task is finished, try to delete it but ignore any errors
         await deleteTask(server, task.uuid);
         break;

@@ -172,7 +172,7 @@ test('delete selection: 1 text', () => {
   expect(state.document.content).toBeValidDocumentContent();
 });
 
-test('delete selection: more texts', () => {
+test('delete selection: multiple text items', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = addUuids([
     { type: 'paragraph_start', speaker: 'Speaker One', language: null },
@@ -576,7 +576,7 @@ test('copy', async () => {
   await runAsyncThunkSync(copy(), state);
   // document should not be mutated by copy
   expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
-  // document has be serialized
+  // document has been serialized
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
   expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
   expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({
@@ -628,7 +628,7 @@ test('cut', async () => {
     { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
     { type: 'paragraph_end' },
   ]);
-  // document has be serialized
+  // document has been serialized
   expect(mockedSerializeDocument).toHaveBeenCalledTimes(1);
   expect(mockedSerializeDocument.mock.calls[0].length).toBe(1);
   expect(mockedSerializeDocument.mock.calls[0][0]).toMatchObject({

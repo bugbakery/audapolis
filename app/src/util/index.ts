@@ -18,7 +18,7 @@ export function assertUnreachable(_: never): never {
 
 /**
  * One of the worse hack in audapolis: If the difference between two numbers is less than EPSILON,
- * we consider them to be the same.
+ * we consider them to be the same in some places.
  */
 export const EPSILON = 0.00001;
 

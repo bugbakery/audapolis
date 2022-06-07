@@ -213,7 +213,7 @@ export async function deserializeDocument(
       'Unversioned audapolis files are not supported anymore.\nProbably your audapolis file is corrupt.'
     );
   } else if (parsed.version == 1) {
-    partialDocument = convertV1toV3(parsed);
+    partialDocument = convertV1toV3(parsed.content);
   } else if (parsed.version == 2) {
     partialDocument = convertV2toV3(parsed);
   } else if (parsed.version == 3) {
@@ -294,11 +294,11 @@ function paragraphV1toV3Items(paragraph: V1Paragraph): V3DocumentItem[] {
   ];
 }
 
-function convertV1toV3(v1_document: V1DocumentJson): Omit<Document, 'sources'> {
+export function convertV1toV3(v1_content: V1Paragraph[]): Omit<Document, 'sources'> {
   const content = [];
   let last_speaker = null;
   const metadata = { display_speaker_names: false, display_video: false };
-  for (const paragraph of v1_document.content) {
+  for (const paragraph of v1_content) {
     content.push(...paragraphV1toV3Items(paragraph));
 
     if (last_speaker === null) {

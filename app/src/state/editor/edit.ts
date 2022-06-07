@@ -4,7 +4,10 @@ import {
   Document,
   serializeDocument,
   Source,
+  UuidExtension,
   V3DocumentItem,
+  V3ParagraphStartItem,
+  V3TextItem,
   V3TimedDocumentItem,
 } from '../../core/document';
 import { clipboard } from 'electron';
@@ -407,3 +410,88 @@ export const copySelectionText = createAsyncActionWithReducer<EditorState>(
     clipboard.writeText(selectedText);
   }
 );
+
+function filterContentWordLevel(
+  content: V3DocumentItem[],
+  tester: (_a0: string) => boolean
+): V3DocumentItem[] {
+  const filteredContent: V3DocumentItem[] = [];
+  let paraStart: (V3ParagraphStartItem & UuidExtension) | null = null;
+  for (const item of content) {
+    if (item.type == 'paragraph_start') {
+      paraStart = item;
+    } else if (item.type == 'paragraph_end') {
+      if (paraStart === null) {
+        filteredContent.push(item);
+      }
+    } else if (item.type == 'text' && tester(item.text)) {
+      if (paraStart !== null) {
+        filteredContent.push(paraStart);
+        paraStart = null;
+      }
+      filteredContent.push(item);
+    }
+  }
+  return filteredContent;
+}
+
+function paraToText(content: V3DocumentItem[]): string {
+  return content
+    .filter((x): x is V3TextItem & UuidExtension => x.type == 'text')
+    .map((x) => x.text)
+    .join(' ');
+}
+function filterContentParagraphLevel(
+  content: V3DocumentItem[],
+  tester: (_a0: string) => boolean
+): V3DocumentItem[] {
+  const filteredContent: V3DocumentItem[] = [];
+  let para = [];
+  for (const item of content) {
+    if (item.type !== 'paragraph_end') {
+      para.push(item);
+    } else {
+      const text = paraToText(para);
+      if (tester(text)) {
+        filteredContent.push(...para, item);
+      }
+      para = [];
+    }
+  }
+  return filteredContent;
+}
+function getTestingFunction(
+  searchString: string,
+  caseInsensitive: boolean,
+  useRegex: boolean
+): (_a0: string) => boolean {
+  if (useRegex) {
+    const regex = new RegExp(searchString, caseInsensitive ? 'i' : '');
+    return (str: string) => regex.test(str);
+  } else if (caseInsensitive) {
+    const lowerCaseSearchString = searchString.toLowerCase();
+    return (str: string) => str.toLowerCase().includes(lowerCaseSearchString);
+  } else {
+    return (str: string) => str.includes(searchString);
+  }
+}
+
+export const filterContent = createActionWithReducer<
+  EditorState,
+  { searchString: string; level: 'word' | 'paragraph'; caseInsensitive: boolean; useRegex: boolean }
+>('editor/filterContent', (state, { searchString, level, caseInsensitive, useRegex }) => {
+  const tester = getTestingFunction(searchString, caseInsensitive, useRegex);
+  let filteredContent: V3DocumentItem[];
+  if (level == 'word') {
+    filteredContent = filterContentWordLevel(state.document.content, tester);
+  } else {
+    filteredContent = filterContentParagraphLevel(state.document.content, tester);
+  }
+  if (filteredContent.length == 0) {
+    filteredContent = [
+      { type: 'paragraph_start', speaker: '', language: null, uuid: uuidv4() },
+      { type: 'paragraph_end', uuid: uuidv4() },
+    ];
+  }
+  state.document.content = filteredContent;
+});

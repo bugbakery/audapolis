@@ -4,7 +4,14 @@ import { RootState } from './index';
 import { readFileSync } from 'fs';
 import { basename, extname } from 'path';
 import { sleep } from '../util';
-import { V3DocumentItem } from '../core/document';
+import {
+  convertV1toV3,
+  V1Paragraph,
+  V1ParagraphItem,
+  V1V2Silence,
+  V1V2Word,
+  V3DocumentItem,
+} from '../core/document';
 import { fetchModelState, Model } from './models';
 import { getServer } from './server';
 import { createHash } from 'crypto';
@@ -14,10 +21,10 @@ import {
   getTask,
   startTranscription as startTranscriptionApiCall,
   TranscriptionState,
+  TranscriptionTask,
 } from '../server_api/api';
 import { openFile } from '../../ipc/ipc_renderer';
 import { openDocumentFromMemory } from './editor/io';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface TranscribeState {
   file?: string;
@@ -145,47 +152,18 @@ export const startTranscription = createAsyncThunk<
             objectUrl,
           },
         };
-        if (content === undefined) {
-          throw Error('Transcription failed: State is done, but no content was produced');
-        }
 
-        const flatContent: V3DocumentItem[] = [];
-        for (const para of content) {
-          flatContent.push(
-            {
-              type: 'paragraph_start',
-              speaker: para.speaker,
-              language: transcription_model.lang,
-              uuid: uuidv4(),
-            },
-            // todo: proper typing
-            ...para.content.map((word: any) => {
-              if (word.type == 'word') {
-                return {
-                  type: 'text',
-                  source: hashValue,
-                  sourceStart: word.sourceStart,
-                  length: word.length,
-                  text: word.word,
-                  conf: word.conf,
-                  uuid: uuidv4(),
-                };
-              }
-              if (word.type == 'silence') {
-                word.type = 'non_text';
-              }
-              word['source'] = hashValue;
-              word['uuid'] = uuidv4();
-              return word;
-            }),
-            { type: 'paragraph_break', uuid: uuidv4() }
-          );
-        }
+        const flatContent: V3DocumentItem[] = convertTranscriptionResultToV3Content(
+          content,
+          hashValue,
+          transcription_model.lang
+        );
+
         dispatch(
           openDocumentFromMemory({
             sources: sources,
             content: flatContent,
-            metadata: { display_speaker_names: diarize, display_video: false }, // TODO @pajowu: display_video
+            metadata: { display_speaker_names: diarize, display_video: false },
           })
         );
         // Once the task is finished, try to delete it but ignore any errors
@@ -196,6 +174,40 @@ export const startTranscription = createAsyncThunk<
     }
   }
 );
+
+function convertTranscriptionResultToV3Content(
+  content: TranscriptionTask['content'],
+  source: string,
+  language: string
+): V3DocumentItem[] {
+  if (content === undefined) {
+    throw Error('Transcription failed: State is done, but no content was produced');
+  }
+
+  const v1Content: V1Paragraph[] = content.map((para): V1Paragraph => {
+    return {
+      ...para,
+      content: para.content.map((word): V1ParagraphItem => {
+        const isSilence = (x: Omit<V1ParagraphItem, 'source'>): x is Omit<V1V2Silence, 'source'> =>
+          x.type == 'silence';
+        const isWord = (x: Omit<V1ParagraphItem, 'source'>): x is Omit<V1V2Word, 'source'> =>
+          x.type == 'word';
+
+        if (isSilence(word) || isWord(word)) {
+          return {
+            ...word,
+            source: source,
+          };
+        } else {
+          throw new Error(
+            "this is not possible - but the typescript compiler doesn't know that yet"
+          );
+        }
+      }),
+    };
+  });
+  return convertV1toV3(v1Content).content.map((x) => ({ ...x, language }));
+}
 
 export const importSlice = createSlice({
   name: 'nav',

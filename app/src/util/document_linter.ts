@@ -1,5 +1,5 @@
 import { V3DocumentItem } from '../core/document';
-import { isParagraphItem } from '../state/editor/selectors';
+import { isParagraphItem, memoize } from '../state/editor/selectors';
 
 export function lintDocumentContent(content: V3DocumentItem[]): {
   pass: boolean;
@@ -58,3 +58,5 @@ export function lintDocumentContent(content: V3DocumentItem[]): {
   }
   return { pass: true, message: () => ':)' };
 }
+
+export const memoizedLintDocumentContent = memoize(lintDocumentContent);

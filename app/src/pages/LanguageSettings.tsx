@@ -19,6 +19,8 @@ import {
   majorScale,
   Radio,
   Table,
+  TableCellProps,
+  TextTableCellProps,
   Tooltip,
   TrashIcon,
 } from 'evergreen-ui';
@@ -26,6 +28,8 @@ import { Circle } from 'rc-progress';
 import { openModelManager } from '../state/nav';
 import { useEffect, useState } from 'react';
 import { LanguageSettingsTour } from '../tour/LanguageSettingsTour';
+import { jsx } from '@emotion/react';
+import JSX = jsx.JSX;
 
 function ModelTable({
   models,
@@ -75,98 +79,64 @@ function ModelTable({
     }
   }, [defaultModel, downloaded]);
 
-  const ModelTableRow = ({
-    row_model,
-    className,
-    isDefault,
-    action,
-  }: {
-    row_model: Model;
-    className?: string;
-    isDefault: boolean | null;
-    action: JSX.Element;
-  }): JSX.Element => {
-    return (
-      <Table.Row id={row_model.name} className={className}>
-        <Table.Cell>
-          {isDefault !== null ? (
-            <Radio
-              checked={isDefault}
-              name={`default-${type}`}
-              onChange={() => {
-                setDefaultModel(lang, type, row_model.model_id);
-                setLocalDefaultModel(row_model.model_id);
-              }}
-            />
-          ) : (
-            <></>
-          )}
-        </Table.Cell>
-        <Table.TextCell {...nameColumnsProps}>{row_model.name}</Table.TextCell>
-        <Table.TextCell isNumber>{row_model.size}</Table.TextCell>
-        <Table.TextCell flexBasis={'55%'}>{row_model.description}</Table.TextCell>
-        <Table.Cell {...lastColumnProps}>{action}</Table.Cell>
-      </Table.Row>
-    );
-  };
-
-  const rows = (
-    <>
-      {downloaded.map((model) => (
-        <ModelTableRow
-          row_model={model}
-          className={'downloaded'}
-          isDefault={defaultModel == model.model_id}
-          action={
-            <Tooltip content={'delete model'}>
-              <IconButton icon={TrashIcon} onClick={() => dispatch(deleteModel(model))} />
-            </Tooltip>
-          }
-          key={model.model_id}
-        />
-      ))}
-      {downloading.map((model) => (
-        <ModelTableRow
-          row_model={model}
-          isDefault={null}
-          action={
-            <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
-              <Button
-                padding={0}
-                appearance={'minimal'}
-                onClick={() => dispatch(cancelDownload(model.task_uuid))}
-              >
-                <Circle
-                  style={{ height: majorScale(3) }}
-                  percent={model.progress * 100}
-                  strokeWidth={50}
-                  trailWidth={0}
-                  strokeLinecap={'butt'}
-                />
-              </Button>
-            </Tooltip>
-          }
-          key={model.model_id}
-        />
-      ))}
-      {notDownloaded.map((model) => (
-        <ModelTableRow
-          key={model.model_id}
-          row_model={model}
-          isDefault={null}
-          action={
-            <Tooltip content={'download model'}>
-              <IconButton
-                className={'download' /* for tour */}
-                icon={CloudDownloadIcon}
-                onClick={() => dispatch(downloadModel(model))}
+  const rows = [
+    ...downloaded.map((model) => (
+      <ModelTableRow
+        row_model={model}
+        className={'downloaded'}
+        isDefault={defaultModel == model.model_id}
+        action={
+          <Tooltip content={'delete model'}>
+            <IconButton icon={TrashIcon} onClick={() => dispatch(deleteModel(model))} />
+          </Tooltip>
+        }
+        key={model.model_id}
+        {...{ type, lang, setLocalDefaultModel, nameColumnsProps, lastColumnProps }}
+      />
+    )),
+    ...downloading.map((model) => (
+      <ModelTableRow
+        row_model={model}
+        isDefault={null}
+        action={
+          <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
+            <Button
+              padding={0}
+              appearance={'minimal'}
+              onClick={() => dispatch(cancelDownload(model.task_uuid))}
+            >
+              <Circle
+                style={{ height: majorScale(3) }}
+                percent={model.progress * 100}
+                strokeWidth={50}
+                trailWidth={0}
+                strokeLinecap={'butt'}
               />
-            </Tooltip>
-          }
-        />
-      ))}
-    </>
-  );
+            </Button>
+          </Tooltip>
+        }
+        key={model.model_id}
+        {...{ type, lang, setLocalDefaultModel, nameColumnsProps, lastColumnProps }}
+      />
+    )),
+    ...notDownloaded.map((model) => (
+      <ModelTableRow
+        key={model.model_id}
+        row_model={model}
+        isDefault={null}
+        action={
+          <Tooltip content={'download model'}>
+            <IconButton
+              className={'download' /* for tour */}
+              icon={CloudDownloadIcon}
+              onClick={() => dispatch(downloadModel(model))}
+            />
+          </Tooltip>
+        }
+        {...{ type, lang, setLocalDefaultModel, nameColumnsProps, lastColumnProps }}
+      />
+    )),
+  ];
 
   return (
     <Table id={id}>
@@ -190,6 +160,51 @@ function ModelTable({
         )}
       </Table.Body>
     </Table>
+  );
+}
+
+function ModelTableRow({
+  row_model,
+  className,
+  isDefault,
+  action,
+  type,
+  lang,
+  setLocalDefaultModel,
+  nameColumnsProps,
+  lastColumnProps,
+}: {
+  row_model: Model;
+  className?: string;
+  isDefault: boolean | null;
+  action: JSX.Element;
+  type: string;
+  lang: string;
+  setLocalDefaultModel: (_arg0: string) => void;
+  nameColumnsProps: TextTableCellProps;
+  lastColumnProps: TableCellProps;
+}): JSX.Element {
+  return (
+    <Table.Row id={row_model.name} className={className}>
+      <Table.Cell>
+        {isDefault !== null ? (
+          <Radio
+            checked={isDefault}
+            name={`default-${type}`}
+            onChange={() => {
+              setDefaultModel(lang, type, row_model.model_id);
+              setLocalDefaultModel(row_model.model_id);
+            }}
+          />
+        ) : (
+          <></>
+        )}
+      </Table.Cell>
+      <Table.TextCell {...nameColumnsProps}>{row_model.name}</Table.TextCell>
+      <Table.TextCell isNumber>{row_model.size}</Table.TextCell>
+      <Table.TextCell flexBasis={'55%'}>{row_model.description}</Table.TextCell>
+      <Table.Cell {...lastColumnProps}>{action}</Table.Cell>
+    </Table.Row>
   );
 }
 

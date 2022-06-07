@@ -1,7 +1,7 @@
-import { assertSome, EPSILON } from '../../util';
 import { createActionWithReducer } from '../util';
 import { EditorState } from './types';
-import { currentItem, firstPossibleCursorPosition } from './selectors';
+import { currentIndex, firstPossibleCursorPosition } from './selectors';
+import { V3DocumentItem } from '../../core/document';
 
 export const setPlayerTime = createActionWithReducer<EditorState, number>(
   'editor/setTimePlayer',
@@ -15,9 +15,7 @@ export const setUserIndex = createActionWithReducer<EditorState, number>(
   'editor/setUserIndex',
   (state, newIndex) => {
     state.cursor.current = 'user';
-    if (newIndex < 0) {
-      newIndex = 0;
-    }
+    newIndex = Math.max(newIndex, firstPossibleCursorPosition(state.document.content));
     if (newIndex > state.document.content.length - 1) {
       newIndex = state.document.content.length - 1;
     }
@@ -40,38 +38,28 @@ export const togglePlaying = createActionWithReducer<EditorState>(
 );
 
 export const goLeft = createActionWithReducer<EditorState>('editor/goLeft', (state) => {
-  if (state.cursor.current == 'user') {
-    const newPosition = Math.max(
-      state.cursor.userIndex - 1,
-      firstPossibleCursorPosition(state.document.content)
-    );
-    setUserIndex.reducer(state, newPosition);
-  } else {
-    const item = currentItem(state);
-    assertSome(item);
-    if (state.cursor.playerTime > item.absoluteStart + EPSILON) {
-      setUserIndex.reducer(state, item.absoluteIndex);
-    } else {
-      setUserIndex.reducer(state, item.absoluteIndex - 1);
-    }
-  }
-
-  state.selection = null;
+  moveCursor(state, -1);
 });
 
 export const goRight = createActionWithReducer<EditorState>('editor/goRight', (state) => {
-  if (state.cursor.current == 'user') {
-    setUserIndex.reducer(state, state.cursor.userIndex + 1);
-  } else {
-    const item = currentItem(state);
-    assertSome(item);
-    const itemLength = 'length' in item ? item.length : 0;
-    if (state.cursor.playerTime + EPSILON < item.absoluteStart + itemLength) {
-      setUserIndex.reducer(state, item.absoluteIndex + 1);
-    } else {
-      setUserIndex.reducer(state, item.absoluteIndex + 2);
-    }
+  moveCursor(state, 1);
+});
+
+function moveCursor(state: EditorState, offset: number) {
+  const curPosition = currentIndex(state);
+  let newPosition = curPosition + offset;
+  if (isBetweenParagraphs(state.document.content, newPosition)) {
+    newPosition += offset;
   }
+  setUserIndex.reducer(state, newPosition);
 
   state.selection = null;
-});
+}
+
+function isBetweenParagraphs(content: V3DocumentItem[], index: number): boolean {
+  const prevItem = content[index - 1];
+  const curItem = content[index];
+  return (
+    prevItem && curItem && prevItem.type == 'paragraph_break' && curItem.type == 'paragraph_start'
+  );
+}

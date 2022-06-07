@@ -1,7 +1,6 @@
 import { defaultEditorState, EditorState } from './types';
 import { V3DocumentItem, getEmptyDocument } from '../../core/document';
 import { goLeft, goRight } from './play';
-import { EPSILON } from '../../util';
 import _ from 'lodash';
 import { addUuids } from '../../util/test_helper';
 
@@ -38,7 +37,7 @@ const testLeftPlayer = (before: number, after: number) => {
 const testLeftUser = (before: number, after: number) => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
-  state.cursor.playerTime = before;
+  state.cursor.userIndex = before;
   goLeft.reducer(state);
   expect(state.cursor.current).toBe('user');
   expect(state.cursor.userIndex).toBe(after);
@@ -47,17 +46,21 @@ const testLeftUser = (before: number, after: number) => {
 test('goLeft trivial', () => {
   testLeftPlayer(2.0, 2);
   testLeftPlayer(1.0, 1);
-  testLeftPlayer(0.0, 0);
+  testLeftPlayer(0.0, 1);
 });
+
 test('goLeft start of paragraph', () => {
   testLeftPlayer(4.0, 6);
-  testLeftPlayer(3.0, 5);
-  testLeftPlayer(3.0 - EPSILON, 3);
+  testLeftPlayer(3.0, 4);
 });
 
 test('goLeft at start of document', () => {
   testLeftUser(0, 1);
   testLeftUser(1, 1);
+});
+
+test('goLeft at start of paragraph', () => {
+  testLeftUser(6, 4);
 });
 
 const testRightPlayer = (before: number, after: number) => {
@@ -87,7 +90,8 @@ test('goRight trivial', () => {
 
 test('goRight end of paragraph', () => {
   testRightPlayer(2.0, 4);
-  testRightPlayer(3.0 - EPSILON, 5);
+  testRightPlayer(3.0, 7);
+  testRightUser(4, 6);
 });
 
 test('goRight end of document', () => {

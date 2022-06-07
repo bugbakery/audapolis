@@ -17,7 +17,10 @@ import {
   Heading,
   IconButton,
   majorScale,
+  Pane,
+  PaneProps,
   Radio,
+  StopIcon,
   Table,
   TableCellProps,
   TextTableCellProps,
@@ -100,19 +103,21 @@ function ModelTable({
         isDefault={null}
         action={
           <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
-            <Button
-              padding={0}
-              appearance={'minimal'}
+            <HoverSwitcher
               onClick={() => dispatch(cancelDownload(model.task_uuid))}
-            >
-              <Circle
-                style={{ height: majorScale(3) }}
-                percent={model.progress * 100}
-                strokeWidth={50}
-                trailWidth={0}
-                strokeLinecap={'butt'}
-              />
-            </Button>
+              hoverChild={<IconButton icon={StopIcon} />}
+              defaultChild={
+                <Button appearance={'minimal'} padding={0}>
+                  <Circle
+                    style={{ height: majorScale(3) }}
+                    percent={model.progress * 100}
+                    strokeWidth={50}
+                    trailWidth={0}
+                    strokeLinecap={'butt'}
+                  />
+                </Button>
+              }
+            />
           </Tooltip>
         }
         key={model.model_id}
@@ -205,6 +210,31 @@ function ModelTableRow({
       <Table.TextCell flexBasis={'55%'}>{row_model.description}</Table.TextCell>
       <Table.Cell {...lastColumnProps}>{action}</Table.Cell>
     </Table.Row>
+  );
+}
+
+function HoverSwitcher({
+  hoverChild,
+  defaultChild,
+  ...switcherProps
+}: PaneProps & {
+  hoverChild: JSX.Element;
+  defaultChild: JSX.Element;
+}): JSX.Element {
+  const [shownChild, setShownChild] = useState(defaultChild);
+
+  return (
+    <Pane
+      {...switcherProps}
+      onMouseLeave={() => {
+        setShownChild(defaultChild);
+      }}
+      onMouseOver={() => {
+        setShownChild(hoverChild);
+      }}
+    >
+      {shownChild}
+    </Pane>
   );
 }
 

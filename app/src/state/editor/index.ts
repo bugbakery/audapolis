@@ -49,6 +49,7 @@ function editorReducer(state: EditorState | undefined, action: AnyAction): Edito
     if (!lintResult.pass) {
       if (process.env.NODE_ENV == 'development') {
         alert(lintResult.message());
+        console.error('DOCUMENT LINTING FAILED!', lintResult.message());
       } else {
         console.error('DOCUMENT LINTING FAILED!', lintResult.message());
       }

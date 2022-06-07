@@ -12,6 +12,7 @@ import {
   reassignParagraph,
   renameSpeaker,
   setText,
+  filterContent,
 } from './edit';
 import JSZip from 'jszip';
 import { Document, getEmptyDocument, serializeDocument } from '../../core/document';
@@ -1244,5 +1245,129 @@ test('copySelectionText: no selection', async () => {
 
   expect(mockedWriteText).toHaveBeenCalledTimes(0);
 
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  filterContent.reducer(state, {
+    searchString: 'One',
+    level: 'word',
+    caseInsensitive: false,
+    useRegex: false,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_end' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content: regex', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  filterContent.reducer(state, {
+    searchString: 'One|Two',
+    level: 'word',
+    caseInsensitive: false,
+    useRegex: true,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids(documentContentTwoParaTwoSpeaker);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content: no regex', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  filterContent.reducer(state, {
+    searchString: 'One|Two',
+    level: 'word',
+    caseInsensitive: false,
+    useRegex: false,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: '', language: null },
+    { type: 'paragraph_end' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content: empty document', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  filterContent.reducer(state, {
+    searchString: ' One',
+    level: 'word',
+    caseInsensitive: false,
+    useRegex: false,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: '', language: null },
+    { type: 'paragraph_end' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content: paragraph', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = addUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Some', conf: 1, source: 's1', sourceStart: 1, length: 1 },
+    { type: 'text', text: 'words', conf: 1, source: 's1', sourceStart: 2, length: 1 },
+    { type: 'paragraph_end' },
+    { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
+    { type: 'text', text: 'Some', conf: 1, source: 's2', sourceStart: 1, length: 1 },
+    { type: 'text', text: 'other', conf: 1, source: 's2', sourceStart: 2, length: 1 },
+    { type: 'text', text: 'words', conf: 1, source: 's2', sourceStart: 3, length: 1 },
+    { type: 'paragraph_end' },
+  ]);
+  filterContent.reducer(state, {
+    searchString: 'Some words',
+    level: 'paragraph',
+    caseInsensitive: false,
+    useRegex: false,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'Some', conf: 1, source: 's1', sourceStart: 1, length: 1 },
+    { type: 'text', text: 'words', conf: 1, source: 's1', sourceStart: 2, length: 1 },
+    { type: 'paragraph_end' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content: case insensitive', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  filterContent.reducer(state, {
+    searchString: 'one',
+    level: 'word',
+    caseInsensitive: true,
+    useRegex: false,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_end' },
+  ]);
+  expect(state.document.content).toBeValidDocumentContent();
+});
+
+test('filter content: case insensitive regex', () => {
+  const state = _.cloneDeep(defaultEditorState);
+  state.document.content = _.cloneDeep(documentContentTwoParaTwoSpeaker);
+  filterContent.reducer(state, {
+    searchString: 'one?',
+    level: 'word',
+    caseInsensitive: true,
+    useRegex: true,
+  });
+  expect(state.document.content).toStrictEqualExceptUuids([
+    { type: 'paragraph_start', speaker: 'Speaker One', language: null },
+    { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
+    { type: 'paragraph_end' },
+  ]);
   expect(state.document.content).toBeValidDocumentContent();
 });

@@ -2,7 +2,6 @@ import { V3DocumentItemWithoutUuid, V3TimedDocumentItemWithoutUuid } from '../ut
 import { Document } from '../core/document';
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toStrictEqualExceptUuids(

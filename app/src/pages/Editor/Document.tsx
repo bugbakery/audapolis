@@ -212,13 +212,13 @@ function handleWordClick(dispatch: Dispatch, content: V3TimedDocumentItem[], e: 
 const getAbsoluteItemIndex = (
   content: V3TimedDocumentItem[],
   element: HTMLElement | null
-): number => {
+): number | null => {
   const itemUuid = element?.id?.replace('item-', '');
   if (!itemUuid) {
-    return 0;
+    return null;
   }
   const uuidIndexMap = memoizedUuidToIndexMap(content);
-  return uuidIndexMap[itemUuid] || 0;
+  return uuidIndexMap[itemUuid] || null;
 };
 
 const getItem = (
@@ -226,6 +226,7 @@ const getItem = (
   element: HTMLElement | null
 ): V3TimedDocumentItem | null => {
   const itemIdx = getAbsoluteItemIndex(content, element);
+  if (itemIdx == null) return null;
   return content[itemIdx];
 };
 

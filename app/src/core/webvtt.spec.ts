@@ -10,13 +10,13 @@ const testContent: V3DocumentItem[] = addUuids([
   { type: 'text', text: 'Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
   { type: 'text', text: 'Three', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
   { type: 'text', text: 'Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
   { type: 'paragraph_start', speaker: 'Speaker Two', language: 'en' },
   { type: 'text', text: 'Two One', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
   { type: 'text', text: 'Two Two', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
   { type: 'text', text: 'Two Three', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
   { type: 'text', text: 'Two Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ]);
 
 test('webvtt: export minimal', () => {
@@ -55,7 +55,7 @@ test('webvtt: line length: too long word', () => {
       length: 1,
     },
     { type: 'text', text: 'Four', source: 'source-1', sourceStart: 1, conf: 1, length: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(
@@ -69,7 +69,7 @@ test('webvtt: line length: too long word', () => {
 test('webvtt: empty para creates no cue', () => {
   const testContent: V3DocumentItem[] = addUuids([
     { type: 'paragraph_start', speaker: 'Speaker One', language: 'en' },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(

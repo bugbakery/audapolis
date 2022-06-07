@@ -160,8 +160,8 @@ export function Document(): JSX.Element {
         switch (p.type) {
           case 'paragraph': {
             const speakerColor = getSpeakerColor(p.speaker);
-            const paraBreakIdx = p.breakAbsoluteIndex;
-            const paraBreakUuid = p.breakUuid;
+            const paraBreakIdx = p.endAbsoluteIndex;
+            const paraBreakUuid = p.endUuid;
             return (
               <Paragraph
                 key={i}

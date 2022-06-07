@@ -15,7 +15,7 @@ export function lintDocumentContent(content: V3DocumentItem[]): {
    *   paragraph_start ┌──┴────────────────┐
    *       ┌──────────►│ In Paragraph      │
    *       │           └┬──────────────────┘
-   *   ┌───┴───┐        │paragraph_break ▲
+   *   ┌───┴───┐        │paragraph_end ▲
    *   │ Start │        ▼                │ paragraph_start
    *   └───────┘       ┌─────────────────┴─┐             ┌─────────┐
    *       ▲           │ Outside Paragraph ├────────────►│ Accept  │
@@ -30,8 +30,8 @@ export function lintDocumentContent(content: V3DocumentItem[]): {
   if (content[0].type != 'paragraph_start') {
     return { pass: false, message: () => 'every document needs to start with a paragraph_start' };
   }
-  if (content[content.length - 1].type != 'paragraph_break') {
-    return { pass: false, message: () => 'every document needs to end with a paragraph_break' };
+  if (content[content.length - 1].type != 'paragraph_end') {
+    return { pass: false, message: () => 'every document needs to end with a paragraph_end' };
   }
   let inPara = false;
   for (const item of content) {
@@ -45,11 +45,11 @@ export function lintDocumentContent(content: V3DocumentItem[]): {
         inPara = true;
       }
     }
-    if (item.type == 'paragraph_break') {
+    if (item.type == 'paragraph_end') {
       if (!inPara) {
         return {
           pass: false,
-          message: () => 'paragraph_break item encountered outside of paragraph',
+          message: () => 'paragraph_end item encountered outside of paragraph',
         };
       } else {
         inPara = false;

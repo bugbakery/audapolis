@@ -53,7 +53,7 @@ export function Paragraph({
     <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(2)}>
       <Speaker
         name={data.speaker}
-        paragraphBreakAbsoluteIndex={data.absoluteIndex}
+        paragraphEndAbsoluteIndex={data.absoluteIndex}
         color={color.toString()}
         width={displaySpeakerNames ? 150 : 0}
         transition={'width 0.2s'}
@@ -252,12 +252,12 @@ const EditingStartButton = ({
 
 function Speaker({
   name,
-  paragraphBreakAbsoluteIndex,
+  paragraphEndAbsoluteIndex,
   color,
   ...props
 }: PaneProps & {
   name: string | null;
-  paragraphBreakAbsoluteIndex: number;
+  paragraphEndAbsoluteIndex: number;
 }): JSX.Element {
   const [editing, setEditing] = useState(null as SpeakerEditing);
   const dispatch = useDispatch();
@@ -327,7 +327,7 @@ function Speaker({
               if (editing.type == EditingType.Reassign) {
                 dispatch(
                   reassignParagraph({
-                    absoluteIndex: paragraphBreakAbsoluteIndex,
+                    absoluteIndex: paragraphEndAbsoluteIndex,
                     newSpeaker: editing.currentText,
                   })
                 );

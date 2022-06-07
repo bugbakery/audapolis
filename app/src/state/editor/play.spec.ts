@@ -9,12 +9,12 @@ const testContent: V3DocumentItem[] = addUuids([
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
   { type: 'paragraph_start', speaker: 'paragraph_02', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ]);
 
 const testState: EditorState = {

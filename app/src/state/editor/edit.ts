@@ -50,8 +50,8 @@ function ensureValidCursorPosition(state: EditorState) {
     );
   }
 }
-export const insertParagraphBreak = createActionWithReducer<EditorState>(
-  'editor/insertParagraphBreak',
+export const insertParagraphEnd = createActionWithReducer<EditorState>(
+  'editor/insertParagraphEnd',
   (state) => {
     ensureValidCursorPosition(state);
     const insertPos = getInsertPos(state);
@@ -59,7 +59,7 @@ export const insertParagraphBreak = createActionWithReducer<EditorState>(
     state.document.content.splice(
       insertPos,
       0,
-      { type: 'paragraph_break', uuid: uuidv4() },
+      { type: 'paragraph_end', uuid: uuidv4() },
       { ...paraStart, uuid: uuidv4() }
     );
     state.cursor.current = 'user';
@@ -92,9 +92,9 @@ export const deleteSelection = createActionWithReducer<EditorState>(
     }
     if (
       selectionEnd === state.document.content.length &&
-      !(prevElem && prevElem.type === 'paragraph_break')
+      !(prevElem && prevElem.type === 'paragraph_end')
     ) {
-      restoreElems.push({ type: 'paragraph_break', uuid: uuidv4() });
+      restoreElems.push({ type: 'paragraph_end', uuid: uuidv4() });
     }
     state.document.content.splice(selection.startIndex, selection.length, ...restoreElems);
     state.cursor.current = 'user';
@@ -142,10 +142,10 @@ export const renameSpeaker = createActionWithReducer<
   });
 });
 
-function deleteParagraphBreak(state: EditorState, currentIndex: number) {
+function deleteParagraphEnd(state: EditorState, currentIndex: number) {
   const item = state.document.content[currentIndex];
-  if (item.type !== 'paragraph_break') {
-    throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
+  if (item.type !== 'paragraph_end') {
+    throw new Error('deleteParagraphEnd needs to be called on a paragraph_end');
   }
   if (currentIndex == state.document.content.length - 1) {
     return;
@@ -158,7 +158,7 @@ function deleteParagraphBreak(state: EditorState, currentIndex: number) {
 function deleteParagraphStart(state: EditorState, currentIndex: number) {
   const item = state.document.content[currentIndex];
   if (item.type !== 'paragraph_start') {
-    throw new Error('deleteParagraphBreak needs to be called on a paragraph_break');
+    throw new Error('deleteParagraphEnd needs to be called on a paragraph_end');
   }
   if (currentIndex == 0) {
     return;
@@ -186,8 +186,8 @@ function deleteNonSelection(state: EditorState, direction: 'left' | 'right') {
   }
   const item = state.document.content[curIdx];
   switch (item.type) {
-    case 'paragraph_break': {
-      deleteParagraphBreak(state, curIdx);
+    case 'paragraph_end': {
+      deleteParagraphEnd(state, curIdx);
       break;
     }
     case 'paragraph_start': {
@@ -289,17 +289,17 @@ export const paste = createAsyncActionWithReducer<EditorState, void, ClipboardDo
       const matchesAtEnd = !pastedEndsWithDifferentSpeakerThanNextItem(state, payload, insertPos);
       // matches speaker at start
       // YES: remove paragraph_start at start
-      // NO: add paragraph_break at start
+      // NO: add paragraph_end at start
       if (matchesAtStart) {
         payload.content.splice(0, 1);
       } else if (nextItem) {
-        payload.content.splice(0, 0, { type: 'paragraph_break', uuid: uuidv4() });
+        payload.content.splice(0, 0, { type: 'paragraph_end', uuid: uuidv4() });
       }
       // matches speaker at end
       // YES: remove paragraph_end at end
       // NO: add paragraph_start for speaker at insertPos at end
       if (!matchesAtEnd) {
-        if (nextItem && nextItem.type != 'paragraph_break') {
+        if (nextItem && nextItem.type != 'paragraph_end') {
           payload.content.push({
             type: 'paragraph_start',
             speaker: getNotNullSpeakerNameAtIndex(state.document.content, insertPos),
@@ -346,9 +346,9 @@ function checkPastedContent(pasted: ClipboardDocument, mergedSources: Record<str
       } else {
         inPara = true;
       }
-    } else if (item.type == 'paragraph_break') {
+    } else if (item.type == 'paragraph_end') {
       if (!inPara) {
-        throw new Error('paragraph_break item encountered outside paragraph');
+        throw new Error('paragraph_end item encountered outside paragraph');
       } else {
         inPara = false;
       }
@@ -361,7 +361,7 @@ function checkPastedContent(pasted: ClipboardDocument, mergedSources: Record<str
     }
   }
   if (inPara) {
-    throw new Error('missing trailing paragraph break item');
+    throw new Error('missing trailing paragraph end item');
   }
 }
 

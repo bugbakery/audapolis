@@ -60,6 +60,6 @@ function isBetweenParagraphs(content: V3DocumentItem[], index: number): boolean 
   const prevItem = content[index - 1];
   const curItem = content[index];
   return (
-    prevItem && curItem && prevItem.type == 'paragraph_break' && curItem.type == 'paragraph_start'
+    prevItem && curItem && prevItem.type == 'paragraph_end' && curItem.type == 'paragraph_start'
   );
 }

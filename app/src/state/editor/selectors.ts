@@ -165,9 +165,9 @@ const memoizedSelectedItems = memoize(
         });
       }
       const lastItem = selectedItems[selectedItems.length - 1];
-      if (lastItem && lastItem.type !== 'paragraph_break') {
+      if (lastItem && lastItem.type !== 'paragraph_end') {
         selectedItems.push({
-          type: 'paragraph_break',
+          type: 'paragraph_end',
           uuid: uuidv4(),
           absoluteIndex: lastItem.absoluteIndex + 1,
           absoluteStart: lastItem.absoluteStart,
@@ -182,11 +182,8 @@ export function selectionDocument(state: EditorState): Document {
   const timedDocumentSlice: V3TimedDocumentItem[] = selectedItems(state);
 
   const documentSlice = untimeDocumentItems(timedDocumentSlice);
-  if (
-    documentSlice.length > 0 &&
-    documentSlice[documentSlice.length - 1].type != 'paragraph_break'
-  ) {
-    documentSlice.push({ type: 'paragraph_break', uuid: uuidv4() });
+  if (documentSlice.length > 0 && documentSlice[documentSlice.length - 1].type != 'paragraph_end') {
+    documentSlice.push({ type: 'paragraph_end', uuid: uuidv4() });
   }
   const neededSources = new Set(documentSlice.map((x) => 'source' in x && x.source));
   const filteredSources = Object.fromEntries(
@@ -214,7 +211,7 @@ export function selectionSpansMultipleParagraphs(state: EditorState): boolean {
     selection.startIndex,
     selection.startIndex + selection.length
   );
-  return selectedItems.filter((x) => x.type == 'paragraph_break').length > 0;
+  return selectedItems.filter((x) => x.type == 'paragraph_end').length > 0;
 }
 
 export const memoizedParagraphItems = memoize(
@@ -264,8 +261,8 @@ export function renderItems(timedContent: V3TimedDocumentItem[]): RenderItem[] {
   for (const item of timedContent) {
     if (item.type == 'paragraph_start') {
       current_speaker = item.speaker;
-    } else if (item.type == 'paragraph_break') {
-      // we don't core about para break
+    } else if (item.type == 'paragraph_end') {
+      // we don't case about para end
     } else if (
       !current ||
       getRenderType(item.type) != current.type ||
@@ -338,12 +335,12 @@ export const memoizedMacroItems = memoize((content: V3DocumentItem[]): V3TimedMa
   const macros = [];
   let cur_macro: V3TimedMacroItem | null = null;
   for (const item of timedContent) {
-    if (item.type == 'paragraph_break') {
+    if (item.type == 'paragraph_end') {
       if (cur_macro == null) {
-        throw new Error('paragraph break without a paragraph found. This should not be possible');
+        throw new Error('paragraph end without a paragraph found. This should not be possible');
       }
-      cur_macro.breakAbsoluteIndex = item.absoluteIndex;
-      cur_macro.breakUuid = item.uuid;
+      cur_macro.endAbsoluteIndex = item.absoluteIndex;
+      cur_macro.endUuid = item.uuid;
       macros.push(cur_macro);
       cur_macro = null;
     } else if (item.type == 'paragraph_start') {
@@ -354,8 +351,8 @@ export const memoizedMacroItems = memoize((content: V3DocumentItem[]): V3TimedMa
         language: item.language,
         absoluteIndex: item.absoluteIndex,
         absoluteStart: item.absoluteStart,
-        breakAbsoluteIndex: 0,
-        breakUuid: '',
+        endAbsoluteIndex: 0,
+        endUuid: '',
         uuid: item.uuid,
       };
     } else if (isParagraphItem(item)) {

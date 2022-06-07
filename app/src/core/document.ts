@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * The file versions of audapolis are not the same as the actual release versions of the app.
- * They should be changed any time a breaking update to the file structure happens but it is not necessary to bump them
+ * They should be changed any time a breaking update to the file structure happens however it is not necessary to bump them
  * when a new audapolis version is released.
  */
 
@@ -87,7 +87,7 @@ interface V3DocumentMetadata {
 }
 
 type V3DocumentItemWithoutUuid =
-  | V3ParagraphBreakItem
+  | V3ParagraphEndItem
   | V3ParagraphStartItem
   | V3TextItem
   | V3NonTextItem
@@ -96,8 +96,8 @@ type V3DocumentItemWithoutUuid =
 export type V3DocumentItem = V3DocumentItemWithoutUuid & UuidExtension;
 export type V3TimedDocumentItem = V3DocumentItem & IdentifiableExtension;
 
-export interface V3ParagraphBreakItem {
-  type: 'paragraph_break';
+export interface V3ParagraphEndItem {
+  type: 'paragraph_end';
 }
 
 export interface V3ParagraphStartItem {
@@ -144,9 +144,9 @@ export interface V3Paragraph<I = V3TimedParagraphItem> {
 export type V3MacroItem = V3Paragraph;
 export type V3UntimedMacroItem = V3Paragraph<V3ParagraphItem>;
 export type V3TimedParagraph = V3Paragraph &
-  IdentifiableExtension & { breakAbsoluteIndex: number; breakUuid: string };
+  IdentifiableExtension & { endAbsoluteIndex: number; endUuid: string };
 export type V3TimedMacroItem = V3MacroItem &
-  IdentifiableExtension & { breakAbsoluteIndex: number; breakUuid: string };
+  IdentifiableExtension & { endAbsoluteIndex: number; endUuid: string };
 
 //     what is a document?
 export interface Source {
@@ -175,7 +175,7 @@ export function getEmptyDocument(): Document {
     sources: {},
     content: [
       { type: 'paragraph_start', speaker: '', language: null, uuid: uuidv4() },
-      { type: 'paragraph_break', uuid: uuidv4() },
+      { type: 'paragraph_end', uuid: uuidv4() },
     ],
     metadata: { display_speaker_names: false, display_video: false },
   };
@@ -288,7 +288,7 @@ function paragraphV1toV3Items(paragraph: V1Paragraph): V3DocumentItem[] {
     { type: 'paragraph_start', uuid: uuidv4(), speaker: paragraph.speaker, language: null },
     ...paragraph.content.map(paragraphItemV1V2toV3),
     {
-      type: 'paragraph_break',
+      type: 'paragraph_end',
       uuid: uuidv4(),
     },
   ];
@@ -317,7 +317,7 @@ function convertV2toV3(v2_document: V2DocumentJson): Omit<Document, 'sources'> {
     switch (item.type) {
       case 'paragraph_break':
         if (content.length > 0) {
-          content.push({ type: 'paragraph_break', uuid: uuidv4() });
+          content.push({ type: 'paragraph_end', uuid: uuidv4() });
         }
         if (item.speaker !== null) {
           content.push({
@@ -335,7 +335,7 @@ function convertV2toV3(v2_document: V2DocumentJson): Omit<Document, 'sources'> {
     }
   }
   if (content.length > 0) {
-    content.push({ type: 'paragraph_break', uuid: uuidv4() });
+    content.push({ type: 'paragraph_end', uuid: uuidv4() });
   } else {
     content = getEmptyDocument().content;
   }

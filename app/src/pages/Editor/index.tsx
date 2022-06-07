@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import { ExportDocumentDialog } from './ExportDocumentDialog';
 import { EditorTour } from '../../tour/EditorTour';
 import { togglePlaying } from '../../state/editor/play';
-import { insertParagraphBreak } from '../../state/editor/edit';
+import { insertParagraphEnd } from '../../state/editor/edit';
 import { EditorMenuBar } from './MenuBar';
 
 const MainContainer = styled(MainCenterColumn)`
@@ -27,7 +27,7 @@ export function EditorPage(): JSX.Element {
       dispatch(togglePlaying());
       e.preventDefault();
     } else if (e.key === 'Enter') {
-      dispatch(insertParagraphBreak());
+      dispatch(insertParagraphEnd());
     }
   };
 

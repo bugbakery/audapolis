@@ -13,14 +13,14 @@ const testContent: V3DocumentItem[] = addUuids([
   { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
   { type: 'non_text', source: 'source-1', sourceStart: 5, length: 1 },
   { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
   { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
   { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
   { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
   { type: 'artificial_silence', length: 10 },
   { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
   { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ]);
 
 function getState(): EditorState {
@@ -107,7 +107,7 @@ test('startTranscriptCorrection warns if selection is non continuous in source',
   expect(mockedWarning).toHaveBeenCalled();
 });
 
-test('startTranscriptCorrection warns if paragraph_break is selected', () => {
+test('startTranscriptCorrection warns if paragraph_end is selected', () => {
   const state = getState();
   state.selection = {
     startIndex: 5,
@@ -160,14 +160,14 @@ test('finishTranscriptCorrection changes document', () => {
     { type: 'text', source: 'source-1', sourceStart: 2, length: 3, text: 'One Three Two', conf: 1 },
     { type: 'non_text', source: 'source-1', sourceStart: 5, length: 1 },
     { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
     { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
     { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
 });
 
@@ -185,14 +185,14 @@ test('finishTranscriptCorrection changes document', () => {
     { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'text', source: 'source-1', sourceStart: 2, length: 4, text: 'One Three Two', conf: 1 },
     { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
     { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
     { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
 });
 
@@ -210,13 +210,13 @@ test('finishTranscriptCorrection creates silence when correction is empty', () =
     { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'non_text', source: 'source-1', sourceStart: 2, length: 4 },
     { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'Speaker Two', language: null },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'One', conf: 1 },
     { type: 'text', source: 'source-2', sourceStart: 2, length: 1, text: 'Two', conf: 1 },
     { type: 'artificial_silence', length: 10 },
     { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
     { type: 'text', source: 'source-3', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
 });

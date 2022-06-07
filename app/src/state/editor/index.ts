@@ -5,7 +5,7 @@ import { ActionWithReducers, AsyncActionWithReducers, exposeReducersWindow } fro
 import undoable, { includeAction, StateWithHistory } from 'redux-undo';
 import {
   deleteSelection,
-  insertParagraphBreak,
+  insertParagraphEnd,
   paste,
   reassignParagraph,
   renameSpeaker,
@@ -59,7 +59,7 @@ function editorReducer(state: EditorState | undefined, action: AnyAction): Edito
 
 const stateSlice: Reducer<StateWithHistory<EditorState | null>> = undoable(editorReducer, {
   filter: includeAction([
-    insertParagraphBreak.type,
+    insertParagraphEnd.type,
     deleteSelection.type,
     deleteSomething.type,
     reassignParagraph.type,

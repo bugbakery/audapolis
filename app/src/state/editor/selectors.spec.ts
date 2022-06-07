@@ -28,12 +28,12 @@ const testParagraphSpeaker1: V3DocumentItemWithoutUuid[] = [
   { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
   { type: 'text', source: 'source-1', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
   { type: 'text', source: 'source-1', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ];
 
 const testParagraphEmpty: V3DocumentItemWithoutUuid[] = [
   { type: 'paragraph_start', speaker: 'Speaker Empty', language: 'test' },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ];
 
 const testParagraphSpeaker2: V3DocumentItemWithoutUuid[] = [
@@ -43,7 +43,7 @@ const testParagraphSpeaker2: V3DocumentItemWithoutUuid[] = [
   { type: 'text', source: 'source-2', sourceStart: 4, length: 1, text: 'Three', conf: 1 },
   { type: 'text', source: 'source-2', sourceStart: 5, length: 1, text: 'Four', conf: 1 },
   { type: 'artificial_silence', length: 10 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ];
 
 const testContentLong: V3DocumentItem[] = addUuids([
@@ -115,7 +115,7 @@ test('convert document to timed items', () => {
       absoluteIndex: 4,
     },
     { type: 'artificial_silence', length: 10, absoluteStart: 4, absoluteIndex: 5 },
-    { type: 'paragraph_break', absoluteStart: 14, absoluteIndex: 6 },
+    { type: 'paragraph_end', absoluteStart: 14, absoluteIndex: 6 },
   ]);
 });
 
@@ -201,7 +201,7 @@ test('selected items', () => {
       absoluteStart: 1,
       absoluteIndex: 2,
     },
-    { type: 'paragraph_break', absoluteStart: 1, absoluteIndex: 3 },
+    { type: 'paragraph_end', absoluteStart: 1, absoluteIndex: 3 },
   ]);
 });
 
@@ -241,7 +241,7 @@ test('selected items: doesnt add para start if already selected', () => {
       absoluteStart: 1,
       absoluteIndex: 2,
     },
-    { type: 'paragraph_break', absoluteStart: 1, absoluteIndex: 3 },
+    { type: 'paragraph_end', absoluteStart: 1, absoluteIndex: 3 },
   ]);
 });
 
@@ -295,7 +295,7 @@ test('selected render items', () => {
       absoluteStart: 2,
       absoluteIndex: 3,
     },
-    { type: 'paragraph_break', absoluteStart: 2, absoluteIndex: 4 },
+    { type: 'paragraph_end', absoluteStart: 2, absoluteIndex: 4 },
   ]);
   expect(renderItems(selItems)).toStrictEqual([
     {
@@ -349,16 +349,16 @@ test('selectionDocument: packs all used sources', () => {
   });
 });
 
-test('selectionDocument adds paragraph start before first word; paragraph break at end', async () => {
+test('selectionDocument adds paragraph start before first word; paragraph end at end', async () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = addUuids([
     { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
     { type: 'text', text: 'One', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
     { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 1, conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
     { type: 'text', text: 'Two', length: 1, source: 'source-1', sourceStart: 2, conf: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   state.selection = { headPosition: 'left', startIndex: 2, length: 1 };
 
@@ -373,7 +373,7 @@ test('selectionDocument adds paragraph start before first word; paragraph break 
       sourceStart: 1,
       conf: 1,
     },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   expect(selDocument.content).toBeValidDocumentContent();
 });
@@ -558,13 +558,13 @@ test('current item skips through zero-length items', () => {
   state.document.content = _.cloneDeep(
     addUuids([
       { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
     ])
   );
   state.cursor.current = 'player';
   state.cursor.playerTime = 0;
   expect(currentItem(state)).toMatchObject({
-    type: 'paragraph_break',
+    type: 'paragraph_end',
   });
 });
 
@@ -584,8 +584,8 @@ test('paragraphs', () => {
       speaker: 'Speaker One',
       absoluteStart: 0,
       absoluteIndex: 0,
-      breakAbsoluteIndex: 5,
-      breakUuid: '5',
+      endAbsoluteIndex: 5,
+      endUuid: '5',
       uuid: '0',
       content: [
         {
@@ -635,8 +635,8 @@ test('paragraphs', () => {
       speaker: 'Speaker Empty',
       absoluteStart: 4,
       absoluteIndex: 6,
-      breakAbsoluteIndex: 7,
-      breakUuid: '7',
+      endAbsoluteIndex: 7,
+      endUuid: '7',
       content: [],
       uuid: '6',
     },
@@ -645,8 +645,8 @@ test('paragraphs', () => {
       speaker: 'Speaker Two',
       absoluteStart: 4,
       absoluteIndex: 8,
-      breakAbsoluteIndex: 14,
-      breakUuid: '14',
+      endAbsoluteIndex: 14,
+      endUuid: '14',
       uuid: '8',
       content: [
         {
@@ -734,7 +734,7 @@ test('render items: source silence', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: null },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'non_text', source: 'source-1', sourceStart: 3, length: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -756,7 +756,7 @@ test('render items: same source, not-matching time', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: null },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3.1, length: 1, text: 'Two', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -786,7 +786,7 @@ test('render items: same source, not-matching time', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 2.9, length: 1, text: 'Two', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -816,7 +816,7 @@ test('render items: same source, matching time', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -831,7 +831,7 @@ test('render items: same source, matching time', () => {
   ]);
 });
 
-test('render items: missing paragraph break', () => {
+test('render items: missing paragraph end', () => {
   expect(() =>
     memoizedDocumentRenderItems(
       addUuids([
@@ -848,10 +848,10 @@ test('render items: same source, matching time, matching speaker-name', () => {
       addUuids([
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -872,10 +872,10 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
       addUuids([
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
         { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -905,7 +905,7 @@ test('render items: two silences', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'artificial_silence', length: 1 },
         { type: 'artificial_silence', length: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -924,7 +924,7 @@ test('render items: word after silence', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'artificial_silence', length: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toStrictEqual([
@@ -984,12 +984,12 @@ test('currentSpeaker with 0-len para: player cursor', () => {
     addUuids([
       { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Three', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
     ])
   );
   state.cursor.current = 'player';
@@ -1003,12 +1003,12 @@ test('currentSpeaker with 0-len para: user cursor', () => {
     addUuids([
       { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Three', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
     ])
   );
   state.cursor.current = 'user';
@@ -1024,18 +1024,18 @@ test('currentSpeaker with 0-len para: user cursor', () => {
   expect(currentSpeaker(state)).toBe('Speaker Three');
 });
 
-test('currentSpeaker before first para break', () => {
+test('currentSpeaker before first para end', () => {
   const state = _.cloneDeep(defaultEditorState);
   state.document.content = _.cloneDeep(
     addUuids([
       { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Three', language: 'test' },
       { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
     ])
   );
   state.cursor.current = 'user';
@@ -1073,23 +1073,23 @@ test('speakerIndices: empty doc', () => {
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({});
 });
 
-test('speakerIndices: doc with only speaker changes and para breaks', () => {
+test('speakerIndices: doc with only speaker changes and para ends', () => {
   const contentMacros = memoizedMacroItems(
     addUuids([
       { type: 'paragraph_start', speaker: '', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: '', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
       { type: 'paragraph_start', speaker: '', language: 'test' },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
     ])
   );
   expect(memoizedSpeakerIndices(contentMacros)).toStrictEqual({
@@ -1104,7 +1104,7 @@ test('firstPossibleCursorPosition', () => {
       addUuids([
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toBe(1);
@@ -1113,10 +1113,10 @@ test('firstPossibleCursorPosition', () => {
     firstPossibleCursorPosition(
       addUuids([
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
         { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toBe(1);
@@ -1126,7 +1126,7 @@ test('firstPossibleCursorPosition', () => {
       addUuids([
         { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', length: 1, sourceStart: 1, source: 'source-1', text: 'One', conf: 1 },
-        { type: 'paragraph_break' },
+        { type: 'paragraph_end' },
       ])
     )
   ).toBe(1);

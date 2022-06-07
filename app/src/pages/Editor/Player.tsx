@@ -40,7 +40,7 @@ export function Player(): JSX.Element {
     }
     let cIdx = currentIndex(state.editor.present);
     let cItem = state.editor.present.document.content[cIdx];
-    if (cIdx > 0 && cItem && cItem.type == 'paragraph_break') {
+    if (cIdx > 0 && cItem && cItem.type == 'paragraph_end') {
       cIdx -= 1;
       cItem = state.editor.present.document.content[cIdx];
     }

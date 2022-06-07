@@ -15,12 +15,12 @@ const testContent: V3DocumentItem[] = addUuids([
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
   { type: 'paragraph_start', speaker: 'paragraph_02', language: null },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
   { type: 'artificial_silence', length: 1 },
-  { type: 'paragraph_break' },
+  { type: 'paragraph_end' },
 ]);
 
 const testState: EditorState = _.cloneDeep(defaultEditorState);
@@ -72,7 +72,7 @@ test('moveSelectionHeadLeft: selection (left head), extends to left', () => {
   expect(state.cursor.userIndex).toBe(2);
 });
 
-test('moveSelectionHeadLeft: no selection, does not select para break if met', () => {
+test('moveSelectionHeadLeft: no selection, does not select para end if met', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
@@ -82,7 +82,7 @@ test('moveSelectionHeadLeft: no selection, does not select para break if met', (
   expect(state.cursor.userIndex).toBe(1);
 });
 
-test('moveSelectionHeadLeft: selection, does not select para break if met', () => {
+test('moveSelectionHeadLeft: selection, does not select para end if met', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
   state.cursor.userIndex = 2;
@@ -127,7 +127,7 @@ test.each([1.1, 1.4, 1.5, 1.7, 2])(
   }
 );
 
-test('moveSelectionHeadLeft: right selection, collapses without including para break', () => {
+test('moveSelectionHeadLeft: right selection, collapses without including para end', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'player';
   state.cursor.playerTime = 1;
@@ -186,7 +186,7 @@ test('moveSelectionHeadRight: selection (right head), extends to right', () => {
   expect(state.cursor.userIndex).toBe(3);
 });
 
-test('moveSelectionHeadRight: no selection, para break is selected as own item', () => {
+test('moveSelectionHeadRight: no selection, para end is selected as own item', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
   state.cursor.userIndex = 4;
@@ -196,7 +196,7 @@ test('moveSelectionHeadRight: no selection, para break is selected as own item',
   expect(state.cursor.userIndex).toBe(5);
 });
 
-test('moveSelectionHeadRight: selection over para break', () => {
+test('moveSelectionHeadRight: selection over para end', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'user';
   state.cursor.userIndex = 4;
@@ -242,7 +242,7 @@ test.each([1, 1.1, 1.4, 1.5, 1.7])(
   }
 );
 
-test('moveSelectionHeadRight: left selection, collapses without including para break', () => {
+test('moveSelectionHeadRight: left selection, collapses without including para end', () => {
   const state = _.cloneDeep(testState);
   state.cursor.current = 'player';
   state.cursor.playerTime = 3;
@@ -253,23 +253,23 @@ test('moveSelectionHeadRight: left selection, collapses without including para b
   expect(state.cursor.userIndex).toBe(4);
 });
 
-test('moveSelectionHeadRight: multiple para breaks to right', () => {
+test('moveSelectionHeadRight: multiple para ends to right', () => {
   const state = _.cloneDeep(testState);
   state.document.content = addUuids([
     { type: 'paragraph_start', speaker: 'paragraph_01', language: null },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'paragraph_02', language: null },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'paragraph_03', language: null },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
     { type: 'paragraph_start', speaker: 'paragraph_04', language: null },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
     { type: 'artificial_silence', length: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   state.cursor.current = 'player';
   state.cursor.playerTime = 2;

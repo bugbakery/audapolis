@@ -76,7 +76,7 @@ export function contentToVtt(
             throw new Error('Current speaker is null. Who is the speaker?');
           }
           items.push(
-            { type: 'paragraph_break', uuid: uuidv4() },
+            { type: 'paragraph_end', uuid: uuidv4() },
             {
               type: 'paragraph_start',
               speaker: cur_speak,

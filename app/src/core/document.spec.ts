@@ -13,7 +13,7 @@ test('serialization roundtrips', async () => {
     content: addUuids([
       { type: 'paragraph_start', speaker: 'S1', language: null },
       { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-      { type: 'paragraph_break' },
+      { type: 'paragraph_end' },
     ]),
     sources: {
       'source-1': {
@@ -109,7 +109,7 @@ test('deserialization of v1 succeeds', async () => {
   expect(deserializedDocument.content).toStrictEqualExceptUuids([
     { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   expect(deserializedDocument.sources).toMatchObject({
     'source-1': {
@@ -139,7 +139,7 @@ test('deserialization of v2 succeeds', async () => {
   expect(deserializedDocument.content).toStrictEqualExceptUuids([
     { type: 'paragraph_start', speaker: 'Speaker One', language: null },
     { type: 'text', text: 'One', conf: 1, source: 'source-1', sourceStart: 1, length: 1 },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   expect(deserializedDocument.sources).toMatchObject({
     'source-1': {
@@ -165,7 +165,7 @@ test('deserialization of empty v2 yields default document', async () => {
   expect(fileAsString).toBe('ABC');
   expect(deserializedDocument.content).toStrictEqualExceptUuids([
     { type: 'paragraph_start', speaker: '', language: null },
-    { type: 'paragraph_break' },
+    { type: 'paragraph_end' },
   ]);
   expect(deserializedDocument.sources).toMatchObject({
     'source-1': {

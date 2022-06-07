@@ -17,19 +17,13 @@ Every section MUST end with a `DocumentItem` of type `paragragraph_break`.
 ### `DocumentItem`s
 
 There are 5 types of document items:
-- `paragraph_break`
 - `paragraph_start`
+- `paragraph_end`
 - `text`
 - `non_text`
 - `artificial_silence`
 
 Every document item MUST have an uuid in the `uuid` property in addition the properties described below.
-
-#### `paragraph_break`
-
-A `paragraph_break` marks the end of a paragraph and thus the end of a section.
-It MAY ONLY occur at the end of a paragraph.
-It has no additional properties.
 
 #### `paragraph_start`
 
@@ -50,6 +44,13 @@ It MAY otherwise contain the entire range of unicode characters.
 The `language` MUST be a string or null.
 It MUST be null or an ietf language code.
 It MAY NOT be another value.
+
+#### `paragraph_end`
+
+A `paragraph_end` marks the end of a paragraph and thus the end of a section.
+It MAY ONLY occur at the end of a paragraph.
+It has no additional properties.
+
 
 #### `text`
 
@@ -106,7 +107,7 @@ It MUST be greater than zero.
 ### Conclusion
 
 The document items describe above allow us to divide the `content` into sections.
-A section is a `paragraph_start` followed by zero or more `text`, `non_text` or `aritifical_silence` item, finished by a `paragraph_break`.
+A section is a `paragraph_start` followed by zero or more `text`, `non_text` or `aritifical_silence` item, finished by a `paragraph_end`.
 
 The first item of a document is always a `paragraph_start`.
 

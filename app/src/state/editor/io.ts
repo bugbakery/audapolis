@@ -62,7 +62,7 @@ export const saveDocument = createAsyncActionWithReducer<
 );
 
 export const closeDocument = createAsyncActionWithReducer<EditorState>(
-  'editor/delete',
+  'editor/closeDocument',
   async (arg, { dispatch }) => {
     dispatch(setPlay(false));
     dispatch(openLanding());

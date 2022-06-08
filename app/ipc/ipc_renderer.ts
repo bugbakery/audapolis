@@ -4,12 +4,14 @@
 
 import {
   ipcRenderer,
+  IpcRendererEvent,
   OpenDialogOptions,
   OpenDialogReturnValue,
   SaveDialogOptions,
   SaveDialogReturnValue,
 } from 'electron';
 import { MenuItemConstructorOptionsIpc, ServerInfo } from '../main_process/types';
+import { LogSource, LogLevel } from '../src/util/log';
 
 export function saveFile(options: SaveDialogOptions): Promise<SaveDialogReturnValue> {
   return ipcRenderer.invoke('save-file', options);
@@ -67,4 +69,14 @@ export function subscribeLocalServerInfo(callback: (stderr: ServerInfo) => void)
 
 export function subscribeOpenAbout(callback: () => void): void {
   ipcRenderer.on('open-about', callback);
+}
+
+export function subscribeExportDebugLog(
+  callback: (_event: IpcRendererEvent, _a0: string) => void
+): void {
+  ipcRenderer.on('export-debug-log', callback);
+}
+
+export function sendLogLine(level: LogLevel, ...args: any[]): void {
+  ipcRenderer.invoke('log-line', LogSource.RendererProcess, level, args);
 }

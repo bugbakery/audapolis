@@ -131,11 +131,11 @@ export const currentCursorTime = (state: EditorState): number => {
   }
 };
 
-function hasParagraphStart(content: V3DocumentItem[]): boolean {
+function needToAddParagraphStart(content: V3DocumentItem[]): boolean {
   if (content.length == 0) {
-    return true;
+    return false;
   } else {
-    return content[0].type == 'paragraph_start';
+    return content[0].type != 'paragraph_start';
   }
 }
 
@@ -152,7 +152,7 @@ const memoizedSelectedItems = memoize(
         selection.startIndex,
         selection.startIndex + selection.length
       );
-      if (!hasParagraphStart(selectedItems)) {
+      if (needToAddParagraphStart(selectedItems)) {
         const speakerData = getParagraphStart(content, selection.startIndex);
         if (speakerData == null) {
           throw new Error("that's not possible");

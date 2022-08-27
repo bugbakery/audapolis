@@ -24,7 +24,7 @@ test('webvtt: export minimal', () => {
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:04.000\nOne Two Three Four\n\n' +
-      '00:00:04.000 --> 00:00:08.000\nTwo One Two Two Two Three Two Four'
+      '00:00:04.000 --> 00:00:08.000\nTwo One Two Two Two Three Two Four\n'
   );
 });
 
@@ -37,7 +37,7 @@ test('webvtt: line length', () => {
       '00:00:04.000 --> 00:00:05.000\nTwo One\n\n' +
       '00:00:05.000 --> 00:00:06.000\nTwo Two\n\n' +
       '00:00:06.000 --> 00:00:07.000\nTwo Three\n\n' +
-      '00:00:07.000 --> 00:00:08.000\nTwo Four'
+      '00:00:07.000 --> 00:00:08.000\nTwo Four\n'
   );
 });
 
@@ -62,7 +62,7 @@ test('webvtt: line length: too long word', () => {
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:02.000\nOne Two\n\n' +
       '00:00:02.000 --> 00:00:03.000\nSupercalifragilisticexpialidocious\n\n' +
-      '00:00:03.000 --> 00:00:04.000\nFour'
+      '00:00:03.000 --> 00:00:04.000\nFour\n'
   );
 });
 
@@ -73,7 +73,7 @@ test('webvtt: empty para creates no cue', () => {
   ]);
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(
-    'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis'
+    'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n'
   );
 });
 
@@ -81,7 +81,7 @@ test('webvtt: empty document creates no cue', () => {
   const testContent: V3DocumentItem[] = [];
   const vtt = contentToVtt(testContent, false, false, 10);
   expect(vtt.toString()).toBe(
-    'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis'
+    'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n'
   );
 });
 
@@ -90,7 +90,7 @@ test('webvtt: speaker names', () => {
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:04.000\n<v Speaker One>One Two Three Four\n\n' +
-      '00:00:04.000 --> 00:00:08.000\n<v Speaker Two>Two One Two Two Two Three Two Four'
+      '00:00:04.000 --> 00:00:08.000\n<v Speaker Two>Two One Two Two Two Three Two Four\n'
   );
 });
 
@@ -99,7 +99,7 @@ test('webvtt: word timings', () => {
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:04.000\n<00:00:00.000><c>One</c> <00:00:01.000><c>Two</c> <00:00:02.000><c>Three</c> <00:00:03.000><c>Four</c>\n\n' +
-      '00:00:04.000 --> 00:00:08.000\n<00:00:04.000><c>Two One</c> <00:00:05.000><c>Two Two</c> <00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>'
+      '00:00:04.000 --> 00:00:08.000\n<00:00:04.000><c>Two One</c> <00:00:05.000><c>Two Two</c> <00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>\n'
   );
 });
 
@@ -108,7 +108,7 @@ test('webvtt: speaker names and word timings', () => {
   expect(vtt.toString()).toBe(
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:04.000\n<v Speaker One><00:00:00.000><c>One</c> <00:00:01.000><c>Two</c> <00:00:02.000><c>Three</c> <00:00:03.000><c>Four</c>\n\n' +
-      '00:00:04.000 --> 00:00:08.000\n<v Speaker Two><00:00:04.000><c>Two One</c> <00:00:05.000><c>Two Two</c> <00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>'
+      '00:00:04.000 --> 00:00:08.000\n<v Speaker Two><00:00:04.000><c>Two One</c> <00:00:05.000><c>Two Two</c> <00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>\n'
   );
 });
 
@@ -118,7 +118,7 @@ test('webvtt: speaker names, word timings and line limit', () => {
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:04.000\n<v Speaker One><00:00:00.000><c>One</c> <00:00:01.000><c>Two</c> <00:00:02.000><c>Three</c> <00:00:03.000><c>Four</c>\n\n' +
       '00:00:04.000 --> 00:00:06.000\n<v Speaker Two><00:00:04.000><c>Two One</c> <00:00:05.000><c>Two Two</c>\n\n' +
-      '00:00:06.000 --> 00:00:08.000\n<v Speaker Two><00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>'
+      '00:00:06.000 --> 00:00:08.000\n<v Speaker Two><00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>\n'
   );
 });
 
@@ -130,6 +130,6 @@ test('webvtt: speaker names, word timings and line limit', async () => {
     'WEBVTT This file was generated using audapolis: https://github.com/audapolis/audapolis\n\n' +
       '00:00:00.000 --> 00:00:04.000\n<v Speaker One><00:00:00.000><c>One</c> <00:00:01.000><c>Two</c> <00:00:02.000><c>Three</c> <00:00:03.000><c>Four</c>\n\n' +
       '00:00:04.000 --> 00:00:06.000\n<v Speaker Two><00:00:04.000><c>Two One</c> <00:00:05.000><c>Two Two</c>\n\n' +
-      '00:00:06.000 --> 00:00:08.000\n<v Speaker Two><00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>'
+      '00:00:06.000 --> 00:00:08.000\n<v Speaker Two><00:00:06.000><c>Two Three</c> <00:00:07.000><c>Two Four</c>\n'
   );
 });

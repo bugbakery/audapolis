@@ -69,7 +69,7 @@
     "tmp": "^0.2.1",
     "tree-kill": "^1.2.2",
     "typescript": "^4.4.3",
-    "vite": "^2.5.7",
+    "vite": "^2.9.13",
     "vite-plugin-commonjs-externals": "^0.1.1"
   },
   "dependencies": {

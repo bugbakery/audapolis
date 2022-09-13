@@ -27,11 +27,14 @@ export function EditorPage(): JSX.Element {
 
   const documentRef = useRef<HTMLDivElement>(null);
   const handleKeyPress: KeyboardEventHandler = (e) => {
-    if (e.key === ' ') {
-      dispatch(togglePlaying());
-      e.preventDefault();
-    } else if (e.key === 'Enter') {
-      dispatch(insertParagraphEnd());
+    if (document.activeElement?.tagName !== 'INPUT') {
+      // ignore key presses going to input fields
+      if (e.key === ' ') {
+        dispatch(togglePlaying());
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        dispatch(insertParagraphEnd());
+      }
     }
   };
 

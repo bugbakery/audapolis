@@ -78,5 +78,10 @@ export function subscribeExportDebugLog(
 }
 
 export function sendLogLine(level: LogLevel, ...args: any[]): void {
-  ipcRenderer.invoke('log-line', LogSource.RendererProcess, level, args);
+  ipcRenderer.invoke(
+    'log-line',
+    LogSource.RendererProcess,
+    level,
+    ...args.map((x) => x?.toString() || 'n/a')
+  );
 }

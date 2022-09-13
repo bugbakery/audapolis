@@ -100,5 +100,5 @@ ipcMain.handle('get-home-path', () => {
 
 ipcMain.handle('log-line', (_event, source: LogSource, level: LogLevel, ...args: any[]) => {
   assertSome(logLine);
-  logLine(source, level, ...args);
+  logLine(source, level, ...args.map((x) => JSON.stringify(x)));
 });

@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state';
 import { V3TimedDocumentItem } from '../../core/document';
 import * as React from 'react';
-import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect, useRef } from 'react';
+import { KeyboardEventHandler, MouseEventHandler, RefObject, useEffect } from 'react';
 import { Cursor } from './Cursor';
 import { Paragraph } from './Paragraph';
 import { basename, extname } from 'path';
@@ -46,7 +46,7 @@ const DocumentContainer = styled.div<{ displaySpeakerNames: boolean }>`
   }
 `;
 
-export function Document(): JSX.Element {
+export function Document({ documentRef }: { documentRef: RefObject<HTMLDivElement> }): JSX.Element {
   const dispatch = useDispatch();
   const content = useSelector((state: RootState) =>
     state.editor.present ? memoizedTimedDocumentItems(state.editor.present.document.content) : []
@@ -67,18 +67,18 @@ export function Document(): JSX.Element {
   });
 
   const speakerColorIndices = memoizedSpeakerIndices(contentMacros);
-  const ref = useRef<HTMLDivElement>(null);
   const theme: Theme = useTheme();
 
   useEffect(() => {
-    ref.current && ref.current.focus();
-  }, [ref.current]);
+    console.log('setting current focus');
+    documentRef.current ? documentRef.current.focus() : {};
+  }, [documentRef.current]);
 
   const mouseDownHandler: MouseEventHandler = (e) => {
     if (e.detail != 1 || e.buttons != 1) return;
 
     e.preventDefault();
-    ref.current?.focus(); // sometimes we loose focus and then it is nice to be able to gain it back
+    documentRef.current?.focus(); // sometimes we loose focus and then it is nice to be able to gain it back
 
     if (e.detail == 1 && !e.shiftKey) {
       handleWordClick(dispatch, content, e);
@@ -135,7 +135,7 @@ export function Document(): JSX.Element {
   return (
     <DocumentContainer
       id={'document'}
-      ref={ref}
+      ref={documentRef}
       displaySpeakerNames={displaySpeakerNames}
       onMouseDown={mouseDownHandler}
       onMouseMove={mouseMoveHandler}
@@ -143,8 +143,8 @@ export function Document(): JSX.Element {
       onKeyDown={keyDownHandler}
     >
       <Cursor />
-      <SelectionMenu documentRef={ref} />
-      <SelectionApply documentRef={ref} />
+      <SelectionMenu documentRef={documentRef} />
+      <SelectionApply documentRef={documentRef} />
 
       <Pane display={'flex'} flexDirection={'row'} marginBottom={majorScale(4)}>
         <Pane

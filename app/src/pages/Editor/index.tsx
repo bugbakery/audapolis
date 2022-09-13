@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { EditorTitleBar } from './TitleBar';
 import { Document } from './Document';
 import { Player } from './Player';
-import { KeyboardEventHandler } from 'react';
+import { KeyboardEventHandler, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { ExportDocumentDialog } from './ExportDocumentDialog';
 import { EditorTour } from '../../tour/EditorTour';
@@ -12,6 +12,7 @@ import { togglePlaying } from '../../state/editor/play';
 import { insertParagraphEnd } from '../../state/editor/edit';
 import { EditorMenuBar } from './MenuBar';
 import { FilterDialog } from './Filter';
+import { SearchOverlay } from './Search';
 
 const MainContainer = styled(MainCenterColumn)`
   justify-content: start;
@@ -23,6 +24,8 @@ const MainContainer = styled(MainCenterColumn)`
 `;
 export function EditorPage(): JSX.Element {
   const dispatch = useDispatch();
+
+  const documentRef = useRef<HTMLDivElement>(null);
   const handleKeyPress: KeyboardEventHandler = (e) => {
     if (e.key === ' ') {
       dispatch(togglePlaying());
@@ -41,9 +44,10 @@ export function EditorPage(): JSX.Element {
       <EditorTitleBar />
       <ExportDocumentDialog />
       <FilterDialog />
+      <SearchOverlay />
 
       <MainContainer id={'scroll-container'}>
-        <Document />
+        <Document documentRef={documentRef} />
       </MainContainer>
     </AppContainer>
   );

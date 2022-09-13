@@ -130,7 +130,7 @@ export function ExportDocumentDialog(): JSX.Element {
           width={'100%'}
           initialSelectedItem={formState}
           items={exportValues}
-          itemToString={(x) => (x ? x.type : '')}
+          itemToString={(x) => x?.type || ''}
           onChange={(selected) => {
             if (!selected) return;
             setFormState((state) => {

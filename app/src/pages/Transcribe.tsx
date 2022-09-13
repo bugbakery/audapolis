@@ -52,7 +52,7 @@ function ModelSelector({
       width={'100%'}
       selectedItem={selectedModel}
       items={models}
-      itemToString={(model) => `${model.name}`}
+      itemToString={(model) => model?.name || ''}
       onChange={(selected) => {
         if (selected !== null) setSelectedModel(selected);
       }}
@@ -181,8 +181,10 @@ export function TranscribePage(): JSX.Element {
             width={'100%'}
             selectedItem={selectedLanguage}
             items={languages}
-            itemToString={(lang) => `${lang.lang}`}
-            onChange={(selected) => setSelectedLanguage(selected)}
+            itemToString={(lang) => lang?.lang || ''}
+            onChange={(selected) => {
+              if (selected !== null) setSelectedLanguage(selected);
+            }}
             marginBottom={majorScale(1)}
           />
           <details style={{ marginBottom: majorScale(3) }}>

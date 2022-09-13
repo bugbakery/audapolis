@@ -86,8 +86,10 @@ export function Otio({
         width={'100%'}
         initialSelectedItem={otioFormat}
         items={otioFormats}
-        itemToString={(x) => x.name}
-        onChange={(selected) => setOtioFormat(selected)}
+        itemToString={(x) => x?.name || ''}
+        onChange={(selected) => {
+          if (selected) setOtioFormat(selected);
+        }}
       />
     </FormField>
   );

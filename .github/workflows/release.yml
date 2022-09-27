@@ -4,26 +4,23 @@ on:
     branches:
       - main
     paths-ignore:
-      - '**.md'
-      - '**.spec.js'
-      - '.idea'
-      - '.gitignore'
-      - '.github/**'
-      - '!.github/workflows/release.yml'
+      - "**.md"
+      - "**.spec.js"
+      - ".idea"
+      - ".gitignore"
+      - ".github/**"
+      - "!.github/workflows/release.yml"
   pull_request:
     branches:
       - main
-
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
-
 defaults:
   run:
-    shell: 'bash'
-
+    shell: "bash"
 
 jobs:
   pre_job:
@@ -65,11 +62,11 @@ jobs:
 
   upload_artifacts:
     name: Build
-    needs: [ get_metadata, pre_job ]
+    needs: [get_metadata, pre_job]
 
     strategy:
       matrix:
-        os: [ macos-10.15, ubuntu-latest, windows-latest ]
+        os: [macos-10.15, ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -106,7 +103,7 @@ jobs:
           toolchain: stable
 
       - name: Install pyoxidizer fork
-        run: cargo install --git https://github.com/audapolis/PyOxidizer.git --rev 3f3980d81e67928db83df20b9c1aefa3c8235866 pyoxidizer
+        run: cargo install pyoxidizer
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -119,7 +116,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies
@@ -171,7 +168,7 @@ jobs:
           mac_certs_password: ${{ secrets.mac_certs_password }}
 
   finalize:
-    needs: [ upload_artifacts ]
+    needs: [upload_artifacts]
     if: always()
     # && ${{ needs.upload_artifacts.result == 'skipped' || needs.upload_artifacts.result == 'success' }}
 

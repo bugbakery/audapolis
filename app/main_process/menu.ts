@@ -77,6 +77,19 @@ export function setMenu(window: BrowserWindow, args: MenuItemConstructorOptionsI
           },
           accelerator: 'CommandOrControl+N',
         },
+        { type: 'separator' },
+        {
+          role: 'ZoomIn',
+          accelerator: 'CommandOrControl+plus',
+        },
+        {
+          role: 'ZoomOut',
+          accelerator: 'CommandOrControl+-',
+        },
+        {
+          role: 'ResetZoom',
+          accelerator: 'CommandOrControl+0',
+        },
       ],
     },
     {

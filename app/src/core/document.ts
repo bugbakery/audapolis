@@ -396,5 +396,5 @@ export interface SourceRenderItem {
 
   source: string;
   sourceStart: number;
-  speaker: string;
+  speaker: string | null;
 }

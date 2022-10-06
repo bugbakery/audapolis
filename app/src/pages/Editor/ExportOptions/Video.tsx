@@ -44,7 +44,7 @@ export function Video({
   const [limitLineLength, setLimitLineLength] = useState(false);
   const [lineLimit, setLineLimit] = useState(60);
   exportCallbackRef.current = async (document, path, progressCallback) => {
-    const ris = memoizedDocumentRenderItems(document.content);
+    const ris = memoizedDocumentRenderItems(document.content, false);
     const sources = document.sources;
     const vtt = contentToVtt(document.content, false, false, limitLineLength ? lineLimit : null);
     await exportVideo(

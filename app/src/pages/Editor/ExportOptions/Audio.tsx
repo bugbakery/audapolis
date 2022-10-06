@@ -19,7 +19,7 @@ export function Audio({
   >;
 }): JSX.Element {
   exportCallbackRef.current = async (document, path, progressCallback) => {
-    const renderItems = memoizedDocumentRenderItems(document.content);
+    const renderItems = memoizedDocumentRenderItems(document.content, false);
     const sources = document.sources;
     await exportAudio(renderItems, sources, path, progressCallback);
   };

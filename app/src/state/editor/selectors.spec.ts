@@ -297,7 +297,7 @@ test('selected render items', () => {
     },
     { type: 'paragraph_end', absoluteStart: 2, absoluteIndex: 4 },
   ]);
-  expect(renderItems(selItems)).toStrictEqual([
+  expect(renderItems(selItems, true)).toStrictEqual([
     {
       absoluteStart: 1,
       length: 2,
@@ -706,7 +706,7 @@ test('paragraphs fails if no paragraph start before first word', () => {
 });
 
 test('renderItems', () => {
-  expect(memoizedDocumentRenderItems(testContentLong)).toStrictEqual([
+  expect(memoizedDocumentRenderItems(testContentLong, true)).toStrictEqual([
     {
       type: 'media',
       absoluteStart: 0,
@@ -735,7 +735,8 @@ test('render items: source silence', () => {
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'non_text', source: 'source-1', sourceStart: 3, length: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -757,7 +758,8 @@ test('render items: same source, not-matching time', () => {
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3.1, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -787,7 +789,8 @@ test('render items: same source, not-matching time', () => {
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 2.9, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -817,7 +820,8 @@ test('render items: same source, matching time', () => {
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -837,7 +841,8 @@ test('render items: missing paragraph end', () => {
       addUuids([
         { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
-      ])
+      ]),
+      true
     )
   ).toThrow(/who is the speaker/i);
 });
@@ -852,7 +857,8 @@ test('render items: same source, matching time, matching speaker-name', () => {
         { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -876,7 +882,8 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
         { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -898,6 +905,31 @@ test('render items: same source, matching time, mismatching speaker-name', () =>
   ]);
 });
 
+test('render items: same source, matching time, mismatching speaker-name, ignoring speaker names', () => {
+  expect(
+    memoizedDocumentRenderItems(
+      addUuids([
+        { type: 'paragraph_start', speaker: 'Speaker One', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 2, length: 1, text: 'One', conf: 1 },
+        { type: 'paragraph_end' },
+        { type: 'paragraph_start', speaker: 'Speaker Two', language: 'test' },
+        { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
+        { type: 'paragraph_end' },
+      ]),
+      false
+    )
+  ).toStrictEqual([
+    {
+      type: 'media',
+      absoluteStart: 0,
+      length: 2,
+      source: 'source-1',
+      sourceStart: 2,
+      speaker: null,
+    },
+  ]);
+});
+
 test('render items: two silences', () => {
   expect(
     memoizedDocumentRenderItems(
@@ -906,7 +938,8 @@ test('render items: two silences', () => {
         { type: 'artificial_silence', length: 1 },
         { type: 'artificial_silence', length: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {
@@ -925,7 +958,8 @@ test('render items: word after silence', () => {
         { type: 'artificial_silence', length: 1 },
         { type: 'text', source: 'source-1', sourceStart: 3, length: 1, text: 'Two', conf: 1 },
         { type: 'paragraph_end' },
-      ])
+      ]),
+      true
     )
   ).toStrictEqual([
     {

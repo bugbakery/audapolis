@@ -104,7 +104,7 @@ function getTranscriptCorrectionState(state: EditorState): string {
 }
 
 function isSameSourceAndContinuous(items: V3TimedDocumentItem[]): boolean {
-  return renderItems(items).length == 1;
+  return renderItems(items, false).length == 1;
 }
 
 export const abortTranscriptCorrection = createActionWithReducer<EditorState>(

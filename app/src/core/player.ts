@@ -45,9 +45,9 @@ export class Player {
       (selectedItems, content) => {
         this.pause();
         if (selectedItems.length > 0) {
-          this.renderItems = renderItems(selectedItems);
+          this.renderItems = renderItems(selectedItems, false);
         } else {
-          this.renderItems = memoizedDocumentRenderItems(content);
+          this.renderItems = memoizedDocumentRenderItems(content, false);
         }
         if (this.playing) this.play();
       }

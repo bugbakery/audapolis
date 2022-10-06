@@ -24,7 +24,7 @@ export async function exportOtio(
   fs.mkdirSync(path.join(outputPath, 'media'));
 
   const timeline: OtioSegment[] = content.map((x) => {
-    if (!('speaker' in x)) {
+    if (!('speaker' in x) || x.speaker === null) {
       console.debug(x);
       throw Error('not implemented');
     }

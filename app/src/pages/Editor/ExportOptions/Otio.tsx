@@ -33,7 +33,7 @@ export function Otio({
     assertSome(state.editor.present);
     const server = state.server.servers[state.server.selectedServer];
 
-    const ris = memoizedDocumentRenderItems(document.content);
+    const ris = memoizedDocumentRenderItems(document.content, true);
     const sources = document.sources;
     await exportOtio(
       documentBaseName,

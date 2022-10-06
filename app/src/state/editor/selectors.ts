@@ -249,12 +249,17 @@ function isSubsequentSourceSegment(
   }
 }
 
-export const memoizedDocumentRenderItems = memoize((content: V3DocumentItem[]): RenderItem[] => {
-  const timedContent = memoizedTimedDocumentItems(content);
-  return renderItems(timedContent);
-});
+export const memoizedDocumentRenderItems = memoize(
+  (content: V3DocumentItem[], splitOnSpeakerChange: boolean): RenderItem[] => {
+    const timedContent = memoizedTimedDocumentItems(content);
+    return renderItems(timedContent, splitOnSpeakerChange);
+  }
+);
 
-export function renderItems(timedContent: V3TimedDocumentItem[]): RenderItem[] {
+export function renderItems(
+  timedContent: V3TimedDocumentItem[],
+  splitOnSpeakerChange: boolean
+): RenderItem[] {
   const items = [];
   let current: RenderItem | null = null;
   let current_speaker: string | null = null;
@@ -268,7 +273,7 @@ export function renderItems(timedContent: V3TimedDocumentItem[]): RenderItem[] {
       getRenderType(item.type) != current.type ||
       !isSubsequentSourceSegment(current, item) ||
       !isSameSource(current, item) ||
-      ('speaker' in current && current_speaker != current.speaker)
+      (splitOnSpeakerChange && 'speaker' in current && current_speaker != current.speaker)
     ) {
       if (current) {
         items.push(current);
@@ -287,7 +292,7 @@ export function renderItems(timedContent: V3TimedDocumentItem[]): RenderItem[] {
             length,
             sourceStart,
             source,
-            speaker: current_speaker,
+            speaker: splitOnSpeakerChange ? current_speaker : null,
           };
           break;
         }

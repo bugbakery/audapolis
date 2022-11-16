@@ -19,8 +19,8 @@ repos:
     rev: 22.3.0
     hooks:
       - id: black
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.2
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
     hooks:
       - id: flake8
   - repo: https://github.com/pre-commit/mirrors-eslint
@@ -37,7 +37,7 @@ repos:
           - eslint-plugin-unused-imports@1.1.4
         files: \.tsx?$ # *.js, *.jsx, *.ts and *.tsx
         types: [file]
-        args: ['-c', 'app/.eslintrc.json', '--max-warnings', '0']
+        args: ["-c", "app/.eslintrc.json", "--max-warnings", "0"]
   - repo: local
     hooks:
       - id: tsc

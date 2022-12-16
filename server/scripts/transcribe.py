@@ -1,6 +1,8 @@
 import argparse
 import hashlib
 import json
+import subprocess
+import tempfile
 import time
 import uuid
 import zipfile
@@ -100,13 +102,22 @@ if __name__ == "__main__":
     if args.token:
         headers["Authorization"] = f"Bearer {args.token}"
 
+    tmpfile = tempfile.NamedTemporaryFile(suffix=".wav")
+    if args.file.suffix != ".wav":
+        subprocess.check_call(["ffmpeg", "-y", "-i", str(args.file), tmpfile.name])
+        server_file = tmpfile.name
+    else:
+        server_file = args.file
+
     print(f"Uploading {args.file}")
     upload_req = requests.post(
         f"{args.server}/tasks/start_transcription/",
-        files={"file": open(args.file, "rb")},
+        files={"file": open(server_file, "rb")},
         params={
             "transcription_model": f"transcription-{args.language}-{args.transcription_model}",
-            "punctuation_model": f"punctuation-{args.language}-{args.punctuation_model}",
+            "punctuation_model": f"punctuation-{args.language}-{args.punctuation_model}"
+            if args.punctuation_model is not None
+            else None,
             "diarize": args.diarize,
         },
         data={"fileName": str(args.file)},

@@ -74,9 +74,6 @@ export const createWindow = (): void => {
   window.on('focus', () => {
     applyMenuBar(window);
   });
-  window.on('blur', () => {
-    unregisterAccelerators();
-  });
 
   window.on('ready-to-show', () => window.show());
 };
@@ -152,6 +149,6 @@ app.on('activate', () => {
 import '../ipc/ipc_main';
 import './server';
 import { windowList } from './windowList';
-import { applyMenuBar, setMenuBar, unregisterAccelerators } from './menu';
+import { applyMenuBar, setMenuBar } from './menu';
 import { isRunningInTest } from '../src/util';
 import { initMainProcessLog } from '../src/util/log';

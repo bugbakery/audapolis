@@ -39,7 +39,7 @@ class CustomEnvironment extends NodeEnvironment {
     while (!this.browser) {
       try {
         this.browser = await puppeteer.connect({
-          browserURL: `http://localhost:${port}`,
+          browserURL: `http://127.0.0.1:${port}/`,
         });
         const pages = await this.browser.pages();
         // we do this to filter out the devtools window

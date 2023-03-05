@@ -3,7 +3,7 @@ import path from 'path';
 import JSZip from 'jszip';
 import { getHomePath, saveFile, sendLogLine } from '../../ipc/ipc_renderer';
 import { isRunningInTest } from './index';
-import glob from 'glob';
+import { globSync } from 'glob';
 import { app } from 'electron';
 
 export enum LogLevel {
@@ -55,7 +55,7 @@ export function initMainProcessLog(): void {
     fs.mkdirSync(log_dir, { recursive: true });
   }
   const now = new Date();
-  for (const oldLogfile of glob.sync(path.join(log_dir, '*.log'))) {
+  for (const oldLogfile of globSync(path.join(log_dir, '*.log'))) {
     if (now.getTime() - fs.statSync(oldLogfile).mtime.getTime() > 5 * 24 * 60 * 60 * 1000) {
       fs.rmSync(oldLogfile);
     }

@@ -7,16 +7,7 @@ import {
   V3TimedParagraphItem,
   V3TimedParagraph,
 } from '../../core/document';
-import {
-  Button,
-  majorScale,
-  Pane,
-  PaneProps,
-  Popover,
-  Position,
-  Text,
-  TextInput,
-} from 'evergreen-ui';
+import { majorScale, Pane, PaneProps, Text } from 'evergreen-ui';
 import { reassignParagraph, renameSpeaker } from '../../state/editor/edit';
 import { RootState } from '../../state';
 import { useTheme } from '../../components/theme';
@@ -27,6 +18,8 @@ import {
   setTranscriptCorrectionText,
 } from '../../state/editor/transcript_correction';
 import { assertSome } from '../../util';
+import { MenuItem, showContextMenu } from '../../components/Menu';
+import styled from 'styled-components';
 
 export function Paragraph({
   data,
@@ -228,27 +221,16 @@ type SpeakerEditing = null | {
   isNew: boolean;
 };
 
-const EditingStartButton = ({
-  type,
-  bottom,
-  setEditing,
-  name,
-  ...props
-}: {
-  setEditing: (next: SpeakerEditing) => void;
-  name: string;
-  type: EditingType;
-  children: string;
-  bottom?: boolean;
-}) => (
-  <Button
-    {...props}
-    onClick={() => setEditing({ isNew: true, type, currentText: name })}
-    display={'block'}
-    margin={majorScale(1)}
-    marginBottom={bottom ? majorScale(1) : 0}
-  />
-);
+const SpeakerEditInput = styled.input`
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+
+  font-family: 'SF UI Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  font-size: 14px;
+`;
 
 function Speaker({
   name,
@@ -262,6 +244,26 @@ function Speaker({
   const [editing, setEditing] = useState(null as SpeakerEditing);
   const dispatch = useDispatch();
 
+  const onContextMenu = (e: React.MouseEvent<HTMLSpanElement>) => {
+    e.stopPropagation();
+    showContextMenu(
+      <>
+        <MenuItem
+          label={'Rename Speaker'}
+          callback={() =>
+            setEditing({ isNew: true, type: EditingType.Rename, currentText: name || '' })
+          }
+        />
+        <MenuItem
+          label={'Reassign Speaker'}
+          callback={() =>
+            setEditing({ isNew: true, type: EditingType.Reassign, currentText: name || '' })
+          }
+        />
+      </>
+    );
+  };
+
   if (!editing) {
     return (
       <Pane
@@ -271,47 +273,22 @@ function Speaker({
         whiteSpace={'nowrap'}
         userSelect={'none'}
       >
-        <Popover
-          position={Position.RIGHT}
-          content={
-            <Pane display={'flex'} flexDirection={'column'}>
-              <EditingStartButton
-                type={EditingType.Rename}
-                setEditing={setEditing}
-                name={name || ''}
-              >
-                Rename Speaker
-              </EditingStartButton>
-              <EditingStartButton
-                type={EditingType.Reassign}
-                setEditing={setEditing}
-                name={name || ''}
-                bottom
-              >
-                Reassign Speaker
-              </EditingStartButton>
-            </Pane>
-          }
+        <Text
+          maxWidth={props.width}
+          paddingRight={majorScale(2)}
+          display={'inline-block'}
+          color={color}
+          onContextMenu={onContextMenu}
+          onClick={onContextMenu}
         >
-          <Text
-            maxWidth={props.width}
-            paddingRight={majorScale(2)}
-            display={'inline-block'}
-            color={color}
-            onContextMenu={(e: React.MouseEvent<HTMLSpanElement>) =>
-              (e.target as HTMLSpanElement).click()
-            }
-          >
-            {name || 'click to set speaker'}
-          </Text>
-        </Popover>
+          {name || 'click to set speaker'}
+        </Text>
       </Pane>
     );
   } else {
     return (
       <Pane {...props}>
-        <TextInput
-          width={'100%'}
+        <SpeakerEditInput
           placeholder={'Enter speaker name'}
           value={editing.currentText}
           ref={(ref: HTMLInputElement) => {
@@ -343,7 +320,7 @@ function Speaker({
             setEditing({ ...editing, currentText: e.target.value });
           }}
           onBlur={() => {
-            setEditing(null);
+            //setEditing(null);
           }}
         />
       </Pane>

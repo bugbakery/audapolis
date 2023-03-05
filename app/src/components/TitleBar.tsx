@@ -7,7 +7,7 @@ import { showMenuBar } from '../../ipc/ipc_renderer';
 function getWindowControlsRect(): DOMRect {
   const windowControlsOverlay = window.navigator.windowControlsOverlay;
   if (windowControlsOverlay.visible) {
-    return windowControlsOverlay.getBoundingClientRect();
+    return windowControlsOverlay.getTitlebarAreaRect();
   } else {
     return new DOMRect(55, 0, window.innerWidth - 2 * 55, 55);
   }

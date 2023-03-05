@@ -11,29 +11,19 @@ export const createWindow = (): void => {
   const window = new BrowserWindow({
     height: 600,
     width: 800,
-    frame: false,
-    titleBarStyle: 'hiddenInset',
-    titleBarOverlay: true,
+    titleBarStyle: 'hidden',
     trafficLightPosition: { x: 21, y: 21 },
+    titleBarOverlay: {
+      color: '#fff',
+      symbolColor: '#000',
+      height: 55,
+    },
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
       enableBlinkFeatures: 'ClipboardCustomFormats',
-      nativeWindowOpen: true,
     },
     show: false,
-  });
-
-  window.webContents.on('new-window', (event, url, frameName, disposition, options) => {
-    if (frameName === 'modal') {
-      event.preventDefault();
-      event.newGuest = new BrowserWindow({
-        ...options,
-        parent: window,
-        width: 500,
-        height: 400,
-      });
-    }
   });
 
   if (process.env.NODE_ENV === 'development') {

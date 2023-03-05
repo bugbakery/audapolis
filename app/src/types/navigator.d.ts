@@ -1,6 +1,6 @@
 interface Navigator {
   windowControlsOverlay: {
     visible: boolean;
-    getBoundingClientRect: () => DOMRect;
+    getTitlebarAreaRect: () => DOMRect;
   };
 }

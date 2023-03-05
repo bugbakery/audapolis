@@ -1,6 +1,5 @@
-import { AsyncThunkAction } from '@reduxjs/toolkit/dist/createAsyncThunk';
 import { EditorState } from '../state/editor/types';
-import { AnyAction } from '@reduxjs/toolkit';
+import { AnyAction, AsyncThunkAction } from '@reduxjs/toolkit';
 import { reducers } from '../state/editor';
 import _ from 'lodash';
 

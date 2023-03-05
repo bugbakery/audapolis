@@ -56,12 +56,9 @@ export function Paragraph({
       <span key={data.uuid} id={`item-${data.uuid}`} />
       <Pane color={displaySpeakerNames ? color : theme.colors.default} transition={'color 0.5s'}>
         {data.content.map((item, i) => {
-          const commonProps = {
-            key: item.uuid,
-            id: `item-${item.uuid}`,
-          };
+          const id = `item-${item.uuid}`;
           if (editingRange && editingRange.startIndex == item.absoluteIndex) {
-            return <TranscriptCorrectionEntry {...commonProps} />;
+            return <TranscriptCorrectionEntry key={item.uuid} id={id} />;
           } else if (
             editingRange &&
             editingRange.startIndex <= item.absoluteIndex &&
@@ -70,7 +67,7 @@ export function Paragraph({
             return; // we are handling the rendering in the first element
           } else {
             const preserve = i == 0 || i == data.content.length - 1;
-            return renderParagraphItem(item, displayConfidence, commonProps, preserve);
+            return renderParagraphItem(item, displayConfidence, { key: item.uuid, id }, preserve);
           }
         })}
         <ParagraphSign

@@ -60,7 +60,6 @@ def convertTranscriptionResultToV3Content(content, source, language):
         )
 
         for item in para["content"]:
-
             item["source"] = source
             v3_content.append(paragraphItemV1V2toV3(item))
 

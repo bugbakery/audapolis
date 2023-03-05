@@ -1,8 +1,9 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.4.0
     hooks:
       - id: check-added-large-files
       - id: check-merge-conflict
@@ -11,20 +12,24 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: trailing-whitespace
+
+  # python checks
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.3
+    rev: 5.12.0
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 23.1.0
     hooks:
       - id: black
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
+    rev: 6.0.0
     hooks:
       - id: flake8
+
+  # js checks
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.1.0
+    rev: v8.35.0
     hooks:
       - id: eslint
         additional_dependencies:
@@ -54,8 +59,3 @@ repos:
         language: node
         files: app/.*
         pass_filenames: false
-# TODO
-# -   repo: https://github.com/pre-commit/mirrors-mypy
-#     rev: 'v0.910'  # Use the sha / tag you want to point at
-#     hooks:
-#     -   id: mypy

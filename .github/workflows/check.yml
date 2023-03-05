@@ -1,0 +1,43 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: app/package-lock.json
+    - name: install dependencies
+      run: npm --prefix app/ ci
+    - name: run pre-commit lints
+      uses: pre-commit/action@v3.0.0
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: app/package-lock.json
+    - name: install dependencies
+      run: npm --prefix app/ ci
+    - name: run fast tests
+      run: npm --prefix app/ run test:fast
+    - name: run puppeteer tests
+      run: npm --prefix app/ run test:puppeteer

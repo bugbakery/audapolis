@@ -31,8 +31,6 @@ import { Circle } from 'rc-progress';
 import { openModelManager } from '../state/nav';
 import { useEffect, useState } from 'react';
 import { LanguageSettingsTour } from '../tour/LanguageSettingsTour';
-import { jsx } from '@emotion/react';
-import JSX = jsx.JSX;
 
 function ModelTable({
   models,

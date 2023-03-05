@@ -43,6 +43,13 @@ export const setFilterPopup = createActionWithReducer<EditorState, boolean>(
   }
 );
 
+export const toggleSearchOverlay = createActionWithReducer<EditorState>(
+  'editor/toggleSearchOverlay',
+  (state) => {
+    state.showSearchOverlay = !state.showSearchOverlay;
+  }
+);
+
 export const setExportState = createActionWithReducer<
   EditorState,
   { running: boolean; progress: number }

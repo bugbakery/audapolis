@@ -10,6 +10,7 @@ import {
   toggleDisplayConfidence,
   toggleDisplaySpeakerNames,
   toggleDisplayVideo,
+  toggleSearchOverlay,
 } from '../../state/editor/display';
 import React from 'react';
 import {
@@ -110,6 +111,12 @@ export function EditorMenuBar(): JSX.Element {
           label={'Filter document'}
           callback={() => dispatch(setFilterPopup(true))}
           accelerator={'CommandOrControl+Shift+F'}
+        />
+
+        <MenuItem
+          label={'Search in document'}
+          callback={() => dispatch(toggleSearchOverlay())}
+          accelerator={'CommandOrControl+F'}
         />
       </MenuGroup>
       <MenuGroup label={'View'}>

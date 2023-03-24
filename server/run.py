@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import socket
 import sys
@@ -29,6 +30,7 @@ if __name__ == "__main__":
     port = get_open_port()
     print(json.dumps({"msg": "server_starting", "port": port}), flush=True)
     reload = not getattr(sys, "oxidized", False)
+    os.environ["AESARA_FLAGS"] = "cxx="
     uvicorn.run(
         "app.main:app", host="127.0.0.1", port=port, access_log=False, reload=reload
     )

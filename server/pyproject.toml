@@ -2,12 +2,15 @@
 name = "Audapolis Server"
 version = "0.0.1"
 description = ""
-authors = ["Karl Engelhardt <audapolis@ca.pajowu.de>", "Jaro Habiger <jarohabiger@googlemail.com>"]
+authors = [
+    "Karl Engelhardt <audapolis@ca.pajowu.de>",
+    "Jaro Habiger <jarohabiger@googlemail.com>",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8, !=3.9.0, <3.11"
 fastapi = "^0.85.0"
-uvicorn = {extras = ["standard"], version = "^0.18.0"}
+uvicorn = { extras = ["standard"], version = "^0.18.0" }
 python-multipart = "^0.0.5"
 pydub = "^0.25.1"
 appdirs = "^1.4.4"
@@ -21,7 +24,8 @@ scipy = "^1.7.3"
 webrtcvad = "^2.0.10"
 scikit-learn = "^1.0.1"
 pydiar = "^0.0.6"
-punctuator = {git = "https://github.com/audapolis/punctuator2", rev = "2d5755787cd3e6325473a6cd42576b2f1754deb1"}
+punctuator = { git = "https://github.com/audapolis/punctuator2", rev = "9442bd1c9b5dc81650106e83f4a6949a21b6a162" }
+setuptools = "<60.0.0"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"

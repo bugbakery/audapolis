@@ -23,7 +23,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'index.ts',
-      fileName: 'start',
+      fileName: 'start.cjs',
       formats: ['cjs'],
     },
     outDir: '../build/main_process/',

@@ -4,7 +4,6 @@ import { RootState } from '../../state';
 
 jest.setTimeout(60000);
 
-import { JSONObject } from 'puppeteer-core';
 import { Document, V3DocumentItem } from '../../core/document';
 import { assertSome } from '../../util';
 import { addUuids } from '../../util/test_helper';
@@ -48,7 +47,7 @@ beforeEach(async () => {
 
   await page.evaluate((document) => {
     window.store.dispatch(window.reducers.openDocumentFromMemory(document));
-  }, document as unknown as JSONObject);
+  }, document);
 });
 
 afterEach(async () => {

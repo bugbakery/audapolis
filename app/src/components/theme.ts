@@ -41,16 +41,20 @@ export const darkTheme: Theme = mergeTheme(defaultTheme, {
         default: {
           backgroundColor: 'colors.overlayBackgroundColor',
           color: 'colors.white',
-          _hover: { backgroundColor: 'colors.darkerOverlayBackgroundColor' },
-          _active: {
-            backgroundColor: 'colors.lighterOverlayBackgroundColor',
+          selectors: {
+            _hover: { backgroundColor: 'colors.darkerOverlayBackgroundColor' },
+            _active: {
+              backgroundColor: 'colors.lighterOverlayBackgroundColor',
+            },
           },
         },
         primary: { backgroundColor: 'colors.white', color: 'colors.overlayBackgroundColor' },
         minimal: {
           color: 'colors.default',
-          _active: { backgroundColor: 'colors.lighterOverlayBackgroundColor' },
-          _hover: { backgroundColor: 'colors.darkerOverlayBackgroundColor' },
+          selectors: {
+            _active: { backgroundColor: 'colors.lighterOverlayBackgroundColor' },
+            _hover: { backgroundColor: 'colors.darkerOverlayBackgroundColor' },
+          },
         },
       },
     },
@@ -62,12 +66,12 @@ export const darkTheme: Theme = mergeTheme(defaultTheme, {
         },
       },
     },
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     Option: {
       baseStyle: {
         backgroundColor: 'colors.overlayBackgroundColor',
-        _before: { width: 0 },
+        selectors: {
+          _before: { width: 0 },
+        },
       },
     },
     Label: {
@@ -129,7 +133,9 @@ export const lightTheme: Theme = mergeTheme(defaultTheme, {
     Button: {
       appearances: {
         minimal: {
-          _active: { backgroundColor: 'colors.gray400' },
+          selectors: {
+            _active: { backgroundColor: 'colors.gray400' },
+          },
         },
       },
     },

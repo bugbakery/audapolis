@@ -1,6 +1,10 @@
 import { Draft } from 'immer';
-import { AnyAction, AsyncThunk, createAsyncThunk } from '@reduxjs/toolkit';
-import { AsyncThunkPayloadCreator } from '@reduxjs/toolkit/dist/createAsyncThunk';
+import {
+  AnyAction,
+  AsyncThunk,
+  createAsyncThunk,
+  AsyncThunkPayloadCreator,
+} from '@reduxjs/toolkit';
 import { RootState } from './index';
 
 type ReducerType<StateSlice, Payload = void> = (state: Draft<StateSlice>, payload: Payload) => void;

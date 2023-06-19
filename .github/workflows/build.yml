@@ -76,8 +76,7 @@ jobs:
         shell: bash
         run: echo "Currently on branch '${{ steps.extract_branch.outputs.branch }}'"
 
-  upload_artifacts:
-    name: Build
+  build:
     needs: [get_metadata, pre_job]
 
     strategy:
@@ -183,14 +182,23 @@ jobs:
           # Password for decrypting `mac_certs`
           mac_certs_password: ${{ secrets.mac_certs_password }}
 
-  finalize:
-    needs: [upload_artifacts]
-    if: always()
-    # && ${{ needs.upload_artifacts.result == 'skipped' || needs.upload_artifacts.result == 'success' }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-${{matrix.os}}
+          path: |
+            app/dist/*.deb
+            app/dist/*.pacman
+            app/dist/*.AppImage
+            app/dist/*.rpm
+            app/dist/*.dmg
+            app/dist/*.zip
+            app/dist/*.exe
 
+  finalize:
+    needs: [build]
     runs-on: ubuntu-latest
 
     steps:
       - name: Check that build succeeded or was skipped
         shell: bash
-        run: "[[ '${{needs.upload_artifacts.result}}' == 'success'  || '${{needs.upload_artifacts.result}}' == 'skipped' ]]"
+        run: "[[ '${{needs.build.result}}' == 'success'  || '${{needs.build.result}}' == 'skipped' ]]"

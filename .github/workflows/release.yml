@@ -33,7 +33,23 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@master
         with:
-          paths: '[".github/workflows/release.yml","app/package.json","app/package-lock.json","app/electron-builder.config.js","app/get_version.js","app/src/vite_main.config.js","app/src/vite_renderer.config.js","app/src/scripts/*","server/build_server.sh","server/poetry.lock","server/pyoxidizer.bzl","server/pyproject.toml","server/requirements.txt"]'
+          paths: |
+            [
+              ".github/workflows/release.yml",
+              "app/package.json",
+              "app/package-lock.json",
+              "app/electron-builder.config.js",
+              "app/get_version.js",
+              "app/src/vite_main.config.js",
+              "app/src/vite_renderer.config.js",
+              "app/src/scripts/*",
+              "app/assets/*",
+              "server/build_server.sh",
+              "server/poetry.lock",
+              "server/pyoxidizer.bzl",
+              "server/pyproject.toml",
+              "server/requirements.txt"
+            ]
 
   get_metadata:
     runs-on: ubuntu-latest
@@ -102,8 +118,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Install pyoxidizer fork
-        run: cargo install pyoxidizer
+      - name: Install pyoxidizer
+        run: python3 -m pip install pyoxidizer
 
       - name: Install Poetry
         uses: snok/install-poetry@v1

@@ -1,4 +1,4 @@
-name: Build
+name: build
 on:
   push:
     branches:
@@ -59,20 +59,22 @@ jobs:
       branch: ${{ steps.extract_branch.outputs.branch }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v3
+      - name: setup node
+        uses: actions/setup-node@v3
         with:
           node-version: 16
 
-      - name: Extract branch name
+      - name: extract branch name
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
 
-      - name: Echo branch name
+      - name: echo branch name
         shell: bash
         run: echo "Currently on branch '${{ steps.extract_branch.outputs.branch }}'"
 
@@ -86,11 +88,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Import and trust codesigning cert
+      - name: import and trust codesigning cert for macOS
         if: startsWith(matrix.os, 'macos') && (github.ref_name == 'main' || github.ref_type == 'tag')
         shell: bash
         run: ./.github/workflows/import_cert.sh
@@ -100,42 +103,43 @@ jobs:
           MAC_CERT: ${{ secrets.mac_cert }}
 
       # Build server
-      - name: Set up python
+      - name: setup python
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
-      - name: Cache cargo
+      - name: cache cargo
         uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/
           key: ${{ runner.os }}-cargo
 
-      - uses: actions-rs/toolchain@v1
-        name: Install rust
+      - name: install rust
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
-      - name: Install pyoxidizer
+      - name: install pyoxidizer
         run: python3 -m pip install pyoxidizer
 
-      - name: Install Poetry
+      - name: install poetry
         uses: snok/install-poetry@v1
 
-      - name: Build
+      - name: build server
         run: ./server/build_server.sh
 
-      - uses: actions/setup-node@v3
+      - name: setup node
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: "npm"
           cache-dependency-path: app/package-lock.json
 
-      - name: Install dependencies
+      - name: install npm dependencies
         run: npm --prefix app/ ci
 
-      - name: Delete outdated drafts
+      - name: delete outdated draft releases
         uses: hugo19941994/delete-draft-releases@v1.0.0
         continue-on-error: true
         with:
@@ -144,12 +148,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # From https://github.com/samuelmeuli/action-electron-builder/issues/42
-      - name: Install libarchive-tools for pacman build # Related https://github.com/electron-userland/electron-builder/issues/4181
+      - name: install libarchive-tools for pacman build # Related https://github.com/electron-userland/electron-builder/issues/4181
         if: startsWith(matrix.os, 'ubuntu')
         run: sudo apt-get install libarchive-tools
 
       # Compile app and upload artifacts
-      - name: Compile & release Electron app
+      - name: build & release electron app
         uses: samuelmeuli/action-electron-builder@v1
         with:
           build_script_name: build
@@ -180,7 +184,8 @@ jobs:
           # Password for decrypting `mac_certs`
           mac_certs_password: ${{ secrets.mac_certs_password }}
 
-      - uses: actions/upload-artifact@v3
+      - name: upload artifacts to github actions
+        uses: actions/upload-artifact@v3
         with:
           name: build-${{matrix.os}}
           path: |
@@ -197,6 +202,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check that build succeeded or was skipped
+      - name: check that build succeeded or was skipped
         shell: bash
         run: "[[ '${{needs.build.result}}' == 'success'  || '${{needs.build.result}}' == 'skipped' ]]"

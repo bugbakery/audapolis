@@ -158,7 +158,7 @@ jobs:
         with:
           build_script_name: build
           package_root: app/
-          args: --config electron-builder.config.js
+          args: --config electron-builder.config.js ${{ (github.event_name != 'push' || needs.get_metadata.outputs.branch != 'main') && '--publish never'}}
 
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)

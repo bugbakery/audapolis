@@ -10,6 +10,7 @@ on:
       - ".gitignore"
       - ".github/**"
       - "!.github/workflows/build.yml"
+      - "!.github/workflows/import_cert.sh"
   pull_request:
     branches:
       - main
@@ -36,6 +37,7 @@ jobs:
           paths: |
             [
               ".github/workflows/build.yml",
+              ".github/workflows/import_cert.sh",
               "app/package.json",
               "app/package-lock.json",
               "app/electron-builder.config.js",

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-cd "$(dirname $(realpath $0))"
+cd "$(dirname $(readlink -f $0))"
 
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 if [ -z $GIT_ROOT ]; then

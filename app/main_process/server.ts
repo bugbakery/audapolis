@@ -39,7 +39,7 @@ function getServerProcess() {
     dialog.showMessageBoxSync({
       type: 'error',
       message:
-        'Failed to find local executable for server. Please report this issue to https://github.com/audapolis/audapolis/issues',
+        'Failed to find local executable for server. Please report this issue to https://github.com/bugbakery/audapolis/issues',
     });
     app.quit();
     return null;

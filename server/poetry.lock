@@ -23,7 +23,7 @@ typing-extensions = "*"
 
 [package.source]
 type = "git"
-url = "https://github.com/audapolis/aesara.git"
+url = "https://github.com/bugbakery/aesara.git"
 reference = "641902379ffa27d08d8fadd6443b9b1c539caef0"
 resolved_reference = "641902379ffa27d08d8fadd6443b9b1c539caef0"
 
@@ -723,16 +723,16 @@ files = []
 develop = false
 
 [package.dependencies]
-aesara = {git = "https://github.com/audapolis/aesara.git", rev = "641902379ffa27d08d8fadd6443b9b1c539caef0"}
+aesara = {git = "https://github.com/bugbakery/aesara.git", rev = "641902379ffa27d08d8fadd6443b9b1c539caef0"}
 gdown = ">=3.8.3"
 nltk = ">=3.4.5"
 numpy = ">=1.17.2"
 
 [package.source]
 type = "git"
-url = "https://github.com/audapolis/punctuator2"
-reference = "9442bd1c9b5dc81650106e83f4a6949a21b6a162"
-resolved_reference = "9442bd1c9b5dc81650106e83f4a6949a21b6a162"
+url = "https://github.com/bugbakery/punctuator2"
+reference = "f5b98c3f73e6e6b5744e96b604c08afc31a3c093"
+resolved_reference = "f5b98c3f73e6e6b5744e96b604c08afc31a3c093"
 
 [[package]]
 name = "pyaaf2"
@@ -1619,4 +1619,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8, !=3.9.0, <3.11"
-content-hash = "1e9380dd608158111fb3366faeecfd58ee3a2f8ab3b698141f2c84c6066657d4"
+content-hash = "092ca6683714069b982edab9ff1793487726c650d72b1a8608ea09271f7dfe58"

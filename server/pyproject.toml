@@ -3,7 +3,7 @@ name = "Audapolis Server"
 version = "0.0.1"
 description = ""
 authors = [
-    "Karl Engelhardt <audapolis@ca.pajowu.de>",
+    "pajowu <audapolis@ca.pajowu.de>",
     "Jaro Habiger <jarohabiger@googlemail.com>",
 ]
 
@@ -24,7 +24,7 @@ scipy = "^1.7.3"
 webrtcvad = "^2.0.10"
 scikit-learn = "^1.0.1"
 pydiar = "^0.0.6"
-punctuator = { git = "https://github.com/audapolis/punctuator2", rev = "9442bd1c9b5dc81650106e83f4a6949a21b6a162" }
+punctuator = { git = "https://github.com/bugbakery/punctuator2", rev = "f5b98c3f73e6e6b5744e96b604c08afc31a3c093" }
 setuptools = "<60.0.0"
 
 [tool.poetry.dev-dependencies]

@@ -58,7 +58,7 @@ function ConnectingContent(): JSX.Element {
         <p />
         <Text>
           This should only take a few seconds. If it takes much longer,{' '}
-          <ExternalLink href={'https://github.com/audapolis/audapolis/issues/new'}>
+          <ExternalLink href={'https://github.com/bugbakery/audapolis/issues/new'}>
             please report to us
           </ExternalLink>
         </Text>

@@ -6,7 +6,7 @@ This document contains some resources which should help you in doing that.
 
 ## Code Of Conduct
 
-Everyone who contributes to audapolis must follow [our code of conduct](https://github.com/audapolis/audapolis/blob/main/CODE_OF_CONDUCT.md).
+Everyone who contributes to audapolis must follow [our code of conduct](https://github.com/bugbakery/audapolis/blob/main/CODE_OF_CONDUCT.md).
 If you notice any violations, please reach out to us via the ways described in the code of conduct.
 
 ## How to Contribute
@@ -16,8 +16,9 @@ If you notice any violations, please reach out to us via the ways described in t
 Oops 😅 Thank you for catching a bug 🐛.
 Please report this bug to us:
 
-1. Ensure the bug was not already reported by searching through our [Issues](https://github.com/audapolis/audapolis/issues).
-2. If you can't find a bug report for your bug, please [open a new one](https://github.com/audapolis/audapolis/issues/new). Please include **a title and clear description** and if possible as much of the following if possible:
+1. Ensure the bug was not already reported by searching through our [Issues](https://github.com/bugbakery/audapolis/issues).
+2. If you can't find a bug report for your bug, please [open a new one](https://github.com/bugbakery/audapolis/issues/new). Please include **a title and clear description** and if possible as much of the following if possible:
+
 - what one has to do to encounter the bug (**steps to reproduce**)
 - what should have happened (**expected behaviour**)
 - what happened instead (**actual behaviour**)
@@ -27,7 +28,7 @@ For more information on how to write a good bug report, [check out the atom cont
 
 ### "Audapolis should to X" or is behaving weird / unintuitively / not doing what you want?
 
-If audapolis is behaving unintuitively, feels weird, doesn't do something you think it should or similar, please [open an issue](https://github.com/audapolis/audapolis/issues/new) if there doesn't exist one yet.
+If audapolis is behaving unintuitively, feels weird, doesn't do something you think it should or similar, please [open an issue](https://github.com/bugbakery/audapolis/issues/new) if there doesn't exist one yet.
 
 We cannot guarantee that we can implement every feature you want, but we are always happy to discuss them and try to figure out how they might fit into audapolis.
 
@@ -49,17 +50,18 @@ You can find instruction on how to set up a development environment in the [app/
 
 If you have an issue that you understand and want to work on, feel free to do so. If you leave a short message in the issue thread, we can make sure that we do not have multiple people working on the same issue.
 
-Once you have a fix, [open a new pull request](https://github.com/audapolis/audapolis/compare).
+Once you have a fix, [open a new pull request](https://github.com/bugbakery/audapolis/compare).
 We will try to review your pull request as quick as possible.
 
 To make sure we can merge it quickly, you can do a few things to help us:
+
 1. Please make sure that the PR description includes all information we need to review this pull request (for example the issue this fixes, how it works).
 2. Make sure that [our linters](https://pre-commit.com/) pass (for example by running `pre-commit` and/or `pre-commit run --all-files`)
 3. Make sure that branch can be merged into the main branch
 
 ### Write code for new features
 
-If you want to write code for something that is not already [described in an issue](https://github.com/audapolis/audapolis), please open an issue first and communicate that you are working on it.
+If you want to write code for something that is not already [described in an issue](https://github.com/bugbakery/audapolis), please open an issue first and communicate that you are working on it.
 Especially if it's more than a small bugfix for an obvious bug.
 We might have some opinions on whether / how your feature should be included into audapolis.
 

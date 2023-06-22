@@ -10,7 +10,7 @@ HARDCODED_MODELS = [
         "lang": "German",
         "name": "punctuator2-subtitle2go",
         "url": (
-            "https://github.com/audapolis/model-hub/releases/download/2"
+            "https://github.com/bugbakery/audapolis-model-hub/releases/download/2"
             "/Model_subs_norm1_filt_5M_tageschau_euparl_h256_lr0.02.zip"
         ),
         "description": (
@@ -25,7 +25,7 @@ HARDCODED_MODELS = [
         "lang": "English",
         "name": "punctuator2-europarl",
         "url": (
-            "https://github.com/audapolis/model-hub/releases/download/2/"
+            "https://github.com/bugbakery/audapolis-model-hub/releases/download/2/"
             "Demo-EUROPARL-EN.zip"
         ),
         "description": (

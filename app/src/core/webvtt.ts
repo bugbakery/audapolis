@@ -99,7 +99,7 @@ export function contentToVtt(
   );
 
   const vtt = new WebVtt(
-    'This file was generated using audapolis: https://github.com/audapolis/audapolis'
+    'This file was generated using audapolis: https://github.com/bugbakery/audapolis'
   );
   for (const paragraph of paragraphItems) {
     const cue = paragraphToCue(paragraph, wordTimings, includeSpeakerNames);

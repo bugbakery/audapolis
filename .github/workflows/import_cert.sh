@@ -11,4 +11,6 @@ security import <(echo $MAC_KEY | base64 -d) -P "$MAC_CERTS_PASSWORD" -f pkcs12
 echo "Trusting Certificate"
 # Using sudo because overwriting trust settings would require interactive password input
 echo $MAC_CERT | base64 -d > cert.cer
+sudo security authorizationdb write com.apple.trust-settings.admin allow
 sudo security add-trusted-cert -d -r trustRoot -p codeSign -k build.keychain cert.cer
+sudo security authorizationdb remove com.apple.trust-settings.admin

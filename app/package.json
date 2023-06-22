@@ -1,7 +1,7 @@
 {
   "name": "audapolis",
   "productName": "audapolis",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "an editor for spoken-word audio with automatic transcription",
   "author": "audapolis team <audapolis@pajowu.de>",
   "maintainers": [

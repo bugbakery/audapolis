@@ -9,7 +9,7 @@ on:
       - ".idea"
       - ".gitignore"
       - ".github/**"
-      - "!.github/workflows/release.yml"
+      - "!.github/workflows/build.yml"
   pull_request:
     branches:
       - main

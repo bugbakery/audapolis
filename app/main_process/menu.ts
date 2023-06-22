@@ -99,7 +99,7 @@ export function setMenuBar(window: BrowserWindow, args: MenuItemConstructorOptio
         {
           label: 'Learn More',
           click: async () => {
-            await shell.openExternal('https://github.com/audapolis/audapolis');
+            await shell.openExternal('https://github.com/bugbakery/audapolis');
           },
         },
       ],

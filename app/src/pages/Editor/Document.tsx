@@ -187,7 +187,7 @@ export function Document(): JSX.Element {
     } else if (e.key == 'ArrowRight') {
       dispatch(goRight());
     } else if (e.key == 'ArrowUp' || e.key == 'ArrowDown') {
-      // TODO: handle properly (see: https://github.com/audapolis/audapolis/issues/228)
+      // TODO: handle properly (see: https://github.com/bugbakery/audapolis/issues/228)
       e.preventDefault();
     } else if (e.key == 'i') {
       e.preventDefault();

@@ -35,7 +35,7 @@ jobs:
         with:
           paths: |
             [
-              ".github/workflows/release.yml",
+              ".github/workflows/build.yml",
               "app/package.json",
               "app/package-lock.json",
               "app/electron-builder.config.js",

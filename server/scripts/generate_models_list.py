@@ -104,9 +104,19 @@ def print_table_from_dict_list(dict_list, columns=None):
 print_table_from_dict_list(models, columns=["lang", "name", "url"])
 
 by_language = defaultdict(list)
+names_by_language = defaultdict(set)
 for model in models:
     lang = model["lang"]
     del model["lang"]
+
+    i = 2
+    name = model["name"]
+    while name in names_by_language[lang]:
+        name = model["name"] + "-" + str(i)
+        i += 1
+    model["name"] = name
+    names_by_language[lang].add(name)
+
     by_language[lang] += [model]
 
 with open(Path(__file__).parent.parent / "app" / "models.yml", "w") as outfile:

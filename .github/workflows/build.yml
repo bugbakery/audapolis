@@ -96,12 +96,12 @@ jobs:
           fetch-depth: 0
 
       - name: import and trust codesigning cert for macOS
-        if: startsWith(matrix.os, 'macos') && (github.ref_name == 'main' || github.ref_type == 'tag')
+        if: startsWith(matrix.os, 'macos') # && (github.ref_name == 'main' || github.ref_type == 'tag')
         shell: bash
         run: ./.github/workflows/import_cert.sh
         env:
-          MAC_CERTS_PASSWORD: ${{ secrets.mac_certs_password }}
-          MAC_KEY: ${{ secrets.mac_certs }}
+          MAC_KEY_PASSWORD: ${{ secrets.mac_key_password }}
+          MAC_KEY: ${{ secrets.mac_key }}
           MAC_CERT: ${{ secrets.mac_cert }}
 
       # Build server

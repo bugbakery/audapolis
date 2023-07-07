@@ -15,7 +15,7 @@ German:
   size: 1.9G
   type: transcription
   compressed: true
-- name: big
+- name: big-2
   url: https://alphacephei.com/vosk/models/vosk-model-de-tuda-0.6-900k.zip
   description: Latest big wideband model from <a href="https://github.com/uhh-lt/kaldi-tuda-de">Tuda-DE</a>
     project
@@ -108,7 +108,7 @@ Russian Other:
   size: 1.5G
   type: transcription
   compressed: true
-- name: big
+- name: big-2
   url: https://alphacephei.com/vosk/models/vosk-model-ru-0.10.zip
   description: Big narrowband Russian model for servers
   size: 2.5G
@@ -235,7 +235,7 @@ Arabic:
   size: 318M
   type: transcription
   compressed: true
-- name: big
+- name: big-2
   url: https://alphacephei.com/vosk/models/vosk-model-ar-0.22-linto-1.1.0.zip
   description: Big model from <a href="https://doc.linto.ai/#/services/linstt">LINTO</a>
     project
@@ -249,7 +249,7 @@ Farsi:
   size: 47M
   type: transcription
   compressed: true
-- name: small
+- name: small-2
   url: https://alphacephei.com/vosk/models/vosk-model-small-fa-0.5.zip
   description: Bigger small model for desktop application (Persian)
   size: 60M
@@ -270,7 +270,7 @@ Ukrainian:
   size: 73M
   type: transcription
   compressed: true
-- name: small
+- name: small-2
   url: https://alphacephei.com/vosk/models/vosk-model-small-uk-v3-small.zip
   description: Small model from <a href="https://github.com/egorsmkv/speech-recognition-uk">Speech
     Recognition for Ukrainian</a>

@@ -92,7 +92,6 @@ if __name__ == "__main__":
     parser.add_argument("file", type=Path)
     parser.add_argument("--language")
     parser.add_argument("--transcription-model")
-    parser.add_argument("--punctuation-model", required=False)
     parser.add_argument("--server", default="http://127.0.0.1:8000")
     parser.add_argument("--token")
     parser.add_argument("--diarize", action="store_true")
@@ -115,9 +114,6 @@ if __name__ == "__main__":
         files={"file": open(server_file, "rb")},
         params={
             "transcription_model": f"transcription-{args.language}-{args.transcription_model}",
-            "punctuation_model": f"punctuation-{args.language}-{args.punctuation_model}"
-            if args.punctuation_model is not None
-            else None,
             "diarize": args.diarize,
         },
         data={"fileName": str(args.file)},

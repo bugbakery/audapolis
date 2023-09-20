@@ -10,7 +10,6 @@ from zipfile import ZipFile
 
 import requests
 import yaml
-from punctuator import Punctuator
 from vosk import Model
 
 from .config import CACHE_DIR, DATA_DIR
@@ -59,10 +58,9 @@ class ModelDescription:
 class Language:
     lang: str
     transcription_models: List[ModelDescription] = field(default_factory=list)
-    punctuation_models: List[ModelDescription] = field(default_factory=list)
 
     def all_models(self):
-        return self.transcription_models + self.punctuation_models
+        return self.transcription_models
 
 
 class ModelDefaultDict(defaultdict):
@@ -83,8 +81,6 @@ class Models:
                     models[model_description.model_id] = model_description
                     if model["type"] == "transcription":
                         languages[lang].transcription_models.append(model_description)
-                    elif model["type"] == "punctuation":
-                        languages[lang].punctuation_models.append(model_description)
         self.available = dict(languages)
         self.model_descriptions = models
 
@@ -111,12 +107,10 @@ class Models:
     def _load_model(self, model):
         if model.type == "transcription":
             return Model(str(model.path()))
-        elif model.type == "punctuation":
-            return Punctuator(str(model.path()))
         else:
             raise ModelTypeNotSupported()
 
-    def get(self, model_id: str) -> Union[Model, Punctuator]:
+    def get(self, model_id: str) -> Union[Model]:
         model = self.get_model_description(model_id)
         if not model.is_downloaded():
             raise ModelNotDownloaded()

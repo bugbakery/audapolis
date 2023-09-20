@@ -59,7 +59,6 @@ def startup_event():
 async def start_transcription(
     background_tasks: BackgroundTasks,
     transcription_model: str,
-    punctuation_model: Optional[str] = None,
     diarize_max_speakers: Optional[int] = None,
     diarize: bool = False,
     file: UploadFile = File(...),
@@ -70,13 +69,11 @@ async def start_transcription(
         TranscriptionTask(
             file.filename,
             TranscriptionState.QUEUED,
-            punctuate=punctuation_model is not None,
         )
     )
     background_tasks.add_task(
         process_audio,
         transcription_model,
-        punctuation_model,
         file.file,
         fileName,
         task.uuid,

@@ -40,15 +40,6 @@ const steps = [
     body: <Text>Congratulations 🎉. You now have a transcription model...</Text>,
   },
   {
-    target: '#punctuation_table',
-    body: (
-      <Text>
-        For some languages you can also download a punctuation model. These help the computer to
-        guess which punctuation was present in the spoken text.
-      </Text>
-    ),
-  },
-  {
     target: '#back',
     body: <Text>Now you can go back and transcribe your media file.</Text>,
   },

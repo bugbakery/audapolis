@@ -8,7 +8,6 @@ import { RootState } from '../state';
 import { openLanding, openModelManager } from '../state/nav';
 import {
   Button,
-  Checkbox,
   Combobox,
   Dialog,
   FormField,
@@ -68,9 +67,6 @@ export function TranscribePage(): JSX.Element {
       .map((lang) => {
         return {
           ...lang,
-          punctuation_models: lang.punctuation_models.filter(
-            (x) => x.model_id in state.models.downloaded
-          ),
           transcription_models: lang.transcription_models.filter(
             (x) => x.model_id in state.models.downloaded
           ),
@@ -94,24 +90,6 @@ export function TranscribePage(): JSX.Element {
         'transcription'
       )
     );
-  }, [selectedLanguage]);
-  const [punctuate, setPunctuate] = useState(selectedLanguage.punctuation_models.length > 0);
-  const [selectedPunctuationModel, setSelectedPunctuationModel] = useState(
-    getDefaultModelInstance(
-      selectedLanguage.punctuation_models,
-      selectedLanguage.lang,
-      'punctuation'
-    )
-  );
-  useEffect(() => {
-    setSelectedPunctuationModel(
-      getDefaultModelInstance(
-        selectedLanguage.punctuation_models,
-        selectedLanguage.lang,
-        'punctuation'
-      )
-    );
-    setPunctuate(selectedLanguage.punctuation_models.length > 0);
   }, [selectedLanguage]);
   const [diarizationMode, setDiarizationMode] = useState('on' as 'off' | 'on' | 'advanced');
   const [diarizationSpeakers, setDiarizationSpeakers] = useState('4');
@@ -150,7 +128,6 @@ export function TranscribePage(): JSX.Element {
                   dispatch(
                     startTranscription({
                       transcription_model: selectedTranscriptionModel,
-                      punctuation_model: punctuate ? selectedPunctuationModel : null,
                       diarize: diarizationMode != 'off',
                       diarize_max_speakers:
                         diarizationMode == 'advanced' ? parsedSpeakers - 1 : null,
@@ -209,33 +186,6 @@ export function TranscribePage(): JSX.Element {
                   setSelectedModel={setSelectedTranscriptionModel}
                 />
               </FormField>
-              {selectedLanguage.punctuation_models.length > 0 ? (
-                <FormField
-                  marginTop={majorScale(2)}
-                  label={'Punctuation Reconstruction'}
-                  description={
-                    'Audapolis can try to automatically guess the punctuation. This requires a punctuation model, which is only supported for a few languages'
-                  }
-                >
-                  <Checkbox
-                    label={'Enable Punctuation Reconstruction'}
-                    checked={punctuate}
-                    disabled={selectedLanguage.punctuation_models.length == 0}
-                    onChange={(e) => setPunctuate(e.target.checked)}
-                  />
-                  {punctuate ? (
-                    <ModelSelector
-                      selectedModel={selectedPunctuationModel}
-                      models={selectedLanguage.punctuation_models}
-                      setSelectedModel={setSelectedPunctuationModel}
-                    />
-                  ) : (
-                    <></>
-                  )}
-                </FormField>
-              ) : (
-                <></>
-              )}
             </Pane>
           </details>
         </FormField>

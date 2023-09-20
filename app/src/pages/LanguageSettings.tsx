@@ -272,16 +272,6 @@ export function LanguageSettingsPage(): JSX.Element {
           id={'transcription_table'}
         />
 
-        <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
-          Punctuation Models for {language.lang}
-        </Heading>
-        <ModelTable
-          models={language.punctuation_models}
-          lang={language.lang}
-          type={'punctuation'}
-          id={'punctuation_table'}
-        />
-
         <BackButton marginY={majorScale(2)} />
       </MainMaxWidthContainer>
     </AppContainer>

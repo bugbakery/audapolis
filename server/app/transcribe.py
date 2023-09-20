@@ -28,8 +28,6 @@ class TranscriptionState(str, enum.Enum):
     LOADING = "loading"
     DIARIZING = "diarizing"
     TRANSCRIBING = "transcribing"
-    LOADING_PUNCTUATION_MODEL = "loading punctuation model"
-    PUNCTUATING = "punctuating"
     DONE = "done"
 
 
@@ -37,7 +35,6 @@ class TranscriptionState(str, enum.Enum):
 class TranscriptionTask(Task):
     filename: str
     state: TranscriptionState
-    punctuate: bool
     total: float = 0
     processed: float = 0
     content: Optional[dict] = None
@@ -45,14 +42,7 @@ class TranscriptionTask(Task):
 
     def set_transcription_progress(self, processed):
         self.processed += processed
-        if not self.punctuate:
-            self.progress = self.processed / self.total
-        else:
-            self.progress = (self.processed / self.total) * 0.9
-
-    def set_punctuation_progress(self, processed):
-        self.processed = processed
-        self.progress = 0.9 + (processed / self.total)
+        self.progress = self.processed / self.total
 
 
 def transcribe_raw_data(model: Model, name, audio, offset, duration, process_callback):
@@ -81,7 +71,6 @@ EPSILON = 0.00001
 
 def process_audio(
     transcription_model: str,
-    punctuation_model: Optional[str],
     file: UploadFile,
     fileName: str,
     task_uuid: str,
@@ -100,29 +89,8 @@ def process_audio(
         diarize_max_speakers,
     )
 
-    if punctuation_model is not None:
-        content = punctuate(task, punctuation_model, content)
-
     task.content = content
     task.state = TranscriptionState.DONE
-
-
-def punctuate(task, punctuation_model, content):
-    task.state = TranscriptionState.LOADING_PUNCTUATION_MODEL
-    model = models.get(punctuation_model)
-    task.state = TranscriptionState.PUNCTUATING
-    for para_idx, para in enumerate(content):
-        words = [x for x in para["content"] if x["type"] == "word"]
-        full_text = " ".join(x["word"] for x in words)
-        punctuated = model.punctuate(
-            full_text, titleize=False, heuristic_corrections=False
-        )
-
-        for word, puncted in zip(words, punctuated.split(" ")):
-            word["word"] = puncted
-        task.set_punctuation_progress(para_idx / len(content))
-
-    return content
 
 
 def transcribe(

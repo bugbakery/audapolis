@@ -18,14 +18,13 @@ export interface Model {
   url: string;
   description: string;
   size: string;
-  type: 'transcription' | 'punctuation';
+  type: 'transcription';
   model_id: string;
 }
 
 export interface Language {
   lang: string;
   transcription_models: Model[];
-  punctuation_models: Model[];
 }
 
 export type DownloadingModel = Model & {
@@ -54,7 +53,7 @@ export const fetchModelState = createAsyncThunk<
 
   const flattenLanguages = (x: Record<string, Language>) =>
     Object.values(x).flatMap((x) => {
-      return x.transcription_models.concat(x.punctuation_models);
+      return x.transcription_models;
     });
 
   return { all: flattenLanguages(all), downloaded: downloaded, languages: all };

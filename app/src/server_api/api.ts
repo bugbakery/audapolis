@@ -39,7 +39,6 @@ export interface DownloadModelTask extends Task {
 export function startTranscription(
   server: ServerConfig,
   transcription_model: string,
-  punctuation_model: string | null,
   diarize: boolean,
   diarize_max_speakers: number | null,
   file: File,
@@ -48,9 +47,6 @@ export function startTranscription(
   const opts: Record<string, string | boolean | number> = { transcription_model, diarize };
   if (diarize_max_speakers !== null) {
     opts['diarize_max_speakers'] = diarize_max_speakers;
-  }
-  if (punctuation_model !== null) {
-    opts['punctuation_model'] = punctuation_model;
   }
   return fetchFromServer(server, 'POST', 'tasks/start_transcription', opts, {
     form: { file, fileName },

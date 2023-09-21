@@ -6,7 +6,9 @@ security default-keychain -s build.keychain
 security unlock-keychain -p "$MAC_KEY_PASSWORD" build.keychain
 
 echo "Importing key"
-security import <(echo $MAC_KEY | base64 -d) -P "$MAC_KEY_PASSWORD" -f pkcs12
+echo $MAC_KEY | base64 -d > key.cer
+security import key.cer -P "$MAC_KEY_PASSWORD" -f pkcs12
+rm key.cer
 
 echo "Trusting Certificate"
 # Using sudo because overwriting trust settings would require interactive password input

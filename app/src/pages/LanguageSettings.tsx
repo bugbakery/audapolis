@@ -265,6 +265,16 @@ export function LanguageSettingsPage(): JSX.Element {
         <BackButton id={'back' /* for tour */} />
 
         <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
+          Whisper Models for {language.lang}
+        </Heading>
+        <ModelTable
+          models={language.whisper_models}
+          lang={language.lang}
+          type={'whisper'}
+          id={'whisper_table'}
+        />
+
+        <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
           Transcription Models for {language.lang}
         </Heading>
         <ModelTable

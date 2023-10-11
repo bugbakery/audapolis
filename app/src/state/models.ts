@@ -25,6 +25,7 @@ export interface Model {
 export interface Language {
   lang: string;
   transcription_models: Model[];
+  whisper_models: Model[];
 }
 
 export type DownloadingModel = Model & {

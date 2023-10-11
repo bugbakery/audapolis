@@ -41,6 +41,7 @@ export function ModelManagerPage(): JSX.Element {
           <Table.Head padding={0}>
             <Table.TextHeaderCell {...firstColumnProps}>Language</Table.TextHeaderCell>
             <Table.TextHeaderCell>Transcription Models</Table.TextHeaderCell>
+            <Table.TextHeaderCell>Whisper Models</Table.TextHeaderCell>
             <Table.TextHeaderCell {...lastColumnProps} />
           </Table.Head>
 
@@ -58,6 +59,11 @@ export function ModelManagerPage(): JSX.Element {
                 <Table.TextCell {...firstColumnProps}>{lang.lang}</Table.TextCell>
                 <ModelNumberTextCell
                   models={lang.transcription_models}
+                  lang={lang.lang}
+                  downloaded={downloaded}
+                />
+                <ModelNumberTextCell
+                  models={lang.whisper_models}
                   lang={lang.lang}
                   downloaded={downloaded}
                 />

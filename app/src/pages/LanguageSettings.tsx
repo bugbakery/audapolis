@@ -103,21 +103,23 @@ function ModelTable({
         isDefault={null}
         action={
           <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
-            <HoverSwitcher
-              onClick={() => dispatch(cancelDownload(model.task_uuid))}
-              hoverChild={<IconButton icon={StopIcon} />}
-              defaultChild={
-                <Button appearance={'minimal'} padding={0}>
-                  <Circle
-                    style={{ height: majorScale(3) }}
-                    percent={model.progress * 100}
-                    strokeWidth={50}
-                    trailWidth={0}
-                    strokeLinecap={'butt'}
-                  />
-                </Button>
-              }
-            />
+            <Pane>
+              <HoverSwitcher
+                onClick={() => dispatch(cancelDownload(model.task_uuid))}
+                hoverChild={<IconButton icon={StopIcon} />}
+                defaultChild={
+                  <Button appearance={'minimal'} padding={0}>
+                    <Circle
+                      style={{ height: majorScale(3) }}
+                      percent={model.progress * 100}
+                      strokeWidth={50}
+                      trailWidth={0}
+                      strokeLinecap={'butt'}
+                    />
+                  </Button>
+                }
+              />
+            </Pane>
           </Tooltip>
         }
         key={model.model_id}
@@ -221,19 +223,19 @@ function HoverSwitcher({
   hoverChild: JSX.Element;
   defaultChild: JSX.Element;
 }): JSX.Element {
-  const [shownChild, setShownChild] = useState(defaultChild);
+  const [hover, setHover] = useState(false);
 
   return (
     <Pane
       {...switcherProps}
       onMouseLeave={() => {
-        setShownChild(defaultChild);
+        setHover(false);
       }}
       onMouseOver={() => {
-        setShownChild(hoverChild);
+        setHover(true);
       }}
     >
-      {shownChild}
+      {hover ? hoverChild : defaultChild}
     </Pane>
   );
 }
@@ -261,6 +263,16 @@ export function LanguageSettingsPage(): JSX.Element {
       <TitleBar />
       <MainMaxWidthContainer>
         <BackButton id={'back' /* for tour */} />
+
+        <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
+          Whisper Models for {language.lang}
+        </Heading>
+        <ModelTable
+          models={language.whisper_models}
+          lang={language.lang}
+          type={'whisper'}
+          id={'whisper_table'}
+        />
 
         <Heading marginTop={majorScale(3)} marginBottom={majorScale(2)} paddingLeft={majorScale(1)}>
           Transcription Models for {language.lang}

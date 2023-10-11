@@ -1,11 +1,44 @@
 from collections import defaultdict
 from pathlib import Path
 
+import huggingface_hub
 import requests
 import yaml
 from bs4 import BeautifulSoup
 
+WHISPER_MODELS = {
+    "tiny": "guillaumekln/faster-whisper-tiny",
+    "base": "guillaumekln/faster-whisper-base",
+    "small": "guillaumekln/faster-whisper-small",
+    "medium": "guillaumekln/faster-whisper-medium",
+    "large-v1": "guillaumekln/faster-whisper-large-v1",
+    "large-v2": "guillaumekln/faster-whisper-large-v2",
+    "tiny.en": "guillaumekln/faster-whisper-tiny.en",
+    "base.en": "guillaumekln/faster-whisper-base.en",
+    "small.en": "guillaumekln/faster-whisper-small.en",
+    "medium.en": "guillaumekln/faster-whisper-medium.en",
+}
+
 HARDCODED_MODELS = []
+
+models = []
+
+api = huggingface_hub.HfApi()
+for name, url in WHISPER_MODELS.items():
+    repo_info = api.repo_info(url, files_metadata=True)
+    models.append(
+        {
+            "lang": "English" if name.endswith(".en") else "Universal",
+            "name": f"whisper-{name}",
+            "url": url,
+            "description": "Whisper model doing both transcription and punctuation reconstruction",
+            "size": f"{int(sum(f.size for f in repo_info.siblings) / 1024 / 1024)}M",
+            "type": "whisper",
+            "download_type": "huggingface",
+        },
+    )
+
+models.extend(HARDCODED_MODELS)
 
 r = requests.get("https://alphacephei.com/vosk/models")
 assert r.status_code == 200
@@ -14,8 +47,6 @@ table = soup.find("table")
 
 columns = [x.text for x in table.find_all("th")]
 rows = table.find("tbody").find_all("tr")
-
-models = HARDCODED_MODELS
 current_lang = None
 for row in rows:
     if strong := row.find("strong"):
@@ -26,8 +57,7 @@ for row in rows:
         ), "no previous language heading found, probably the format changed :("
         raw = {k: v for k, v in zip(columns, row.find_all("td"))}
 
-        if current_lang == "English Other" or "not" in raw["Notes"].text.lower():
-            continue
+        current_lang = current_lang.replace("Other", "").strip()
 
         if current_lang == "Speaker identification model":
             continue
@@ -46,7 +76,7 @@ for row in rows:
             description=raw["Notes"].decode_contents(),
             size=raw["Size"].text,
             type="transcription",
-            compressed=True,
+            download_type="http+zip",
         )
         models += [model]
 

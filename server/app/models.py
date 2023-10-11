@@ -8,6 +8,7 @@ from typing import Dict, List, Union
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
+import huggingface_hub
 import requests
 import yaml
 from vosk import Model
@@ -40,7 +41,7 @@ class ModelDescription:
     size: str
     type: str
     lang: str
-    compressed: bool = field(default=False)
+    download_type: str = field(default=False)
     model_id: str = field(default=None)
 
     def __post_init__(self):
@@ -58,9 +59,10 @@ class ModelDescription:
 class Language:
     lang: str
     transcription_models: List[ModelDescription] = field(default_factory=list)
+    whisper_models: List[ModelDescription] = field(default_factory=list)
 
     def all_models(self):
-        return self.transcription_models
+        return self.transcription_models + self.whisper_models
 
 
 class ModelDefaultDict(defaultdict):
@@ -81,6 +83,8 @@ class Models:
                     models[model_description.model_id] = model_description
                     if model["type"] == "transcription":
                         languages[lang].transcription_models.append(model_description)
+                    elif model["type"] == "whisper":
+                        languages[lang].whisper_models.append(model_description)
         self.available = dict(languages)
         self.model_descriptions = models
 
@@ -122,38 +126,61 @@ class Models:
     def download(self, model_id: str, task_uuid: str):
         task: DownloadModelTask = tasks.get(task_uuid)
         model = self.get_model_description(model_id)
-        with tempfile.TemporaryFile(dir=CACHE_DIR) as f:
-            response = requests.get(model.url, stream=True)
-            task.total = int(response.headers.get("content-length"))
-            task.state = DownloadModelState.DOWNLOADING
 
-            for data in response.iter_content(
-                chunk_size=max(int(task.total / 1000), 1024 * 1024)
-            ):
-                task.add_progress(len(data))
+        if model.download_type.startswith("http"):
+            with tempfile.TemporaryFile(dir=CACHE_DIR) as f:
+                response = requests.get(model.url, stream=True)
+                task.total = int(response.headers.get("content-length"))
+                task.state = DownloadModelState.DOWNLOADING
 
-                f.write(data)
-                if task.canceled:
-                    return
+                for data in response.iter_content(
+                    chunk_size=max(int(task.total / 1000), 1024 * 1024)
+                ):
+                    task.add_progress(len(data))
 
-            task.state = DownloadModelState.EXTRACTING
-            if model.compressed:
-                with ZipFile(f) as archive:
-                    target_dir = model.path()
-                    for info in archive.infolist():
-                        if info.is_dir():
-                            continue
-                        path = target_dir / Path("/".join(info.filename.split("/")[1:]))
-                        path.parent.mkdir(exist_ok=True, parents=True)
+                    f.write(data)
+                    if task.canceled:
+                        return
 
-                        source = archive.open(info.filename)
-                        target = open(path, "wb")
-                        with source, target:
-                            shutil.copyfileobj(source, target)
-            else:
-                f.seek(0)
-                with open(model.path(), "wb") as target:
-                    shutil.copyfileobj(f, target)
+                task.state = DownloadModelState.EXTRACTING
+                if model.download_type.endswith("+zip"):
+                    with ZipFile(f) as archive:
+                        target_dir = model.path()
+                        for info in archive.infolist():
+                            if info.is_dir():
+                                continue
+                            path = target_dir / Path(
+                                "/".join(info.filename.split("/")[1:])
+                            )
+                            path.parent.mkdir(exist_ok=True, parents=True)
+
+                            source = archive.open(info.filename)
+                            target = open(path, "wb")
+                            with source, target:
+                                shutil.copyfileobj(source, target)
+                else:
+                    f.seek(0)
+                    with open(model.path(), "wb") as target:
+                        shutil.copyfileobj(f, target)
+        elif model.download_type == "huggingface":
+            api = huggingface_hub.HfApi()
+            repo_info = api.repo_info(model.url, files_metadata=True)
+            task.total = sum(f.size for f in repo_info.siblings)
+            with tempfile.TemporaryDirectory(dir=CACHE_DIR) as dir:
+                for f in repo_info.siblings:
+                    url = huggingface_hub.hf_hub_url(model.url, f.rfilename)
+                    with open(Path(dir) / f.rfilename, "wb") as file:
+                        task.state = DownloadModelState.DOWNLOADING
+                        response = requests.get(url, stream=True)
+                        for data in response.iter_content(
+                            chunk_size=max(int(task.total / 1000), 1024 * 1024)
+                        ):
+                            task.add_progress(len(data))
+
+                            file.write(data)
+                            if task.canceled:
+                                return
+                shutil.copytree(dir, model.path())
 
         task.state = DownloadModelState.DONE
 

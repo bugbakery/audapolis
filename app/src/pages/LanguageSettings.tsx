@@ -103,21 +103,23 @@ function ModelTable({
         isDefault={null}
         action={
           <Tooltip content={`downloading model ${Math.round(model.progress * 100)}%`}>
-            <HoverSwitcher
-              onClick={() => dispatch(cancelDownload(model.task_uuid))}
-              hoverChild={<IconButton icon={StopIcon} />}
-              defaultChild={
-                <Button appearance={'minimal'} padding={0}>
-                  <Circle
-                    style={{ height: majorScale(3) }}
-                    percent={model.progress * 100}
-                    strokeWidth={50}
-                    trailWidth={0}
-                    strokeLinecap={'butt'}
-                  />
-                </Button>
-              }
-            />
+            <Pane>
+              <HoverSwitcher
+                onClick={() => dispatch(cancelDownload(model.task_uuid))}
+                hoverChild={<IconButton icon={StopIcon} />}
+                defaultChild={
+                  <Button appearance={'minimal'} padding={0}>
+                    <Circle
+                      style={{ height: majorScale(3) }}
+                      percent={model.progress * 100}
+                      strokeWidth={50}
+                      trailWidth={0}
+                      strokeLinecap={'butt'}
+                    />
+                  </Button>
+                }
+              />
+            </Pane>
           </Tooltip>
         }
         key={model.model_id}
@@ -221,19 +223,19 @@ function HoverSwitcher({
   hoverChild: JSX.Element;
   defaultChild: JSX.Element;
 }): JSX.Element {
-  const [shownChild, setShownChild] = useState(defaultChild);
+  const [hover, setHover] = useState(false);
 
   return (
     <Pane
       {...switcherProps}
       onMouseLeave={() => {
-        setShownChild(defaultChild);
+        setHover(false);
       }}
       onMouseOver={() => {
-        setShownChild(hoverChild);
+        setHover(true);
       }}
     >
-      {shownChild}
+      {hover ? hoverChild : defaultChild}
     </Pane>
   );
 }

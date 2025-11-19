@@ -106,9 +106,9 @@ jobs:
 
       # Build server
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
       - name: cache cargo
         uses: actions/cache@v3
@@ -126,7 +126,9 @@ jobs:
         run: python3 -m pip install pyoxidizer
 
       - name: install poetry
-        uses: snok/install-poetry@v1
+        run: |
+          pipx install poetry
+          pipx inject poetry poetry-plugin-export
 
       - name: build server
         run: ./server/build_server.sh
@@ -187,7 +189,7 @@ jobs:
           mac_certs_password: ${{ secrets.mac_certs_password }}
 
       - name: upload artifacts to github actions
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: build-${{matrix.os}}
           path: |

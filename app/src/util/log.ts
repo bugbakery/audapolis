@@ -1,7 +1,7 @@
 import fs, { createWriteStream } from 'fs';
 import path from 'path';
 import JSZip from 'jszip';
-import { getHomePath, saveFile, sendLogLine } from '../../ipc/ipc_renderer';
+import { getHomePath, saveFile } from '../../ipc/ipc_renderer';
 import { isRunningInTest } from './index';
 import glob from 'glob';
 import { app } from 'electron';
@@ -17,13 +17,29 @@ export enum LogLevel {
   GroupEnd,
 }
 
+export const NumericLogLevels = [LogLevel.Log, LogLevel.Info, LogLevel.Warn, LogLevel.Error];
+
 export enum LogSource {
   MainProcess,
   RendererProcess,
+  ServerProcess,
 }
 
 export let logFilePath: string | null = null;
-let oldLog: ((...args: any[]) => void) | null = null;
+
+const buffer: string[] = [];
+function write(str: string) {
+  buffer.push(str);
+
+  const try_fn = () => {
+    if (process.stdout.writableLength == 0) {
+      process.stdout.write(buffer.shift() || '');
+    } else {
+      setTimeout(try_fn, 10);
+    }
+  };
+  try_fn();
+}
 
 function log(file: number, source: LogSource, level: LogLevel, ...args: any[]) {
   const date = new Date().toISOString();
@@ -36,7 +52,23 @@ function log(file: number, source: LogSource, level: LogLevel, ...args: any[]) {
     level: level_str,
     args: string_args,
   });
-  if (oldLog !== null) oldLog(log_line);
+
+  const FgGreen = '\x1b[32m';
+  const FgBlue = '\x1b[34m';
+  const FgYellow = '\x1b[33m';
+  const Reset = '\x1b[0m';
+  const source_color = [FgGreen, FgBlue, FgYellow][source];
+
+  write(
+    args
+      .join('\n')
+      .split('\n')
+      .map(
+        (line) =>
+          `${source_color}[${source_str.substring(0, 4)}]${Reset} ${level_str.padEnd(5)} | ${line}`
+      )
+      .join('\n') + '\n'
+  );
   fs.writeSync(file, log_line + '\n');
   fs.fsyncSync(file);
 }
@@ -64,23 +96,18 @@ export function initMainProcessLog(): void {
   logFilePath = path.join(log_dir, fileName);
   const file = fs.openSync(logFilePath, 'w');
   console.log('Init logging into', logFilePath);
-  oldLog = console.log;
   console.log = (...args) => log(file, LogSource.MainProcess, LogLevel.Log, ...args);
-  console.trace = (...args) => log(file, LogSource.MainProcess, LogLevel.Trace, ...args);
-  console.debug = (...args) => log(file, LogSource.MainProcess, LogLevel.Debug, ...args);
+  console.trace = (...args) => log(file, LogSource.MainProcess, LogLevel.Log, ...args);
+  console.debug = (...args) => log(file, LogSource.MainProcess, LogLevel.Log, ...args);
   console.info = (...args) => log(file, LogSource.MainProcess, LogLevel.Info, ...args);
   console.warn = (...args) => log(file, LogSource.MainProcess, LogLevel.Warn, ...args);
   console.error = (...args) => log(file, LogSource.MainProcess, LogLevel.Error, ...args);
   logLine = (...args) => log(file, ...args);
-  const oldGroupCollapsed = console.groupCollapsed;
   console.groupCollapsed = (...args) => {
     log(file, LogSource.MainProcess, LogLevel.GroupCollapsed, ...args);
-    oldGroupCollapsed(...args);
   };
-  const oldGroupEnd = console.groupEnd;
   console.groupEnd = (...args) => {
     log(file, LogSource.MainProcess, LogLevel.GroupEnd, ...args);
-    oldGroupEnd(...args);
   };
 }
 
@@ -107,26 +134,4 @@ export async function exportDebugLogsToDisk(file: string): Promise<void> {
       .on('finish', resolve)
       .on('error', reject);
   });
-}
-
-type KeyOfType<T, V> = keyof {
-  [P in keyof T as T[P] extends V ? P : never]: any;
-};
-
-function _mapLogFn(key: KeyOfType<typeof console, (...args: any[]) => void>, level: LogLevel) {
-  const _oldFn: (...args: any[]) => void = console[key];
-  console[key] = (...args: any[]) => {
-    _oldFn(...args);
-    sendLogLine(level, ...args);
-  };
-}
-export function initRendererLog(): void {
-  _mapLogFn('log', LogLevel.Log);
-  _mapLogFn('trace', LogLevel.Trace);
-  _mapLogFn('debug', LogLevel.Debug);
-  _mapLogFn('info', LogLevel.Info);
-  _mapLogFn('warn', LogLevel.Warn);
-  _mapLogFn('error', LogLevel.Error);
-  _mapLogFn('groupCollapsed', LogLevel.GroupCollapsed);
-  _mapLogFn('groupEnd', LogLevel.GroupEnd);
 }

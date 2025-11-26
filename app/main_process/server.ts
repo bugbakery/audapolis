@@ -1,7 +1,7 @@
 import path from 'path';
 import process from 'process';
 import fs from 'fs';
-import { spawn } from 'child_process';
+import { spawn, execFile } from 'child_process';
 import { app, dialog } from 'electron';
 import { publishServerInfo, publishServerStderr } from '../ipc/ipc_main';
 import { ServerInfo } from './types';
@@ -16,8 +16,12 @@ function findServer() {
     // In development
     path.join(process.cwd(), 'server', 'server'),
     path.join(process.cwd(), 'server', 'server.exe'),
+
+    path.join('server', 'server'),
+    path.join('server', 'server.exe'),
   ];
   for (const path of possibilities) {
+    console.log('trying', path, 'exists:', fs.existsSync(path));
     if (fs.existsSync(path)) {
       return path;
     }
@@ -46,8 +50,7 @@ function getServerProcess() {
     return null;
   }
   console.log('Starting server from', path);
-  return spawn(path, {
-    stdio: 'pipe',
+  return execFile(path, {
     env: { ...process.env },
   });
 }
@@ -75,21 +78,23 @@ function startServer() {
     return;
   }
   serverProcess.stdout.on('data', (data: Buffer) => {
-    logLine && logLine(LogSource.ServerProcess, LogLevel.Log, data);
-    try {
-      const parsed_data: ServerStartingMessage | ServerStartedMessage = JSON.parse(data.toString());
-      if (parsed_data.msg == 'server_starting') {
-        publishServerInfo({ state: 'starting', port: parsed_data.port });
-      } else if (parsed_data.msg == 'server_started') {
-        publishServerInfo({ state: 'running', token: parsed_data.token });
+    for (const line of data.toString().trim().split(/\r?\n/)) {
+      logLine && logLine(LogSource.ServerProcess, LogLevel.Log, data);
+      try {
+        const parsed_data: ServerStartingMessage | ServerStartedMessage = JSON.parse(data.toString());
+        if (parsed_data.msg == 'server_starting') {
+          publishServerInfo({ state: 'starting', port: parsed_data.port });
+        } else if (parsed_data.msg == 'server_started') {
+          publishServerInfo({ state: 'running', token: parsed_data.token });
+        }
+      } catch (e) {
+        console.log('error decoding stdout json', e);
       }
-    } catch (e) {
-      console.log('error decoding stdout json', e);
     }
   });
 
   serverProcess.stderr.on('data', (data: Buffer) => {
-    logLine && logLine(LogSource.ServerProcess, LogLevel.Error, data);
+    logLine && logLine(LogSource.ServerProcess, LogLevel.Error, data.toString());
     publishServerStderr(data.toString());
   });
 

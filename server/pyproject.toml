@@ -6,6 +6,7 @@ authors = [
     "pajowu <audapolis@ca.pajowu.de>",
     "Jaro Habiger <jarohabiger@googlemail.com>",
 ]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.8, !=3.9.0, <3.11"
@@ -28,7 +29,7 @@ setuptools = "<60.0.0"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.3"
-black = "^21.8b0"
+black = "^24"
 flake8 = "^3.9.2"
 rich = "^10.9.0"
 types-requests = "^2.25.6"

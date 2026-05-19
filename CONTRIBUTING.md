@@ -74,3 +74,8 @@ Opening an issue first also allows other users to comment on it, often leading t
 If you want to write tests & documentation for existing features / behaviour, always feel free to do so and open a pull request.
 Here, we would also appreachiate if you opened an issue first to avoid duplicate work.
 If you have any questions while doing to, please open an issue or write us an email.
+
+### Generative AI use
+
+We do not accept any contributions that were generated partly or in whole using generative AI (e.g. LLMs).
+This includes but is not limited to issues, pull requests, code, documentation and artwork.

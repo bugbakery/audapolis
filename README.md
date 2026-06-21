@@ -17,6 +17,13 @@
 You can download the newest version for Windows, Linux and macOS [here](https://github.com/bugbakery/audapolis/releases/latest).
 If you find any bugs or UX inconveniences, we would be happy for you to [report them to us](https://github.com/bugbakery/audapolis/issues/new).
 
+## Contributing
+
+If you want to contribute, please first read our
+
+* [Code Of Conduct](https://github.com/bugbakery/bugbakery/blob/main/CODE_OF_CONDUCT.md) and
+* [Contributing Guidelines](https://github.com/bugbakery/bugbakery/blob/main/CONTRIBUTING.md)
+
 ## Survey
 
 It would be really nice if you could help us out by answering [our short survey](https://docs.google.com/forms/d/e/1FAIpQLSerdLMYw3C3sfCyliGTal_CfeH5_jw4l2Zv-NmYc8GEabpHnA/viewform) about your needs & expectations so that we can build actually usefull software and know what you need.

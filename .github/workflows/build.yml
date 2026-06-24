@@ -85,7 +85,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, macos-15-intel, ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -118,6 +118,7 @@ jobs:
           key: ${{ runner.os }}-cargo
 
       - name: install rust
+        if: ${{ !startsWith(matrix.os, 'macos-15-intel') }}
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
